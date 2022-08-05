@@ -1,5 +1,5 @@
 apiVersion: v2
-name: helm-common
+name: harness-common
 description: Helm Common library for Harness Helm Charts 
 
 # A chart can be either an 'application' or a 'library' chart.
