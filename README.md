@@ -2,7 +2,7 @@
 
 to update/publish:
 
-Bump version of src/Chart.yaml
+Bump version of the chart src/Chart.yaml
 
 helm package src -d charts
 
