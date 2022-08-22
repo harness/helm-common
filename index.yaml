@@ -3,6 +3,20 @@ entries:
   harness-common:
   - apiVersion: v2
     appVersion: 0.0.0
+    created: "2022-08-22T19:43:50.50748818Z"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      version: 2.x.x
+    description: Helm Common library for Harness Helm Charts
+    digest: bb67e79170693cc3cd003e4f159dc2849951e6c33ca35786fe9f94594d2f37b4
+    name: harness-common
+    type: library
+    urls:
+    - https://github.com/harness/helm-common/releases/download/harness-common-1.0.1/harness-common-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
+    appVersion: 0.0.0
     created: "2022-08-22T18:07:34.94845781Z"
     dependencies:
     - name: common
@@ -15,4 +29,4 @@ entries:
     urls:
     - https://github.com/harness/helm-common/releases/download/harness-common-1.0.0/harness-common-1.0.0.tgz
     version: 1.0.0
-generated: "2022-08-22T18:07:34.94846801Z"
+generated: "2022-08-22T19:43:50.50749488Z"
