@@ -44,18 +44,6 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Generate container image name
-*/}}
-{{- define "harnesscommon.names.imagename" -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) -}}
-#{{- if .Values.global.imageRegistry -}}
-#{{- printf "%s/%s:%s" .Values.global.imageRegistry ((splitList "/" .Values.image.repository) | last) .Values.image.tag -}}
-#{{- else -}}
-#{{- printf "%s:%s" .Values.image.repository .Values.image.tag -}}
-#{{- end -}}
-{{- end -}}
-
-{{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts.
 */}}
 {{- define "harnesscommon.names.namespace" -}}
