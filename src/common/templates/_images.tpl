@@ -31,14 +31,22 @@ Return the proper Docker Image Registry Secret Names (deprecated: use common.ima
   {{- $pullSecrets := list }}
 
   {{- if .global }}
-    {{- range .global.imagePullSecrets -}}
-      {{- $pullSecrets = append $pullSecrets . -}}
+    {{- if .global.imagePullSecrets }}
+      {{- range .global.imagePullSecrets -}}
+        {{- $pullSecrets = append $pullSecrets . -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 
   {{- range .images -}}
-    {{- range .pullSecrets -}}
-      {{- $pullSecrets = append $pullSecrets . -}}
+    {{- if .pullSecrets }}
+      {{- range .pullSecrets -}}
+        {{- $pullSecrets = append $pullSecrets . -}}
+      {{- end -}}
+    {{- else if .imagePullSecrets }}
+      {{- range .imagePullSecrets -}}
+        {{- $pullSecrets = append $pullSecrets . -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 
