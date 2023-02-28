@@ -24,11 +24,11 @@ Defaults to "postgres' and falls back to .Values.global.postgres.password.secret
   when using an external PostgreSQL
 */}}
 {{- define "harnesscommon.database.postgres.password.secret.name" -}}
-{{- default (printf "%s" "postgres") (pluck "secret" $.Values.global.postgres.password | first ) | quote -}}
+{{- coalesce (pluck "secret" $.Values.global.postgres.password | first ) (printf "%s" "postgres") | quote -}}
 {{- end -}}
 
 {{- define "harnesscommon.database.postgres.password.secret.key" -}}
-{{- default (printf "%s" "postgres-password") (pluck "key" $.Values.global.postgres.password | first ) | quote -}}
+{{- coalesce (pluck "key" $.Values.global.postgres.password | first ) (printf "%s" "postgres-password")  | quote -}}
 {{- end -}}
 
 {{- define "harnesscommon.database.postgres.password" -}}
