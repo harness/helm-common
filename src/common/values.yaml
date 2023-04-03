@@ -2,13 +2,21 @@ global:
   ha: false
   database:
     postgres:
+      ## - installed = true if installed within cluster
       installed: true
+      ## - protocol to use for connection
       protocol: postgres
+      ## - host array for external
       hosts:
         - postgres:5432
+      ## - secret name containing external values
       secretName: postgressecret
+      ## - key within secret containing username
       userKey: username
+      ## - key within secret containing password
       passwordKey: password
+      ## - extra arguments set to connection string
+      extraArgs: ""
     mongo:
       installed: true
       protocol: mongodb
@@ -18,6 +26,7 @@ global:
       secretName: mymongosecret
       userKey: username
       passwordKey: password
+      extraArgs: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
@@ -26,3 +35,4 @@ global:
       secretName: timescalesecret
       userKey: username
       passwordKey: password
+      extraArgs: ""

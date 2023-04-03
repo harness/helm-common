@@ -24,6 +24,7 @@
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $installed := (pluck $type .context.Values.global.database | first ).installed }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
+{{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
 {{- if $installed }}
   {{ $namespace := .context.Release.Namespace}}
   {{- if .context.Values.global.ha -}}
@@ -32,8 +33,8 @@
 {{- printf "'mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
   {{- end }}
 {{- else }}
-{{ $extraArgs := (printf "/%s?authSource=admin" .database )}}
-{{ include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs )}}
+{{ $args := (printf "/%s?%s" .database $extraArgs )}}
+{{ include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args )}}
 {{- end }}
 {{- end }}
 
