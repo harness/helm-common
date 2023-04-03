@@ -1,2 +1,28 @@
 global:
   ha: false
+  database:
+    postgres:
+      installed: true
+      protocol: postgres
+      hosts:
+        - postgres:5432
+      secretName: postgressecret
+      userKey: username
+      passwordKey: password
+    mongo:
+      installed: true
+      protocol: mongodb
+      hosts:
+        - mongo1.foo.bar:1234
+        - mongo2.foo.bar:1234
+      secretName: mymongosecret
+      userKey: username
+      passwordKey: password
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: timescalesecret
+      userKey: username
+      passwordKey: password
