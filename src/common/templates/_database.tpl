@@ -1,49 +1,6 @@
 {{/* vim: set filetype=mustache: */}}
 
 {{/*
-  Global Postgres overrides
-  global:
-    postgres:
-      host: <foo>
-      port: 1234
-      password:
-        secret: <password secret name>
-        key: <key in secret containing password>
-*/}}
-{{- define "harnesscommon.database.postgres.host" -}}
-{{- coalesce (pluck "host" .Values.global.postgres | first ) (printf "%s.%s.svc" "postgres" $.Release.Namespace) -}}
-{{- end -}}
-
-{{- define "harnesscommon.database.postgres.port" -}}
-{{- default 5432 (pluck "port" .Values.global.postgres | first) | int -}}
-{{- end -}}
-
-{{/*
-Return the secret name
-Defaults to "postgres' and falls back to .Values.global.postgres.password.secretName
-  when using an external PostgreSQL
-*/}}
-{{- define "harnesscommon.database.postgres.password.secret.name" -}}
-{{- coalesce (pluck "secret" $.Values.global.postgres.password | first ) (printf "%s" "postgres") | quote -}}
-{{- end -}}
-
-{{- define "harnesscommon.database.postgres.password.secret.key" -}}
-{{- coalesce (pluck "key" $.Values.global.postgres.password | first ) (printf "%s" "postgres-password")  | quote -}}
-{{- end -}}
-
-{{- define "harnesscommon.database.postgres.password" -}}
-- name: DB_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ template "harnesscommon.database.postgres.password.secret.name" .}}
-      key: {{ template "harnesscommon.database.postgres.password.secret.key" . }}
-{{- end -}}
-
-{{- define "harnesscommon.database.postgres" -}}
-postgres://postgres:$(DB_PASSWORD){{template "harnesscommon.database.postgres.host" . }}:{{template "harnesscommon.database.postgres.port" . }}
-{{- end -}}
-
-{{/*
 Create Mongo DB Connection String
 
 Usage:
