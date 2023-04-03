@@ -26,7 +26,7 @@
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
 {{- if $installed }}
-  {{ $namespace := .context.Release.Namespace}}
+  {{- $namespace := .context.Release.Namespace }}
   {{- if .context.Values.global.ha -}}
 {{- printf "'mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database -}}
   {{- else }}
