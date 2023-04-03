@@ -1,3 +1,4 @@
+
 {{- define "harnesscommon.dbconnection.dbenvuser" }}
 {{- $dbType := upper .type }}
 - name: {{ printf "%s_USER" $dbType }}
