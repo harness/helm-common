@@ -33,8 +33,8 @@
 {{- printf "'mongodb://$(MONGO_USERNAME):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
   {{- end }}
 {{- else }}
-{{ $args := (printf "/%s?%s" .database $extraArgs )}}
-{{ include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args )}}
+{{- $args := (printf "/%s?%s" .database $extraArgs )}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args )}}
 {{- end }}
 {{- end }}
 
@@ -58,11 +58,11 @@
 {{/* Generates Postgres Connection string
 {{ include "harnesscommon.dbconnection.postgresConnection" (dict "context" $) }}
 */}}
-{{- define "dbconnection.postgresConnection" }}
+{{- define "harnesscommon.dbconnection.postgresConnection" }}
 {{- $type := "postgres" }}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
-{{ include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol )}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol )}}
 {{- end}}
 
 {{/* Generates TimeScale environment variables
@@ -86,9 +86,9 @@
 {{/* Generates Timescale Connection string
 {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "context" $) }}
 */}}
-{{- define "dbconnection.timescaleConnection" }}
+{{- define "harnesscommon.dbconnection.timescaleConnection" }}
 {{- $type := "timescaledb" }}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
-{{ include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness") }}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness") }}
 {{- end}}
