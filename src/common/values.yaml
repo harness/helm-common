@@ -10,29 +10,27 @@ global:
       hosts:
         - postgres:5432
       ## - secret name containing external values
-      secretName: postgressecret
+      secretName: ""
       ## - key within secret containing username
-      userKey: username
+      userKey: ""
       ## - key within secret containing password
-      passwordKey: password
+      passwordKey: ""
       ## - extra arguments set to connection string
       extraArgs: ""
     mongo:
       installed: true
       protocol: mongodb
-      hosts:
-        - mongo1.foo.bar:1234
-        - mongo2.foo.bar:1234
-      secretName: mymongosecret
-      userKey: username
-      passwordKey: password
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
       extraArgs: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
       hosts:
         - timescaledb-single-chart:5432
-      secretName: timescalesecret
-      userKey: username
-      passwordKey: password
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
       extraArgs: ""
