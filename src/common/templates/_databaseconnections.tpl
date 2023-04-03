@@ -1,5 +1,5 @@
 {{/* Generates mongo environment variables
-{{ include "harnesscommon.dbconnection.mongEnv" . | nident 10 }}
+{{ include "harnesscommon.dbconnection.mongoEnv" . | nident 10 }}
 */}}
 {{- define "harnesscommon.dbconnection.mongoEnv" }}
 {{- $type := "mongo" }}
