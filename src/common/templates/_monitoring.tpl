@@ -29,7 +29,7 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- end -}}
 
 {{/* Port to be added in deployment.yaml for java based applications
-{{ include "harnesscommon.monitoring.deploymentPort" . }}
+{{ include "harnesscommon.monitoring.containerPort" . }}
 */}}
 {{- define "harnesscommon.monitoring.deploymentPort" -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" .Values) | first) -}}
