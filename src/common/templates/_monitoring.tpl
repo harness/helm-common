@@ -31,7 +31,7 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{/* Port to be added in deployment.yaml for java based applications
 {{ include "harnesscommon.monitoring.containerPort" . }}
 */}}
-{{- define "harnesscommon.monitoring.deploymentPort" -}}
+{{- define "harnesscommon.monitoring.containerPort" -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" .Values) | first) -}}
 {{- $globalMonitoring := default (dict) ((pluck "monitoring" .Values.global) | first) }}
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
