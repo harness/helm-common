@@ -7,7 +7,7 @@
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) -}}
 {{- $enabled := (pluck "enabled" $monitoring) | first -}}
 {{- $port := (pluck "port" $monitoring) | first -}}
-ENABLE_PROMETHEUS_COLLECTOR: {{ default "" $enabled | quote }}
+ENABLE_PROMETHEUS_COLLECTOR: {{ default "false" $enabled | quote }}
 PROMETHEUS_COLLECTOR_PORT: {{ default "8889" $port | quote }}
 {{- end -}}
 
