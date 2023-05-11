@@ -27,14 +27,11 @@
 {{- $protocol := .protocol }}
 {{- $extraArgs := .extraArgs }}
 {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s" $protocol $dbType $dbType $firsthost) }}
-{{- if $extraArgs }}
-{{- $connectionString = (printf "%s%s" $connectionString $extraArgs ) }}
-{{- end }}
 {{- range $host := (rest .hosts) }}
-{{- $connectionString = printf "%s,%s://$(%s_USER):$(%s_PASSWORD)@%s" $connectionString $protocol $dbType $dbType $host }}
+{{- $connectionString = printf "%s,%s" $connectionString $host }}
+{{- end}}
 {{- if $extraArgs }}
 {{- $connectionString = (printf "%s%s" $connectionString $extraArgs ) }}
 {{- end }}
-{{- end}}
 {{- printf "%s" $connectionString }}
 {{- end }}
