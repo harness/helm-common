@@ -1,5 +1,5 @@
 {{/* Configurations to be added for java based applications' configmaps
-{{ include "harnesscommon.monitoring.configurations" . }}
+{{ include "harnesscommon.monitoring.config" . }}
 */}}
 {{- define "harnesscommon.monitoring.config" -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" .Values) | first) -}}
