@@ -63,10 +63,17 @@
 */}}
 {{- define "harnesscommon.dbconnection.postgresConnection" }}
 {{- $type := "postgres" }}
+{{- $dbType := upper $type }}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
+{{- $installed := (pluck $type .context.Values.global.database | first).installed }}
+{{- if $installed }}
+{{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s" "postgres" $dbType $dbType "postgres:5432") }}
+{{- printf "%s" $connectionString }}
+{{- else }}
 {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol )}}
-{{- end}}
+{{- end }}
+{{- end }}
 
 {{/* Generates TimeScale environment variables
 {{ include "harnesscommon.dbconnection.timescaleEnv" . | nident 10 }}
