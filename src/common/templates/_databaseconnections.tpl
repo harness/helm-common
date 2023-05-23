@@ -39,7 +39,7 @@
 {{- end }}
 
 {{/* Generates postgres environment variables
-{{ include "harnesscommon.dbconnection.postgresEnv" . | nident 10 }}
+{{ include "harnesscommon.dbconnection.postgresEnv" . | nindent 10 }}
 */}}
 {{- define "harnesscommon.dbconnection.postgresEnv" }}
 {{- $type := "postgres" }}
@@ -48,11 +48,14 @@
 {{- $userKey := (pluck $type .Values.global.database | first).userKey }}
 {{- $installed := (pluck $type .Values.global.database | first).installed }}
 {{- if $installed }}
+{{- $passwordSecret := ( .Values.postgresPassword ).name }}
+{{- $passwordKey := ( .Values.postgresPassword ).key }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret "userValue" "postgres" ) }}
+{{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey ) }}
 {{- else }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret  "userKey" $userKey ) }}
-{{- end }}
 {{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey ) }}
+{{- end }}
 {{- end }}
 
 {{/* Generates Postgres Connection string
