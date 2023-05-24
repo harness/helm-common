@@ -102,3 +102,40 @@
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness") }}
 {{- end}}
+
+{{/* Generates Redis environment variables
+{{ include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD") | nident 10 }}
+*/}}
+{{- define "harnesscommon.dbconnection.redisEnv" }}
+{{- $type := "redis" }}
+{{- $passwordSecret := .context.secretName }}
+{{- $passwordKey := .context.passwordKey }}
+{{- $userKey := .context.userKey }}
+{{- $installed := .context.installed }}
+{{- if not $installed }}
+{{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret  "userKey" $userKey "variableName" .userVariableName ) }}
+{{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey "variableName" .passwordVariableName ) }}
+{{- end }}
+{{- end }}
+
+{{/* Generates Redis Connection string. If userVariableName or passwordVariableName is not provided, a connection string is generated without creds
+{{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" )}}
+*/}}
+{{- define "harnesscommon.dbconnection.redisConnection" -}}
+{{- $type := "redis" -}}
+{{- $hosts := list -}}
+{{- $protocol := "redis" -}}
+{{- if .context.installed  -}}
+{{- printf "redis://redis-sentinel-harness-announce-0:26379,redis://redis-sentinel-harness-announce-1:26379,redis://redis-sentinel-harness-announce-2:26379" -}}
+{{- else -}}
+{{- $hosts = .context.hosts -}}
+{{- $protocol = .context.protocol -}}
+{{- $firsthost := (index $hosts 0) -}}
+{{- $extraArgs := .context.extraArgs -}}
+{{- $connectionString := (printf "%s://%s" $protocol $firsthost) -}}
+{{- if $extraArgs -}}
+  {{- $connectionString = (printf "%s%s" $connectionString $extraArgs ) -}}
+{{- end -}}
+{{- printf "%s" $connectionString -}}
+{{- end -}}
+{{- end -}}
