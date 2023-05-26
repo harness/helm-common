@@ -25,6 +25,8 @@
 {{- $installed := (pluck $type .context.Values.global.database | first ).installed }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
+{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
 {{- if $installed }}
   {{- $namespace := .context.Release.Namespace }}
   {{- if .context.Values.global.ha -}}
@@ -34,7 +36,7 @@
   {{- end }}
 {{- else }}
 {{- $args := (printf "/%s?%s" .database $extraArgs )}}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args )}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
@@ -67,11 +69,13 @@
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $installed := (pluck $type .context.Values.global.database | first).installed }}
+{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
 {{- if $installed }}
 {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s" "postgres" $dbType $dbType "postgres:5432") }}
 {{- printf "%s" $connectionString }}
 {{- else }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol )}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
@@ -99,6 +103,36 @@
 {{- define "harnesscommon.dbconnection.timescaleConnection" }}
 {{- $type := "timescaledb" }}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
+{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness") }}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness" "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName) }}
 {{- end}}
+
+{{/* Generates Redis environment variables
+{{ include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD") | nident 10 }}
+*/}}
+{{- define "harnesscommon.dbconnection.redisEnv" }}
+{{- $type := "redis" }}
+{{- $passwordSecret := .context.secretName }}
+{{- $passwordKey := .context.passwordKey }}
+{{- $userKey := .context.userKey }}
+{{- $installed := .context.installed }}
+{{- if not $installed }}
+{{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret  "userKey" $userKey "variableName" .userVariableName ) }}
+{{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey "variableName" .passwordVariableName ) }}
+{{- end }}
+{{- end }}
+
+{{/* Generates Redis Connection string. If userVariableName or passwordVariableName is not provided, a connection string is generated without creds
+{{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" )}}
+*/}}
+{{- define "harnesscommon.dbconnection.redisConnection" -}}
+{{- $type := "redis" -}}
+{{- $hosts := .context.hosts -}}
+{{- $protocol := .context.protocol -}}
+{{- if and (.context.installed) (empty $hosts) -}}
+  {{- $hosts = list "redis-sentinel-harness-announce-0:26379" "redis-sentinel-harness-announce-1:26379" "redis-sentinel-harness-announce-2:26379" }}
+{{- end -}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" .context.extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+{{- end -}}
