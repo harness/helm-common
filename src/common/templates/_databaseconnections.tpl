@@ -22,11 +22,12 @@
 {{- define "harnesscommon.dbconnection.mongoConnection" }}
 {{- $type := "mongo" }}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
+{{- $dbType := $type | upper}}
 {{- $installed := (pluck $type .context.Values.global.database | first ).installed }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
-{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
-{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
+{{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- if $installed }}
   {{- $namespace := .context.Release.Namespace }}
   {{- if .context.Values.global.ha -}}
@@ -69,8 +70,8 @@
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $installed := (pluck $type .context.Values.global.database | first).installed }}
-{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
-{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
+{{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- if $installed }}
 {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s" "postgres" $dbType $dbType "postgres:5432") }}
 {{- printf "%s" $connectionString }}
@@ -102,9 +103,10 @@
 */}}
 {{- define "harnesscommon.dbconnection.timescaleConnection" }}
 {{- $type := "timescaledb" }}
+{{- $dbType := $type | upper}}
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
-{{- $userVariableName := default (printf "%s_USER" $type) .userVariableName -}}
-{{- $passwordVariableName := default (printf "%s_PASSWORD" $type) .passwordVariableName -}}
+{{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
+{{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness" "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName) }}
 {{- end}}
@@ -114,6 +116,7 @@
 */}}
 {{- define "harnesscommon.dbconnection.redisEnv" }}
 {{- $type := "redis" }}
+{{- $dbType := $type | upper}}
 {{- $passwordSecret := .context.secretName }}
 {{- $passwordKey := .context.passwordKey }}
 {{- $userKey := .context.userKey }}
