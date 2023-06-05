@@ -40,12 +40,13 @@ If connectionType is set other than "string" then protocol and credentials are a
 {{- $protocol := .protocol -}}
 {{- $extraArgs := .extraArgs -}}
 {{- $connectionString := (include "harnesscommon.dbconnection.singleConnectString" (dict "protocol" $protocol "host" $firsthost "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName) ) }}
+{{- $localContext := . }}
+{{- $connectionType := default "string" .connectionType }}
 {{- range $host := (rest .hosts) -}}
-  {{- $connectionType := default "string" .connectionType }}
   {{- if eq $connectionType "string" }}
   {{- $connectionString = printf "%s,%s" $connectionString $host -}}
   {{- else }}
-  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" . ) -}}
+  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" $localContext ) -}}
   {{- end }}
 {{- end -}}
 {{- if $extraArgs -}}
