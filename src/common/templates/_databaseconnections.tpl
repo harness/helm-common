@@ -62,7 +62,7 @@
 {{- end }}
 
 {{/* Generates Postgres Connection string
-{{ include "harnesscommon.dbconnection.postgresConnection" (dict "context" $) }}
+{{ include "harnesscommon.dbconnection.postgresConnection" (dict "database" "foo" "args" "bar" "context" $) }}
 */}}
 {{- define "harnesscommon.dbconnection.postgresConnection" }}
 {{- $type := "postgres" }}
@@ -70,13 +70,15 @@
 {{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
 {{- $installed := (pluck $type .context.Values.global.database | first).installed }}
+{{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
 {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
 {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- if $installed }}
-{{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s" "postgres" $dbType $dbType "postgres:5432") }}
+{{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s/%s?%s" "postgres" $dbType $dbType "postgres:5432" .database .args) }}
 {{- printf "%s" $connectionString }}
 {{- else }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+{{- $appendedArgs := (printf "/%s?%s&%s" .database .args $extraArgs )}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $appendedArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
