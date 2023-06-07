@@ -77,18 +77,14 @@
 {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s/%s?%s" "postgres" $dbType $dbType "postgres:5432" .database .args) }}
 {{- printf "%s" $connectionString }}
 {{- else }}
-{{- $appendedArgs := (printf "/%s" .database )}}
-{{- if or .args $extraArgs }}
-{{- $appendedArgs = (printf "%s?" $appendedArgs)}}
+{{- $paramArgs := default "" .args }}
+{{- $finalArgs := (printf "/%s" .database) }}
+{{- if and $paramArgs $extraArgs }}
+{{- $finalArgs = (printf "%s?%s&%s" $finalArgs $paramArgs $extraArgs) }}
+{{- else if or $paramArgs $extraArgs }}
+{{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
 {{- end }}
-{{- if .args }}
-{{- $appendedArgs = (printf "%s%s" $appendedArgs .args )}}
-{{- end }}
-{{- if and .args $extraArgs }}
-{{- $appendedArgs = (printf "%s&" $appendedArgs)}}
-{{- end }}
-{{- $appendedArgs = (printf "%s%s" $appendedArgs $extraArgs )}}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $appendedArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
@@ -111,7 +107,7 @@
 {{- end }}
 
 {{/* Generates Timescale Connection string
-{{ include "harnesscommon.dbconnection.timescaleConnection" (dict "context" $) }}
+{{ include "harnesscommon.dbconnection.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $) }}
 */}}
 {{- define "harnesscommon.dbconnection.timescaleConnection" }}
 {{- $type := "timescaledb" }}
@@ -120,7 +116,15 @@
 {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
 {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" "/harness" "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName) }}
+{{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
+{{- $paramArgs := default "" .args }}
+{{- $finalArgs := (printf "/%s" .database) }}
+{{- if and $paramArgs $extraArgs }}
+{{- $finalArgs = (printf "%s?%s&%s" $finalArgs $paramArgs $extraArgs) }}
+{{- else if or $paramArgs $extraArgs }}
+{{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
+{{- end }}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName) }}
 {{- end}}
 
 {{/* Generates Redis environment variables
