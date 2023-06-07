@@ -84,7 +84,7 @@
 {{- else if or $paramArgs $extraArgs }}
 {{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
 {{- end }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $appendedArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
