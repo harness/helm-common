@@ -1,5 +1,5 @@
 {{/*
-Return the target Kubernetes version
+Return the target Kubernetes version by default, can be overwritten by .Values.global.kubeVersion(needed for)
 */}}
 {{- define "harnesscommon.capabilities.kubeVersion" -}}
 {{- $providedKubeVersion := .Values.global.kubeVersion }}
