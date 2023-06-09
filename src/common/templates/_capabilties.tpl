@@ -2,8 +2,8 @@
 Return the target Kubernetes version
 */}}
 {{- define "harnesscommon.capabilities.kubeVersion" -}}
-{{- $providedKubeVersion := pluck .Values.global.kubeVersion | first  }}
-{{- default $providedKubeVersion .Capabilities.KubeVersion.Version -}}
+{{- $providedKubeVersion := .Values.global.kubeVersion }}
+{{- default .Capabilities.KubeVersion.Version $providedKubeVersion -}}
 {{- end -}}
 
 {{/*
