@@ -150,7 +150,7 @@
 {{- $type := "redis" -}}
 {{- $hosts := .context.hosts -}}
 {{- $protocol := .context.protocol -}}
-{{- if and (.context.installed) (empty $hosts) -}}
+{{- if .context.installed -}}
   {{- $hosts = list "redis-sentinel-harness-announce-0:26379" "redis-sentinel-harness-announce-1:26379" "redis-sentinel-harness-announce-2:26379" }}
 {{- end -}}
 {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" .context.extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
