@@ -46,7 +46,7 @@ If connectionType is set other than "string" then protocol and credentials are a
   {{- if eq $connectionType "string" }}
   {{- $connectionString = printf "%s,%s" $connectionString $host -}}
   {{- else }}
-  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" $localContext ) -}}
+  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" (dict "protocol" $protocol "host" $host "userVariableName" $localContext.userVariableName "passwordVariableName" $localContext.passwordVariableName) ) -}}
   {{- end }}
 {{- end -}}
 {{- if $extraArgs -}}
