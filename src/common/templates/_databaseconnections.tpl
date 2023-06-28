@@ -178,7 +178,7 @@
 {{- end }}
 {{- $userAndPassField := "" }}
 {{- if and (.userVariableName) (.passwordVariableName) }}
-{{- $userAndPassField = (printf "%s:%s@" .userVariableName .passwordVariableName) }}
+{{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
 {{- end }}
 {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
 {{- if .args }}
