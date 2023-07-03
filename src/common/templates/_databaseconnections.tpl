@@ -172,11 +172,15 @@
 {{- $host := include "harnesscommon.dbconnection.timescaleHost" (dict "context" .context ) }}
 {{- $port := include "harnesscommon.dbconnection.timescalePort" (dict "context" .context ) }}
 {{- $connectionString := "" }}
-{{- if empty .protocol }}
-{{- $connectionString = (printf "%s:%s" $host $port) }}
-{{- else }}
-{{- $connectionString = (printf "%s://%s:%s/%s" .protocol $host $port .database) }}
+{{- $protocol := "" }}
+{{- if not (empty .protocol) }}
+{{- $protocol = (printf "%s://" .protocol) }}
 {{- end }}
+{{- $userAndPassField := "" }}
+{{- if and (.userVariableName) (.passwordVariableName) }}
+{{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+{{- end }}
+{{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
 {{- if .args }}
 {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
 {{- end }}
