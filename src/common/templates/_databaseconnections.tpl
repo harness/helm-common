@@ -117,8 +117,8 @@
 {{- $dbType := upper $type }}
 {{- $certSecret := (pluck $type .context.Values.global.database | first ).certName }}
 {{- $certKey := (pluck $type .context.Values.global.database | first).certKey }}
-{{- $installed := (pluck $type .context.Values.global.database | first).installed }}
-{{- if not $installed }}
+{{- $sslEnabled := (pluck $type .context.Values.global.database | first).sslEnabled }}
+{{- if not $sslEnabled }}
 {{- if .certPathValue }}
 {{- $certPathVariableName := default (printf "%s_SSL_CERT_PATH" $dbType) .certPathVariableName -}}
 - name: {{ $certPathVariableName }}
