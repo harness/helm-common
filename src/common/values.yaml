@@ -34,3 +34,12 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      hosts:
+      - "redis:6379"
+      secretName: "secret"
+      userKey: "user"
+      passwordKey: "password"
+      extraArgs: ""

@@ -126,7 +126,7 @@
 {{- end }}
 {{- if .enableSslVariableName }}
 - name: {{ printf "%s" .enableSslVariableName }}
-  value: {{ (printf "%s\n" "'true'") }} 
+  value: {{ (printf "%s\n" "'true'") }}
 {{- end }}
 {{- if .certVariableName }}
 - name: {{ .certVariableName  }}
@@ -197,9 +197,23 @@
 {{- $passwordKey := .context.passwordKey }}
 {{- $userKey := .context.userKey }}
 {{- $installed := .context.installed }}
-{{- if not $installed }}
+{{- if and (not $installed) $passwordSecret }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret  "userKey" $userKey "variableName" .userVariableName ) }}
 {{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey "variableName" .passwordVariableName ) }}
+{{- end }}
+{{- end }}
+
+{{/* Outputs whether redis password is set or not
+{{ include "harnesscommon.dbconnection.isRedisPasswordSet" (dict "context" .Values.global.database.redis) }}
+*/}}
+{{- define "harnesscommon.dbconnection.isRedisPasswordSet" }}
+{{- $passwordSecret := .context.secretName }}
+{{- $passwordKey := .context.passwordKey }}
+{{- $installed := .context.installed }}
+{{- if and (not $installed) $passwordSecret $passwordKey }}
+{{- printf "true" }}
+{{- else }}
+{{- printf "false" }}
 {{- end }}
 {{- end }}
 
