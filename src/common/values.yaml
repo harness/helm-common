@@ -34,3 +34,8 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: false
+      secretName: "secret"
+      userKey: "user"
+      passwordKey: "password"

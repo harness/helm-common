@@ -6,10 +6,11 @@ Secret and userValue are mutually exclusive
 {{- define "harnesscommon.dbconnection.dbenvuser" }}
 {{- $dbType := upper .type }}
 {{- $name := default (printf "%s_USER" $dbType) .variableName }}
-- name: {{ $name }}
 {{- if .userValue }}
+- name: {{ $name }}
   value: {{ printf "%s" .userValue }}
-{{- else }}
+{{- else if .userKey }}
+- name: {{ $name }}
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s" .secret }}
@@ -23,11 +24,13 @@ Secret and userValue are mutually exclusive
 {{- define "harnesscommon.dbconnection.dbenvpassword" }}
 {{- $dbType := upper .type }}
 {{- $name := default (printf "%s_PASSWORD" $dbType) .variableName }}
+{{- if .passwordKey }}
 - name: {{ $name }}
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s" .secret }}
       key: {{ printf "%s" .passwordKey }}
+{{- end }}
 {{- end }}
 
 {{/* Generates db connection string. If userVariableName or passwordVariableName is not provided, no credentials are added to connection string.
