@@ -209,11 +209,23 @@
 {{- define "harnesscommon.dbconnection.isRedisPasswordSet" }}
 {{- $passwordSecret := .context.secretName }}
 {{- $passwordKey := .context.passwordKey }}
-{{- $installed := .context.installed }}
-{{- if and (not $installed) $passwordSecret $passwordKey }}
+{{- if and $passwordSecret $passwordKey }}
 {{- printf "true" }}
 {{- else }}
 {{- printf "false" }}
+{{- end }}
+{{- end }}
+
+{{/* Outputs whether redis password is set or not
+{{ include "harnesscommon.dbconnection.isRedisSentinel" (dict "context" .Values.global.database.redis) }}
+*/}}
+{{- define "harnesscommon.dbconnection.isRedisSentinel" }}
+{{- $sentinelEnabled := default "false" .context.sentinel }}
+{{- $installed := .context.installed }}
+{{- if (not $installed) }}
+{{- printf "true" }}
+{{- else }}
+{{- printf $sentinelEnabled }}
 {{- end }}
 {{- end }}
 
