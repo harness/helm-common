@@ -31,7 +31,6 @@ USAGE:
                 {{- $latestObj = $currValue }}
             {{- else }}
                 {{- $currHasValidValue = false }}
-                {{- break }}
             {{- end }}
         {{- end }}
         {{- if and $currHasValidValue (not (eq $currValue nil)) }}
@@ -66,7 +65,6 @@ USAGE:
                 {{- $latestObj = $currValue }}
             {{- else }}
                 {{- $currHasValidValue = false }}
-                {{- break }}
             {{- end }}
         {{- end }}
         {{- if and $currHasValidValue (not (eq $currValue nil)) }}
