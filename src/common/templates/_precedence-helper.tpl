@@ -71,6 +71,9 @@ USAGE:
             {{- if and (eq $valueType "string") (not (empty $currValue)) }}
                 {{- $hasValidValue = true }}
                 {{- $value = printf "%v" $currValue }}
+            {{- else if and (eq $valueType "bool") }}
+                {{- $hasValidValue = true }}
+                {{- $value = printf "%v" $currValue }}
             {{- end }}
         {{- end }}
     {{- end }}
