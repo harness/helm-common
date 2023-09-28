@@ -31,7 +31,6 @@ USAGE:
                 {{- $latestObj = $currValue }}
             {{- else }}
                 {{- $currHasValidValue = false }}
-                {{- break }}
             {{- end }}
         {{- end }}
         {{- if and $currHasValidValue (not (eq $currValue nil)) }}
@@ -66,11 +65,13 @@ USAGE:
                 {{- $latestObj = $currValue }}
             {{- else }}
                 {{- $currHasValidValue = false }}
-                {{- break }}
             {{- end }}
         {{- end }}
         {{- if and $currHasValidValue (not (eq $currValue nil)) }}
             {{- if and (eq $valueType "string") (not (empty $currValue)) }}
+                {{- $hasValidValue = true }}
+                {{- $value = printf "%v" $currValue }}
+            {{- else if and (eq $valueType "bool") }}
                 {{- $hasValidValue = true }}
                 {{- $value = printf "%v" $currValue }}
             {{- end }}
