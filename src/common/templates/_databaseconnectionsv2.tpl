@@ -102,10 +102,18 @@ USAGE:
 Generates Redis environment variables
 
 USAGE:
-{{ include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
+{{ include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.redisEnv" }}
     {{- $ := .ctx }}
+    {{- $userVariableName := .userVariableName }}
+    {{- $passwordVariableName := .passwordVariableName }}
+    {{- if empty $userVariableName }}
+    {{- $userVariableName = "REDIS_USERNAME" }}
+    {{- end }}
+    {{- if empty $passwordVariableName }}
+    {{- $passwordVariableName = "REDIS_PASSWORD" }}
+    {{- end }}
     {{- $localRedisCtx := .localRedisCtx }}
     {{- $globalRedisCtx := .globalRedisCtx }}
     {{- if and $ $localRedisCtx $globalRedisCtx }}
@@ -116,10 +124,8 @@ USAGE:
         {{- $localESOSecretIdentifier := (printf "%s-%s-ext-secret" $.Chart.Name "redis") }}
         {{- $globalESOSecretIdentifier := (printf "%s-ext-secret" "redis") }}
         {{- if not $installed }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_USERNAME" "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.userKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_PASSWORD" "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.userKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD" "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.userKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
