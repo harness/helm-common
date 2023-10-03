@@ -89,9 +89,13 @@ USAGE:
     {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context ) }}
     {{- $port := include "harnesscommon.dbconnectionv2.timescalePort" (dict "context" .context ) }}
     {{- $connectionString := "" }}
-    {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+    {{- $protocol := "" }}
     {{- if not (empty .protocol) }}
         {{- $protocol = (printf "%s://" .protocol) }}
+    {{- end }}
+    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+    {{- if not (empty $protocolVar) }}
+        {{- $protocol = (printf "%s://" $protocolVar) }}
     {{- end }}
     {{- $userAndPassField := "" }}
     {{- if and (.userVariableName) (.passwordVariableName) }}
