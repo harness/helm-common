@@ -44,7 +44,7 @@ USAGE:
 Checks if the provided value keys have valid value
 
 USAGE:
-{{ include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled") "valueType" "string") }}
+{{ include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled")) }}
 */}}
 {{- define "harnesscommon.precedence.getValueFromKey" }}
     {{- $ := .ctx }}
@@ -71,7 +71,7 @@ USAGE:
             {{- if and (eq $valueType "string") (not (empty $currValue)) }}
                 {{- $hasValidValue = true }}
                 {{- $value = printf "%v" $currValue }}
-            {{- else if and (eq $valueType "bool") }}
+            {{- else if (eq $valueType "bool") }}
                 {{- $hasValidValue = true }}
                 {{- $value = printf "%v" $currValue }}
             {{- end }}

@@ -2,14 +2,18 @@
 Generates env objects for Default Kubernetes Secrets
 
 USAGE:
-{{ include "harnesscommon.secrets.manageDefaultKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "defaultKubernetesSecretName" "MY_GENERATED_SECRET" "defaultKubernetesSecretKey" "GENERATED_SECRET_KEY") }}
+{{ include "harnesscommon.secrets.manageDefaultKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "overrideEnvName" "MY_ENV" "defaultKubernetesSecretName" "MY_GENERATED_SECRET" "defaultKubernetesSecretKey" "GENERATED_SECRET_KEY") }}
 */}}
 {{- define "harnesscommon.secrets.manageDefaultKubernetesSecretEnv" }}
     {{- $variableName := .variableName }}
+    {{- $envVariableName := $variableName }}
+    {{- if .overrideEnvName }}
+        {{- $envVariableName = .overrideEnvName }}
+    {{- end }}
     {{- $defaultKubernetesSecretName := .defaultKubernetesSecretName }}
     {{- $defaultKubernetesSecretKey := .defaultKubernetesSecretKey }}
     {{- if and (not (empty $variableName)) (not (empty $defaultKubernetesSecretName)) (not (empty $defaultKubernetesSecretKey)) }}
-- name: {{ print $variableName }}
+- name: {{ print $envVariableName }}
   valueFrom:
     secretKeyRef:
       name: {{ print $defaultKubernetesSecretName }}
