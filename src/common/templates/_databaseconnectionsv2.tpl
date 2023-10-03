@@ -6,31 +6,37 @@ USAGE:
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleEnv" }}
     {{- $ := .ctx }}
-    {{- $localTimescaleDBCtx := .localTimescaleDBCtx }}
-    {{- $globalTimescaleDBCtx := .globalTimescaleDBCtx }}
+    {{- $localTimescaleDBCtx := $.Values.timescaledb }}
+    {{- if .localTimescaleDBCtx }}
+        {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
+    {{- end }}
+    {{- $globalTimescaleDBCtx := $.Values.global.database.timescaledb }}
+    {{- if .globalTimescaleDBCtx }}
+        {{- $globalTimescaleDBCtx = .globalTimescaleDBCtx }}
+    {{- end }}
     {{- if and $ $localTimescaleDBCtx $globalTimescaleDBCtx }}
         {{- $installed := false }}
         {{- if eq $globalTimescaleDBCtx.installed true }}
             {{- $installed = $globalTimescaleDBCtx.installed }}
         {{- end }}
-        {{- $localESOSecretIdentifier := (printf "%s-%s-ext-secret" $.Chart.Name "timescaledb") }}
-        {{- $globalESOSecretIdentifier := (printf "%s-ext-secret" "timescaledb") }}
+        {{- $localTimescaleDBESOSecretIdentifier := include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" "timescaledb") }}
+        {{- $globalTimescaleESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "timescaledb") }}
         {{- if $installed }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "defaultValue" "postgres" "defaultKubernetesSecretName" "" "defaultKubernetesSecretKey" "" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "timescaledbPostgresPassword" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "defaultValue" "postgres" "defaultKubernetesSecretName" "" "defaultKubernetesSecretKey" "" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "timescaledbPostgresPassword" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- else }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.userKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.userKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
         {{- $sslEnabled := false }}
-        {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
+        {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
         {{- if eq $sslEnabledVar "true" }}
             {{- $sslEnabled = true }}
         {{- end }}
         {{- if $sslEnabled }}
 - name: TIMESCALEDB_SSL_MODE
   value: require
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_SSL_ROOT_CERT" "defaultKubernetesSecretName" $globalTimescaleDBCtx.certName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.certKey  "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_SSL_ROOT_CERT" "defaultKubernetesSecretName" $globalTimescaleDBCtx.certName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.certKey  "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
@@ -114,18 +120,24 @@ USAGE:
     {{- if empty $passwordVariableName }}
     {{- $passwordVariableName = "REDIS_PASSWORD" }}
     {{- end }}
-    {{- $localRedisCtx := .localRedisCtx }}
-    {{- $globalRedisCtx := .globalRedisCtx }}
+    {{- $localRedisCtx := $.Values.redis }}
+    {{- if .localRedisCtx }}
+        {{- $localRedisCtx = .localRedisCtx }}
+    {{- end }}
+    {{- $globalRedisCtx := $.Values.global.database.redis }}
+    {{- if .globalRedisCtx }}
+        {{- $globalRedisCtx = .globalRedisCtx }}
+    {{- end }}
     {{- if and $ $localRedisCtx $globalRedisCtx }}
         {{- $installed := false }}
         {{- if eq $globalRedisCtx.installed true }}
             {{- $installed = $globalRedisCtx.installed }}
         {{- end }}
-        {{- $localESOSecretIdentifier := (printf "%s-%s-ext-secret" $.Chart.Name "redis") }}
-        {{- $globalESOSecretIdentifier := (printf "%s-ext-secret" "redis") }}
+        {{- $localRedisESOSecretIdentifier := include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" "redis") }}
+        {{- $globalRedisESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "redis") }}
         {{- if not $installed }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.userKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.userKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalRedisESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localRedisESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalRedisESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localRedisESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
@@ -171,21 +183,28 @@ USAGE:
 */}}
 {{- define "harnesscommon.dbconnectionv2.mongoEnv" }}
     {{- $ := .ctx }}
-    {{- $localDBCtx := .localDBCtx }}
-    {{- $globalDBCtx := .globalDBCtx }}
+
+    {{- $localDBCtx := $.Values.mongo }}
+    {{- if .localDBCtx }}
+        {{- $localDBCtx = .localDBCtx }}
+    {{- end }}
+    {{- $globalDBCtx := $.Values.global.database.mongo }}
+    {{- if .globalDBCtx }}
+        {{- $globalDBCtx = .globalDBCtx }}
+    {{- end }}
     {{- if and $ $localDBCtx $globalDBCtx }}
         {{- $installed := false }}
         {{- if eq $globalDBCtx.installed true }}
             {{- $installed = $globalDBCtx.installed }}
         {{- end }}
-        {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "timescaledb" )) }}
-        {{- $globalESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "timescaledb" )) }}
+        {{- $localMongoESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "mongo" )) }}
+        {{- $globalMongoESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "mongo" )) }}
         {{- if $installed }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "mongodbUsername" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" "mongodb-replicaset-chart" "defaultKubernetesSecretKey" "mongodb-root-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "mongodbUsername" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" "mongodb-replicaset-chart" "defaultKubernetesSecretKey" "mongodb-root-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- else }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}

@@ -18,17 +18,23 @@
 {{- end }}
 
 {{/*
-{{ include "harnesscommon.secrets.manageExtKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
+{{ include "harnesscommon.secrets.manageExtKubernetesSecretEnv" (dict "ctx" $ "variableName" "MY_VARIABLE" "overrideEnvName" "MY_ENV" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
 */}}
 {{- define "harnesscommon.secrets.manageExtKubernetesSecretEnv" }}
+{{- $ := .ctx }}
+{{- $variableName := .variableName }}
+{{- $envVariableName := $variableName }}
+{{- if .overrideEnvName }}
+  {{- $envVariableName = .overrideEnvName }}
+{{- end }}
 {{- $secretName := "" }}
 {{- $secretKey := "" }}
-{{- if .variableName }}
+{{- if $variableName }}
   {{- range .extKubernetesSecretCtxs }}
     {{- range . }}
       {{- if and . .secretName .keys }}
-        {{- $currSecretKey := (get .keys $.variableName) }}
-        {{- if and (hasKey .keys $.variableName) $currSecretKey }}
+        {{- $currSecretKey := (get .keys $variableName) }}
+        {{- if and (hasKey .keys $variableName) $currSecretKey }}
           {{- $secretName = .secretName }}
           {{- $secretKey = $currSecretKey }}
         {{- end }}
@@ -36,7 +42,7 @@
     {{- end }}
   {{- end }}
   {{- if and $secretName $secretKey }}
-- name: {{ print .variableName }}
+- name: {{ print $envVariableName }}
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s" $secretName }}

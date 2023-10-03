@@ -133,11 +133,16 @@ Example:
 Generates env object with variableName for ESO Secrets
 
 USAGE:
-{{ include "harnesscommon.secrets.manageESOSecretEnv" (dict "ctx" . "variableName" "MY_VARIABLE" "esoSecretCtxs" (list .Values.secrets.secretManagement.externalSecretsOperator)) }}
+{{- include "harnesscommon.secrets.manageESOSecretEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "esoSecretCtxs" {{- include "harnesscommon.secrets.manageESOSecretEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "esoSecretCtxs" "esoSecretCtxs" (list (dict "secretCtxIdentifier" "app-ext-secret" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) }}
+) }}
 */}}
 {{- define "harnesscommon.secrets.manageESOSecretEnv" }}
 {{- $ := .ctx }}
 {{- $variableName := .variableName }}
+{{- $envVariableName := $variableName }}
+{{- if .overrideEnvName }}
+  {{- $envVariableName = .overrideEnvName }}
+{{- end }}
 {{- $secretName := "" }}
 {{- $secretKey := "" }}
 {{- if .variableName }}
@@ -156,7 +161,7 @@ USAGE:
   {{- end }}
 {{- end }}
   {{- if and $secretName $secretKey }}
-- name: {{ print .variableName }}
+- name: {{ print $envVariableName }}
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s" $secretName }}
