@@ -6,6 +6,12 @@
         {{- $storageClass = .global.storageClass -}}
     {{- end -}}
 {{- end -}}
+{{/*
+local values have more precedence over global values.
+*/}}
+{{- if .persistence.storageClass -}}
+{{- $storageClass = .persistence.storageClass -}}
+{{- end }}
 
 {{- if $storageClass -}}
   {{- if (eq "-" $storageClass) -}}
