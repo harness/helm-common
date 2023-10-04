@@ -3,6 +3,16 @@ entries:
   harness-common:
   - apiVersion: v2
     appVersion: 0.0.0
+    created: "2023-10-04T03:13:53.10062799Z"
+    description: Helm Common library for Harness Helm Charts
+    digest: 1a1cdd43665a9a70b67d3095a55624fb0db218bdd6093365dc8626c93f75348f
+    name: harness-common
+    type: library
+    urls:
+    - https://github.com/harness/helm-common/releases/download/harness-common-1.1.4/harness-common-1.1.4.tgz
+    version: 1.1.4
+  - apiVersion: v2
+    appVersion: 0.0.0
     created: "2023-10-03T06:29:11.2689585Z"
     description: Helm Common library for Harness Helm Charts
     digest: d309cd0a228d7c16ded99065503e4dd81e86cad9b9c9b7b663c2f4edd651ffc9
@@ -353,4 +363,4 @@ entries:
     urls:
     - https://github.com/harness/helm-common/releases/download/harness-common-1.0.0/harness-common-1.0.0.tgz
     version: 1.0.0
-generated: "2023-10-03T06:29:11.269382209Z"
+generated: "2023-10-04T03:13:53.101423201Z"
