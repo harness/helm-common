@@ -63,10 +63,10 @@ Generates env object with variableName for App Secret in the following precedenc
 5. Default/Generated Kubernetes Secret
 
 USAGE:
-{{ include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "MY_VARIABLE" "defaultValue" "my-secret-value" "defaultKubernetesSecretName" "defaultSecretName" "defaultKubernetesSecretKey" "defaultSecretKey" "providedSecretValues" (list "values.secret1" "")) }}
+{{ include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "MY_VARIABLE" "overrideEnvName" "MY_ENV_NAME" "defaultValue" "my-secret-value" "defaultKubernetesSecretName" "defaultSecretName" "defaultKubernetesSecretKey" "defaultSecretKey" "providedSecretValues" (list "values.secret1" "")) }}
 */}}
 {{- define "harnesscommon.secrets.manageAppEnv" }}
 {{- $ := .ctx }}
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" .variableName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
+{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
 {{- end }}
