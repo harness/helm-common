@@ -1,16 +1,14 @@
 {{- define "harnesscommon.storage.class" -}}
-
-{{- $storageClass := .persistence.storageClass -}}
+{{- $storageClass := "" -}}
 {{- if .global -}}
     {{- if .global.storageClass -}}
         {{- $storageClass = .global.storageClass -}}
     {{- end -}}
 {{- end -}}
-{{/*
-local values have more precedence over global values.
-*/}}
-{{- if .persistence.storageClass -}}
-{{- $storageClass = .persistence.storageClass -}}
+{{- if .persistence }}
+    {{- if .persistence.storageClass -}}
+        {{- $storageClass = .persistence.storageClass -}}
+    {{- end }}
 {{- end }}
 
 {{- if $storageClass -}}
@@ -20,5 +18,4 @@ local values have more precedence over global values.
       {{- printf "storageClassName: %s" $storageClass -}}
   {{- end -}}
 {{- end -}}
-
 {{- end -}}
