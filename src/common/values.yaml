@@ -43,3 +43,40 @@ global:
       userKey: "user"
       passwordKey: "password"
       extraArgs: ""
+  smtpCreateSecret:
+    enabled: false
+    SMTP_USERNAME: ""
+    SMTP_PASSWORD: ""
+    SMTP_HOST: ""
+    SMTP_USE_SSL: "true"
+    SMTP_PORT: "465"
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            SMTP_USERNAME: ""
+            SMTP_PASSWORD": ""
+            SMTP_HOST: ""
+            SMTP_PORT": ""
+            SMTP_USE_SSL": ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              SMTP_USERNAME:
+                name: ""
+                property: ""
+              SMTP_PASSWORD":
+                name: ""
+                property: ""
+              SMTP_HOST:
+                name: ""
+                property: ""
+              SMTP_PORT":
+                name: ""
+                property: ""
+              SMTP_USE_SSL:
+                name: ""
+                property: ""
