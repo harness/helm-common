@@ -189,7 +189,7 @@ USAGE:
 {{- end }}
 
 {{/*
-Generates Redis environment variables
+Outputs whether redis password is set or not
 
 USAGE:
 {{ include "harnesscommon.dbconnectionv2.isRedisPasswordSet" (dict "context" $ "passwordVariableName" "REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
