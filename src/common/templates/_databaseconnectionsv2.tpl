@@ -189,14 +189,69 @@ USAGE:
 {{- end }}
 
 {{/*
-Generates MongoDB environment variables
+Generates Redis environment variables
 
 USAGE:
-{{ include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" . "localDBCtx" .Values.mongo "globalDBCtx" .Values.global.database.mongo) | indent 12 }}
+{{ include "harnesscommon.dbconnectionv2.isRedisPasswordSet" (dict "context" $ "passwordVariableName" "REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
+*/}}
+{{- define "harnesscommon.dbconnectionv2.isRedisPasswordSet" }}
+  {{- $ := .context }}
+  {{- $isRedisPasswordSet := "false" -}}
+  {{- $passwordVariableName := .passwordVariableName }}
+  {{- if empty $passwordVariableName }}
+  {{- $passwordVariableName = "REDIS_PASSWORD" }}
+  {{- end }}
+  {{- $localRedisCtx := $.Values.redis }}
+  {{- if .localRedisCtx }}
+      {{- $localRedisCtx = .localRedisCtx }}
+  {{- end }}
+  {{- $globalRedisCtx := $.Values.global.database.redis }}
+  {{- if .globalRedisCtx }}
+      {{- $globalRedisCtx = .globalRedisCtx }}
+  {{- end }}
+  {{- if and $ $localRedisCtx $globalRedisCtx }}
+      {{- $installed := false }}
+      {{- if eq $globalRedisCtx.installed true }}
+          {{- $installed = $globalRedisCtx.installed }}
+      {{- end }}
+      {{- $localRedisESOSecretIdentifier := include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" "redis") }}
+      {{- $globalRedisESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "redis") }}
+      {{- if not $installed }}
+          {{- $secretRefContent := include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalRedisCtx.secretName "defaultKubernetesSecretKey" $globalRedisCtx.passwordKey "extKubernetesSecretCtxs" (list $globalRedisCtx.secrets.kubernetesSecrets $localRedisCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalRedisESOSecretIdentifier "secretCtx" $globalRedisCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localRedisESOSecretIdentifier "secretCtx" $localRedisCtx.secrets.secretManagement.externalSecretsOperator))) }}
+          {{- if $secretRefContent }}
+            {{- $isRedisPasswordSet = "true" }}
+          {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- print $isRedisPasswordSet }}
+{{- end }}
+
+{{/*
+Generates MongoDB environment variables
+USAGE:
+{{ include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $ "localDBCtx" "userVariableName" "" "passwordVariableName" "" .Values.mongo "globalDBCtx" .Values.global.database.mongo) | indent 12 }}
+
+INPUT ARGUMENTS:
+REQUIRED:
+1. ctx
+
+OPTIONAL:
+1. localDBCtx
+   Default: $.Values.mongo
+2. globalDBCtx
+   Default: $.Values.global.database.mongo
+3. userVariableName
+   Default: MONGO_USER
+4. passwordVariableName
+   Default: MONGO_PASSWORD
+
 */}}
 {{- define "harnesscommon.dbconnectionv2.mongoEnv" }}
     {{- $ := .ctx }}
-
+    {{- $type := "mongo" }}
+    {{- $dbType := $type | upper}}
+    {{- $userVariableName := .userVariableName }}
+    {{- $passwordVariableName := .passwordVariableName }}
     {{- $localDBCtx := $.Values.mongo }}
     {{- if .localDBCtx }}
         {{- $localDBCtx = .localDBCtx }}
@@ -210,14 +265,16 @@ USAGE:
         {{- if eq $globalDBCtx.installed true }}
             {{- $installed = $globalDBCtx.installed }}
         {{- end }}
+        {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+        {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
         {{- $localMongoESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "mongo" )) }}
         {{- $globalMongoESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "mongo" )) }}
         {{- if $installed }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "mongodbUsername" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" "mongodb-replicaset-chart" "defaultKubernetesSecretKey" "mongodb-root-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "mongodbUsername" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" "mongodb-replicaset-chart" "defaultKubernetesSecretKey" "mongodb-root-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- else }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_USER" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "MONGO_PASSWORD" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
@@ -226,7 +283,6 @@ USAGE:
 
 {{/*
 Generates Mongo Connection string
-
 USAGE:
 {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "foo") }}
 */}}
@@ -251,9 +307,9 @@ USAGE:
     {{- if $installed }}
         {{- $namespace := $.Release.Namespace }}
         {{- if $.Values.global.ha }}
-        {{- printf "'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database }}
+        {{- printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userVariableName $passwordVariableName $namespace $namespace $namespace .database }}
         {{- else }}
-            {{- printf "'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database }}
+            {{- printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userVariableName $passwordVariableName $namespace .database }}
         {{- end }}
     {{- else }}
         {{- $args := (printf "/%s?%s" .database $extraArgs )}}

@@ -21,6 +21,24 @@ Example:
 {{- end }}
 
 {{/*
+Check if only one valid ESO Secret is provided in the secrets context
+
+Returns: bool
+
+Example:
+{{ include "harnesscommon.secrets.hasSingleValidESOSecret" (dict "secretsCtx" .Values.secrets) }}
+*/}}
+{{- define "harnesscommon.secrets.hasSingleValidESOSecret" }}
+  {{- $secretsCtx := .secretsCtx }}
+  {{- $hasSingleValidESOSecret := "false" }}
+  {{- if and $secretsCtx .secretsCtx.secretManagement $secretsCtx.secretManagement.externalSecretsOperator (eq (len $secretsCtx.secretManagement.externalSecretsOperator) 1) }}
+    {{- $externalSecret := first $secretsCtx.secretManagement.externalSecretsOperator }}
+        {{- $hasSingleValidESOSecret = include "harnesscommon.secrets.hasValidESOSecret" (dict "esoSecretCtx" $externalSecret) }}
+  {{- end }}
+  {{- print $hasSingleValidESOSecret }}
+{{- end }}
+
+{{/*
 Generate ESO Local Secret Context Identifier
 
 Generates Identifier following the format: <chart-name>-<additional-ctx-identifier>-ext-secret
