@@ -20,6 +20,39 @@ Example:
 {{- end }}
 
 {{/*
+Checks if provided variableName relies on default App secret
+USAGE:
+{{ include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "MY_VARIABLE" "providedSecretValues" (list "values.secret1" "")  "extKubernetesSecretCtxs" (list .Values.secrets) "esoSecretCtxs" (list (dict "" .Values.secrets.secretManagement.externalSecretsOperator))) }}
+
+INPUT ARGUMENTS:
+REQUIRED:
+1. ctx
+
+OPTIONAL:
+1. providedSecretValues
+2. extKubernetesSecretCtxs
+3. esoSecretCtxs
+
+*/}}
+{{- define "harnesscommon.secrets.isDefaultAppSecret" }}
+  {{- $ := .ctx }}
+  {{- $variableName := .variableName }}
+  {{- $defaultValue := .defaultValue }}
+  {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+  {{- $extKubernetesSecretCtxs := default (list $.Values.secrets.kubernetesSecrets) .extKubernetesSecretCtxs }}
+  {{- $esoSecretCtxs := default (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)) .esoSecretCtxs }}
+  {{- $isDefault := true }}
+  {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $variableName "esoSecretCtxs" $esoSecretCtxs)) "true" }}
+    {{- $isDefault = false }}
+  {{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" $variableName "extKubernetesSecretCtxs" $extKubernetesSecretCtxs)) "true" }}
+    {{- $isDefault = false }}
+  {{- else if eq (include "harnesscommon.secrets.hasprovidedSecretValues" (dict "ctx" $ "providedSecretValues" .providedSecretValues)) "true" }}
+    {{- $isDefault = false }}
+  {{- end }}
+  {{- printf "%v" $isDefault }}
+{{- end }}
+
+{{/*
 Generates env object with variableName for Secret in the following precedence order
 1. ESO Secret
 2. External Kubernetes Secret
@@ -68,5 +101,5 @@ USAGE:
 {{- define "harnesscommon.secrets.manageAppEnv" }}
 {{- $ := .ctx }}
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
+{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
 {{- end }}
