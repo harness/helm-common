@@ -2,12 +2,26 @@
 Generates TimescaleDB environment variables
 
 USAGE:
-{{ include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" . "userVariableName" "TIMESCALEDB_USERNAME" "passwordVariableName" "TIMESCALEDB_PASSWORD" "sslModeVariableName" "TIMESCALEDB_SSL_MODE" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
+{{ include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $ "userVariableName" "TIMESCALEDB_USERNAME" "passwordVariableName" "TIMESCALEDB_PASSWORD" "sslModeVariableName" "TIMESCALEDB_SSL_MODE" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
 
 INPUT ARGUMENTS:
 REQUIRED:
+1. ctx
 
 OPTIONAL:
+1. localTimescaleDBCtx
+    DEFAULT: $.Values.timescaledb
+2. globalTimescaleDBCtx
+    DEFAULT: $.Values.global.database.timescaledb
+3. userVariableName
+    DEFAULT: TIMESCALEDB_USERNAME
+4. passwordVariableName
+    DEFAULT: TIMESCALEDB_PASSWORD
+5. sslModeVariableName
+6. sslModeValue
+7. certVariableName 
+8. certPathVariableName
+9. certPathValue
 
 
 */}}
