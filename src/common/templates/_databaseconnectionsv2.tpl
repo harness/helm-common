@@ -152,13 +152,22 @@ USAGE:
     {{- end }}
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
     {{- if .args }}
-        {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
-    {{- end }}
-    {{- if $addSSLModeArg }}
-        {{- if $sslEnabled }}
-            {{- $connectionString = (printf "%s,%s" $connectionString "sslmode=require") }}
-        {{- else }}
-            {{- $connectionString = (printf "%s,%s" $connectionString "sslmode=disable") }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
+            {{- end }}
+        {{- else }}    
+            {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
+        {{- end }}
+    {{- else }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=disable") }}
+            {{- end }}
         {{- end }}
     {{- end }}
     {{- printf "%s" $connectionString -}}
