@@ -477,7 +477,8 @@ OPTIONAL:
 
 
 {{/* Generates Postgres Connection string
-{{ include "harnesscommon.dbconnectionv2.postgresConnection" (dict "database" "foo" "args" "bar" "context" $) }}
+USAGE:
+{{ include "harnesscommon.dbconnectionv2.postgresConnection" (dict "ctx" $ "database" "foo" "args" "bar") }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.postgresConnection" }}
     {{- $ := .ctx }}
