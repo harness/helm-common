@@ -47,7 +47,7 @@ USAGE:
         {{- end }}
         {{- if not (empty $secretValue) }}
 - name: {{ print $envVariableName }}
-  value: {{ print $secretValue }}
+  value: '{{ print $secretValue }}'
         {{- end }}
     {{- end }}
 {{- end }}
