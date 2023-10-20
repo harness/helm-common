@@ -2,7 +2,28 @@
 Generates TimescaleDB environment variables
 
 USAGE:
-{{ include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" . "userVariableName" "TIMESCALEDB_USERNAME" "passwordVariableName" "TIMESCALEDB_PASSWORD" "sslModeVariableName" "TIMESCALEDB_SSL_MODE" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
+{{ include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $ "userVariableName" "TIMESCALEDB_USERNAME" "passwordVariableName" "TIMESCALEDB_PASSWORD" "sslModeVariableName" "TIMESCALEDB_SSL_MODE" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
+
+INPUT ARGUMENTS:
+REQUIRED:
+1. ctx
+
+OPTIONAL:
+1. localTimescaleDBCtx
+    DEFAULT: $.Values.timescaledb
+2. globalTimescaleDBCtx
+    DEFAULT: $.Values.global.database.timescaledb
+3. userVariableName
+    DEFAULT: TIMESCALEDB_USERNAME
+4. passwordVariableName
+    DEFAULT: TIMESCALEDB_PASSWORD
+5. sslModeVariableName
+6. sslModeValue
+7. certVariableName 
+8. certPathVariableName
+9. certPathValue
+
+
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleEnv" }}
     {{- $ := .ctx }}
@@ -14,10 +35,13 @@ USAGE:
     {{- if .globalTimescaleDBCtx }}
         {{- $globalTimescaleDBCtx = .globalTimescaleDBCtx }}
     {{- end }}
-    {{- $userVariableName := default "TIMESCALEDB_USERNAME" .userVariableName -}}
-    {{- $passwordVariableName := default "TIMESCALEDB_PASSWORD" .passwordVariableName -}}
-    {{- $sslModeVariableName := default "TIMESCALEDB_SSL_MODE" .sslModeVariableName -}}
-    {{- $certVariableName := default "TIMESCALEDB_SSL_ROOT_CERT" .certVariableName -}}
+    {{- $userVariableName := default "TIMESCALEDB_USERNAME" .userVariableName }}
+    {{- $passwordVariableName := default "TIMESCALEDB_PASSWORD" .passwordVariableName }}
+    {{- $sslModeVariableName := default "TIMESCALEDB_SSL_MODE" .sslModeVariableName }}
+    {{- $sslModeValue := "" }}
+    {{- $handleSSLModeDisable := default false .handleSSLModeDisable }}
+    {{- $certVariableName := default "TIMESCALEDB_SSL_ROOT_CERT" .certVariableName }}
+    {{- $enableSslVariableName := default "" .enableSslVariableName }}
     {{- if and $ $localTimescaleDBCtx $globalTimescaleDBCtx }}
         {{- $installed := false }}
         {{- if eq $globalTimescaleDBCtx.installed true }}
@@ -38,9 +62,24 @@ USAGE:
             {{- $sslEnabled = true }}
         {{- end }}
         {{- if $sslEnabled }}
+            {{- $sslModeValue = default "require" .sslModeValue }}
 - name: {{ print $sslModeVariableName }}
-  value: require
+  value: {{ print $sslModeValue }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $certVariableName "defaultKubernetesSecretName" $globalTimescaleDBCtx.certName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.certKey  "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- $certPathVariableName := default "TIMESCALEDB_SSL_CERT_PATH" .certPathVariableName }}
+            {{- $certPathValue := default "" .certPathValue }}
+            {{- if $certPathValue }}
+- name: {{ print $certPathVariableName }}
+  value: {{ print $certPathValue }}
+            {{- end }}
+            {{- if $enableSslVariableName }}
+- name: {{ print $enableSslVariableName }}
+  value: "true"
+            {{- end }}
+        {{- else if $handleSSLModeDisable }} 
+            {{- $sslModeValue = "disable" }}
+- name: {{ print $sslModeVariableName }}
+  value: {{ print $sslModeValue }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
@@ -87,9 +126,15 @@ USAGE:
 Generates Timescale Connection string
 
 USAGE:
-{{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $) }}
+{{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $ "addSSLModeArg" false) }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleConnection" }}
+    {{- $addSSLModeArg := default false .addSSLModeArg }}
+    {{- $sslEnabled := false }}
+    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
+    {{- if eq $sslEnabledVar "true" }}
+        {{- $sslEnabled = true }}
+    {{- end }}
     {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context ) }}
     {{- $port := include "harnesscommon.dbconnectionv2.timescalePort" (dict "context" .context ) }}
     {{- $connectionString := "" }}
@@ -107,7 +152,23 @@ USAGE:
     {{- end }}
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
     {{- if .args }}
-        {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
+            {{- end }}
+        {{- else }}    
+            {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
+        {{- end }}
+    {{- else }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=disable") }}
+            {{- end }}
+        {{- end }}
     {{- end }}
     {{- printf "%s" $connectionString -}}
 {{- end }}
@@ -183,6 +244,47 @@ USAGE:
         {{- else }}
             {{- $hosts = $globalDBCtx.hosts }}
         {{- end }}
+        {{- $extraArgs = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.redis.extraArgs" ".Values.redis.extraArgs"))) }}
+    {{- end }}
+    {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+{{- end }}
+
+{{/*
+    Redis Host
+
+USAGE:
+{{ include "harnesscommon.dbconnection.redisHost" (dict "context" $ "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" "unsetProtocol" false)}}
+*/}}
+{{- define "harnesscommon.dbconnectionv2.redisHost" }}
+    {{- $ := .context }}
+    {{- $type := "redis" }}
+    {{- $localDBCtx := $.Values.redis }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- $hosts := list }}
+    {{- $protocol := "" }}
+    {{- $extraArgs := "" }}
+    {{- $unsetProtocol := default false .unsetProtocol }}
+    {{- if $globalDBCtx.installed }}
+        {{- if not $unsetProtocol }}
+            {{- $protocol = $globalDBCtx.protocol }}
+        {{- end }}
+        {{- $hosts = list "redis-sentinel-harness-announce-0" "redis-sentinel-harness-announce-1" "redis-sentinel-harness-announce-2" }}
+        {{- $extraArgs = $globalDBCtx.extraArgs }}
+    {{- else }}
+        {{- if not $unsetProtocol }}
+            {{- $protocol = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.redis.protocol" ".Values.redis.protocol"))) }}
+        {{- end }}
+        {{- if gt (len $localDBCtx.hosts) 0 }}
+            {{- $hosts = $localDBCtx.hosts }}
+        {{- else }}
+            {{- $hosts = $globalDBCtx.hosts }}
+        {{- end }}
+        {{- $updatedHosts := list }}
+        {{- range $hostIdx, $host := $hosts}}
+            {{- $hostParts := split ":" $host }}
+            {{- $updatedHosts = append $updatedHosts $hostParts._0 }}
+        {{- end }}
+        {{- $host = $updatedHosts }}
         {{- $extraArgs = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.mongo.extraArgs" ".Values.mongo.extraArgs"))) }}
     {{- end }}
     {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
@@ -314,5 +416,83 @@ USAGE:
     {{- else }}
         {{- $args := (printf "/%s?%s" .database $extraArgs )}}
         {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+    {{- end }}
+{{- end }}
+
+
+{{/*
+Generates Postgres environment variables
+USAGE:
+{{ include "harnesscommon.dbconnectionv2.postgresEnv" (dict "ctx" $ "localDBCtx" "userVariableName" "" "passwordVariableName" "" .Values.postgres "globalDBCtx" .Values.global.database.postgres) | indent 12 }}
+
+INPUT ARGUMENTS:
+REQUIRED:
+1. ctx
+
+OPTIONAL:
+1. localDBCtx
+   Default: $.Values.mongo
+2. globalDBCtx
+   Default: $.Values.global.database.mongo
+3. userVariableName
+   Default: POSTGRES_USER
+4. passwordVariableName
+   Default: POSTGRES_PASSWORD
+
+*/}}
+{{- define "harnesscommon.dbconnectionv2.postgresEnv" }}
+    {{- $ := .ctx }}
+    {{- $type := "postgres" }}
+    {{- $dbType := $type | upper}}
+    {{- $userVariableName := .userVariableName }}
+    {{- $passwordVariableName := .passwordVariableName }}
+    {{- $localDBCtx := $.Values.postgres }}
+    {{- if .localDBCtx }}
+        {{- $localDBCtx = .localDBCtx }}
+    {{- end }}
+    {{- $globalDBCtx := $.Values.global.database.postgres }}
+    {{- if .globalDBCtx }}
+        {{- $globalDBCtx = .globalDBCtx }}
+    {{- end }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $installed := false }}
+        {{- if eq $globalDBCtx.installed true }}
+            {{- $installed = $globalDBCtx.installed }}
+        {{- end }}
+        {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+        {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+        {{- $localMongoESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "postgres" )) }}
+        {{- $globalMongoESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "postgres" )) }}
+        {{- if $installed }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultValue" "postgres" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" "postgres" "defaultKubernetesSecretKey" "postgres-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- else }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $userVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" $passwordVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- end }}
+    {{- else }}
+        {{- fail (printf "invalid input") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+ Postgres Host Port 
+
+*/}}
+{{- define "harnesscommon.dbconnectionv2.PostgresHostPort" }}
+    {{- $ := .context }}
+    {{- $connectionString := "" }}
+    {{- $type := "postgres" }}
+    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- if $installed }}
+        {{- print "postgres:5432" }}
+    {{- else }}
+        {{- $hosts := list }}
+        {{- if gt (len $.Values.postgres.hosts) 0 }}
+            {{- $hosts = $.Values.postgres.hosts }}
+        {{- else }}
+            {{- $hosts = $.Values.global.database.postgres.hosts }}
+        {{- end }}
+    {{- printf "%s" (index $hosts 0) }}
     {{- end }}
 {{- end }}
