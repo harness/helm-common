@@ -475,6 +475,43 @@ OPTIONAL:
     {{- end }}
 {{- end }}
 
+
+{{/* Generates Postgres Connection string
+{{ include "harnesscommon.dbconnection.postgresConnection" (dict "database" "foo" "args" "bar" "context" $) }}
+*/}}
+{{- define "harnesscommon.dbconnection.postgresConnection" }}
+    {{- $ := .ctx }}
+    {{- $type := "postgres" }}
+    {{- $dbType := upper $type }}
+    {{- $installed := true }}
+    {{- if eq $.Values.global.database.mongo.installed false }}
+        {{- $installed = false }}
+    {{- end }}
+    {{- $hosts := list }}
+    {{- if gt (len $.Values.mongo.hosts) 0 }}
+        {{- $hosts = $.Values.mongo.hosts }}
+    {{- else }}
+        {{- $hosts = $.Values.global.database.mongo.hosts }}
+    {{- end }}
+    {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.postgres.protocol" ".Values.mongo.postgres"))) }}
+    {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.postgres.extraArgs" ".Values.mongo.postgres"))) }}
+    {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+    {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+    {{- if $installed }}
+        {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s/%s?%s" "postgres" $dbType $dbType "postgres:5432" .database .args) }}
+        {{- printf "%s" $connectionString }}
+        {{- else }}
+            {{- $paramArgs := default "" .args }}
+            {{- $finalArgs := (printf "/%s" .database) }}
+            {{- if and $paramArgs $extraArgs }}
+                {{- $finalArgs = (printf "%s?%s&%s" $finalArgs $paramArgs $extraArgs) }}
+             {{- else if or $paramArgs $extraArgs }}
+                {{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
+            {{- end }}
+        {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+        {{- end }}
+{{- end }}
+
 {{/*
  Postgres Host Port 
 
