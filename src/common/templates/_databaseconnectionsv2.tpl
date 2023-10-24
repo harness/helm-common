@@ -475,6 +475,57 @@ OPTIONAL:
     {{- end }}
 {{- end }}
 
+
+{{/* Generates Postgres Connection string
+USAGE:
+{{ include "harnesscommon.dbconnectionv2.postgresConnection" (dict "ctx" $ "database" "foo" "args" "bar" "keywordValueConnectionString" true) }}
+*/}}
+{{- define "harnesscommon.dbconnectionv2.postgresConnection" }}
+    {{- $ := .ctx }}
+    {{- $type := "postgres" }}
+    {{- $dbType := upper $type }}
+    {{- $installed := true }}
+    {{- if eq $.Values.global.database.postgres.installed false }}
+        {{- $installed = false }}
+    {{- end }}
+    {{- $hosts := list }}
+    {{- if gt (len $.Values.postgres.hosts) 0 }}
+        {{- $hosts = $.Values.postgres.hosts }}
+    {{- else }}
+        {{- $hosts = $.Values.global.database.postgres.hosts }}
+    {{- end }}
+    {{- $keywordValueConnectionString := .keywordValueConnectionString }}
+    {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.postgres.protocol" ".Values.postgres.protocol"))) }}
+    {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.postgres.extraArgs" ".Values.postgres.extraArgs"))) }}
+    {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+    {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+    {{- if $installed }}
+        {{- if $keywordValueConnectionString }}
+            {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=disable" "postgres" $userVariableName $passwordVariableName .database) }}
+            {{- printf "%s" $connectionString }}
+        {{- else }}
+            {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" "postgres" $userVariableName $passwordVariableName "postgres:5432" .database .args) }}
+            {{- printf "%s" $connectionString }}
+        {{- end }}
+    {{- else }}
+        {{- $paramArgs := default "" .args }}
+        {{- $finalArgs := (printf "/%s" .database) }}
+        {{- if and $paramArgs $extraArgs }}
+            {{- $finalArgs = (printf "%s?%s&%s" $finalArgs $paramArgs $extraArgs) }}
+        {{- else if or $paramArgs $extraArgs }}
+            {{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
+        {{- end }}
+        {{- $firsthostport := (index $hosts 0) -}}
+        {{- $hostport := split ":" $firsthostport -}}
+        {{- if $keywordValueConnectionString }}
+            {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=disable" $hostport._0 $userVariableName $passwordVariableName .database) }}
+            {{- printf "%s" $connectionString }}
+        {{- else }}
+            {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+        {{- end }}
+    {{- end }}
+{{- end }}
+
 {{/*
  Postgres Host Port 
 
