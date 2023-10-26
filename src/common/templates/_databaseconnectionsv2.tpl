@@ -114,9 +114,9 @@ OPTIONAL:
     {{- else }}
         {{- $hosts := list }}
         {{- if gt (len $.Values.timescaledb.hosts) 0 }}
-            {{- $hosts = $.Values.timescal.hosts }}
+            {{- $hosts = $.Values.timescaledb.hosts }}
         {{- else }}
-            {{- $hosts = $.Values.global.database.mongo.hosts }}
+            {{- $hosts = $.Values.global.database.timescaledb.hosts }}
         {{- end }}
         {{- printf "%s" (split ":" (index $.Values.global.database.timescaledb.hosts 0))._1 }}
     {{- end }}
