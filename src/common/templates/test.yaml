@@ -1,2 +1,0 @@
-env:
-{{ include "harnesscommon.dbconnectionv3.manageMongoEnv" (dict "ctx" $ ) }}
