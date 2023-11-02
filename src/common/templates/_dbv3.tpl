@@ -109,28 +109,25 @@ REQUIRED:
         {{- $installed := dig "installed" true $globalDBCtx }}
         {{- $connectionURI := "" }}
         {{- if $connectionURIEnvName }}
-            {{- if not $installed }}
-                {{- $hosts := list }}
-                {{- $protocol := "" }}
-                {{- $extraArgs := "" }}
-                {{- if $localEnabled }}
-                    {{- $hosts = $localDBCtx.hosts }}
-                    {{- $protocol = $localDBCtx.protocol }}
-                    {{- $extraArgs = $localDBCtx.extraArgs }}
-                {{- else }}
-                    {{- $hosts = $globalDBCtx.hosts }}
-                    {{- $protocol = $globalDBCtx.protocol }}
-                    {{- $extraArgs = $globalDBCtx.extraArgs }}
-                {{- end }}
+            {{- if $localEnabled }}
+                {{- $hosts := $localDBCtx.hosts }}
+                {{- $protocol := $localDBCtx.protocol }}
+                {{- $extraArgs := $localDBCtx.extraArgs }}
                 {{- $args := (printf "/%s?%s" $database $extraArgs ) -}}
                 {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
-            {{- else }}
+            {{- else if $installed }}
                 {{- $namespace := $.Release.Namespace }}
                 {{- if $.Values.global.ha }}
                     {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userNameEnvName $passwordEnvName $namespace $namespace $namespace $database }}
                 {{- else }}
                     {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userNameEnvName $passwordEnvName $namespace $database }}
                 {{- end }}
+            {{- else }}
+                {{- $hosts := $globalDBCtx.hosts }}
+                {{- $protocol := $globalDBCtx.protocol }}
+                {{- $extraArgs := $globalDBCtx.extraArgs }}
+                {{- $args := (printf "/%s?%s" $database $extraArgs ) -}}
+                {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
             {{- end }}
 - name: {{ printf "%s" $connectionURIEnvName }}
   value: {{ printf "%s" $connectionURI }}
