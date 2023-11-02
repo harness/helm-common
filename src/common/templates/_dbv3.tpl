@@ -19,6 +19,7 @@ PARAMETERS:
         {{- if empty $instanceName }}
             {{- fail "ERROR: missing input argument - instanceName" }}
         {{- end }}
+        {{- $instanceName =  lower $instanceName }}
         {{- $mongoESOSecretCtxIdentifier = (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" (printf "%s-%s" $instanceName "mongo") )) }}
     {{- else if eq $scope "global" }}
         {{- $mongoESOSecretCtxIdentifier = (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "mongo" )) }}
