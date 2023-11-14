@@ -40,7 +40,7 @@ OPTIONAL:
   {{- $defaultValue := .defaultValue }}
   {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
   {{- $extKubernetesSecretCtxs := default (list $.Values.secrets.kubernetesSecrets) .extKubernetesSecretCtxs }}
-  {{- $esoSecretCtxs := default (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)) .esoSecretCtxs }}
+  {{- $esoSecretCtxs := default (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator)) .esoSecretCtxs }}
   {{- $isDefault := true }}
   {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $variableName "esoSecretCtxs" $esoSecretCtxs)) "true" }}
     {{- $isDefault = false }}
