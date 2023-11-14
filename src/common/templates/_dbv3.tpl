@@ -147,7 +147,7 @@ OPTIONAL:
 Generate K8S Env Spec for MongoDB Connection Environment Variables
 
 USAGE:
-{{ include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "instanceName" "harness") | indent 12 }}
+{{ include "harnesscommon.dbv3.mongoConnectionEnv" (dict "ctx" $ "database" "harness") | indent 12 }}
 
 PARAMETERS:
 REQUIRED:
@@ -208,24 +208,6 @@ OPTIONAL:
     {{- end }}
 {{- end }}
 
-{{/*
-Generate K8S Env Spec for MongoDB
-
-USAGE:
-{{- include "harnesscommon.dbv3.manageMongoEnv" (dict "ctx" $ "database" "") | indent 12 }}
-
-PARAMETERS:
-REQUIRED:
-1. ctx
-2. database
-
-*/}}
-{{- define "harnesscommon.dbv3.manageMongoEnv" }}
-    {{- $ := .ctx }}
-    {{- $params := (dict "ctx" $ "database" .database "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionURIVariableName" .connectionURIVariableName) }}
-    {{- include "harnesscommon.dbv3.mongoEnv" $params }}
-    {{- include "harnesscommon.dbv3.mongoConnectionEnv" $params }}
-{{- end }}
 
 {{/*
 Generate External Secret CRDs for Mongo DBs
@@ -241,8 +223,8 @@ REQUIRED:
 {{- define "harnesscommon.dbv3.generateLocalMongoExternalSecret" }}
     {{- $ := .ctx }}
     {{- $dbType := "mongo" }}
-    {{- range $instanceName, $instance := $.Values.mongo }}
-        {{- $localDBCtx := get $.Values.mongo $instanceName }}
+    {{- range $instanceName, $instance := $.Values.database.mongo }}
+        {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
         {{- $localEnabled := dig "enabled" false $localDBCtx }}
         {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
             {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
