@@ -8,6 +8,8 @@ Usage:
     {{- if typeIs "string" .value }}
         {{- tpl .value .context }}
     {{- else }}
-        {{- tpl (.value | toYaml) .context }}
+        {{- if .value }}
+            {{- tpl (.value | toYaml) .context }}
+        {{- end }}
     {{- end }}
 {{- end -}}
