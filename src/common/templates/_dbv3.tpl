@@ -60,7 +60,7 @@ PARAMETERS:
 */}}
 {{- define "harnesscommon.dbv3.esoSecretCtxIdentifier" }}
     {{- $ := .ctx }}
-    {{- $dbTypeAllowedValues := dict "mongo" "" "timescaledb" "" }}
+    {{- $dbTypeAllowedValues := dict "mongo" "" "timescaledb" "" "redis" "" }}
     {{- $dbType := .dbType }}
     {{- if not (hasKey $dbTypeAllowedValues $dbType) }}
         {{- $errMsg := printf "ERROR: invalid value %s for input argument dbType" $dbType }}
@@ -225,6 +225,244 @@ REQUIRED:
     {{- $dbType := "mongo" }}
     {{- range $instanceName, $instance := $.Values.database.mongo }}
         {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
+            {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
+            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
+            {{- print "\n---" }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Generate K8S Env Spec for Redis Environment Variables
+
+USAGE:
+{{- include "harnesscommon.dbv3.redisEnv" (dict "ctx" $ "database" "eventsFramework") | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+2. database
+
+OPTIONAL:
+1. userVariableName
+2. passwordVariableName
+
+*/}}
+{{- define "harnesscommon.dbv3.redisEnv" }}
+    {{- $ := .ctx }}
+    {{- $dbType := "redis" }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := $database }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.redis $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $userNameEnvName := default (include "harnesscommon.dbv3.generateDBEnvName" (dict "name" "USER" "dbType" $dbType "instanceName" $instanceName)) .userVariableName }}
+        {{- $passwordEnvName := default (include "harnesscommon.dbv3.generateDBEnvName" (dict "name" "PASSWORD" "dbType" $dbType "instanceName" $instanceName)) .passwordVariableName }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $globalDBESOSecretIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "global") }}
+        {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
+        {{- if $localEnabled }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_USERNAME" "overrideEnvName" $userNameEnvName "extKubernetesSecretCtxs" (list $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localDBESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_PASSWORD" "overrideEnvName" $passwordEnvName "extKubernetesSecretCtxs" (list $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localDBESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- else if not $installed }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_USERNAME" "overrideEnvName" $userNameEnvName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalDBESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_PASSWORD" "overrideEnvName" $passwordEnvName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalDBESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- end }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Generate Redis Connection string
+
+USAGE:
+{{ include "harnesscommon.dbv3.redisConnection" (dict "ctx" $ "database" "harness") | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+2. database
+
+OPTIONAL:
+- unsetProtocol
+- excludePort
+- userVariableName
+- passwordVariableName
+
+*/}}
+{{- define "harnesscommon.dbv3.redisConnection" }}
+    {{- $ := .ctx }}
+    {{- $dbType := "redis" }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := $database }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.redis $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $hosts := list }}
+        {{- $protocol := "" }}
+        {{- $extraArgs := "" }}
+        {{- $unsetProtocol := default false .unsetProtocol }}
+        {{- $excludePort := default false .excludePort }}
+        {{- if $localEnabled }}
+            {{- if not $unsetProtocol }}
+                {{- $protocol = $localDBCtx.protocol }}
+            {{- end }}
+            {{- $hosts = $localDBCtx.hosts }}
+            {{- $extraArgs = $localDBCtx.extraArgs }}
+        {{- else if not $installed }}
+            {{- if not $unsetProtocol }}
+                {{- $protocol = $globalDBCtx.protocol }}
+            {{- end }}
+            {{- $hosts = $globalDBCtx.hosts }}
+            {{- $extraArgs = $globalDBCtx.extraArgs }}
+        {{- else }}
+            {{- if not $unsetProtocol }}
+                {{- $protocol = $globalDBCtx.protocol }}
+            {{- end }}
+            {{- $hosts = list "redis-sentinel-harness-announce-0:26379" "redis-sentinel-harness-announce-1:26379" "redis-sentinel-harness-announce-2:26379" }}
+            {{- $extraArgs = $globalDBCtx.extraArgs }}
+        {{- end }}
+        {{- if $excludePort }}
+            {{- $updatedHosts := list }}
+            {{- range $hostIdx, $host := $hosts}}
+                {{- $hostParts := split ":" $host }}
+                {{- $updatedHosts = append $updatedHosts $hostParts._0 }}
+            {{- end }}
+            {{- $host = $updatedHosts }}
+        {{- end }}
+        {{- include "harnesscommon.dbconnection.connection" (dict "type" $dbType "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Outputs whether redis password is set or not
+
+USAGE:
+{{- include "harnesscommon.dbv3.isRedisPasswordSet" (dict "ctx" $ "database" "eventsFramework") | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+2. database
+
+OPTIONAL:
+
+*/}}
+{{- define "harnesscommon.dbv3.isRedisPasswordSet" }}
+    {{- $ := .ctx }}
+    {{- $dbType := "redis" }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := $database }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.redis $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $isRedisPasswordSet := "false" }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $globalDBESOSecretIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "global") }}
+        {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
+        {{- $secretRefContent := "" }}
+        {{- if $localEnabled }}
+            {{- $secretRefContent = include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_PASSWORD" "extKubernetesSecretCtxs" (list $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localDBESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- else if not $installed }}
+            {{- $secretRefContent = include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "REDIS_PASSWORD" "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalDBESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- end }}
+        {{- if $secretRefContent }}
+            {{- $isRedisPasswordSet = "true" }}
+        {{- end }}
+        {{- print $isRedisPasswordSet | quote }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Outputs if redis sentinels are being used
+
+USAGE:
+{{- include "harnesscommon.dbv3.redisEnv" (dict "ctx" $ "database" "eventsFramework") | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+2. database
+
+OPTIONAL:
+1. userVariableName
+2. passwordVariableName
+
+*/}}
+{{- define "harnesscommon.dbv3.useRedisSentinels" }}
+    {{- $ := .ctx }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := $database }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.redis $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $useSentinels := "false" }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- if $localEnabled }}
+            {{- $useSentinels = "false" }}
+        {{- else if not $installed }}
+            {{- $useSentinels = "false" }}
+        {{- else }}
+            {{- $useSentinels = "true" }}
+        {{- end }}
+        {{- printf $useSentinels | quote }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Generate External Secret CRDs for Redis DBs
+
+USAGE:
+{{- include "harnesscommon.dbv3.generateLocalRedisExternalSecret" (dict "ctx" $) | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+
+*/}}
+{{- define "harnesscommon.dbv3.generateLocalRedisExternalSecret" }}
+    {{- $ := .ctx }}
+    {{- $dbType := "redis" }}
+    {{- range $instanceName, $instance := $.Values.database.redis }}
+        {{- $localDBCtx := get $.Values.database.redis $instanceName }}
         {{- $localEnabled := dig "enabled" false $localDBCtx }}
         {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
             {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
