@@ -45,10 +45,10 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- end -}}
 
 {{/* Podmonitor template to be added for Google Managed prometheus
-{{ include "harnesscommon.monitoring.podMonitor" "serviceName" }}
+{{- include "harnesscommon.monitoring.podMonitor" (dict "name" "serviceName" ) }}
 */}}
 {{- define "harnesscommon.monitoring.podMonitor" -}}
-{{- $enabled := and .Values.global.monitoring.enabled (eq .Values.global.monitoring.managedPlatform "google") -}}
+{{- $enabled := and (default (dict) .Values).global.monitoring.enabled (eq ((default (dict) .Values).global.monitoring.managedPlatform) "google") -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" .Values) | first) -}}
 {{- $globalMonitoring := default (dict) ((pluck "monitoring" .Values.global) | first) -}}
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
@@ -59,12 +59,12 @@ prometheus.io/scrape: {{ $enabled | quote}}
 apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
-  name: {{ . }}
+  name: {{ .name }}
   namespace:  {{ $namespace }}
 spec:
   selector:
     matchLabels:
-      app: {{ . }}
+      app: {{ .name }}
   endpoints:
     - port: {{ default "8889" $port | quote }}
       interval: 120s
