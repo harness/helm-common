@@ -1,5 +1,11 @@
 global:
   ha: false
+  cet:
+    # Global Settings/Enabling of Error Tracking Agent
+    # Note: These are for Enabling the Agent with Harness Services
+    agent:
+      enabled: false
+      collectorURL: ""
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -59,7 +65,7 @@ global:
             SMTP_HOST: ""
             SMTP_PORT": ""
             SMTP_USE_SSL": ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
