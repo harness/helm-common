@@ -45,12 +45,13 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- end -}}
 
 {{/* Podmonitor template to be added for Google Managed prometheus
-{{- include "harnesscommon.monitoring.podMonitor" (dict "name" "serviceName" ) }}
+{{ include "harnesscommon.monitoring.podMonitor" (dict "name" "serviceName" "ctx" $) }}
 */}}
 {{- define "harnesscommon.monitoring.podMonitor" -}}
-{{- $enabled := and (default (dict) .Values).global.monitoring.enabled (eq ((default (dict) .Values).global.monitoring.managedPlatform) "google") -}}
-{{- $localMonitoring := default (dict) ((pluck "monitoring" .Values) | first) -}}
-{{- $globalMonitoring := default (dict) ((pluck "monitoring" .Values.global) | first) -}}
+{{- $ := .ctx }}
+{{- $enabled := and .ctx.Values.global.monitoring.enabled (eq .ctx.Values.global.monitoring.managedPlatform "google") -}}
+{{- $localMonitoring := default (dict) ((pluck "monitoring" .ctx.Values) | first) -}}
+{{- $globalMonitoring := default (dict) ((pluck "monitoring" .ctx.Values.global) | first) -}}
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
 {{- $port := (pluck "port" $monitoring) | first }}
 {{- $path := (pluck "path" $monitoring) | first }}
@@ -59,12 +60,12 @@ prometheus.io/scrape: {{ $enabled | quote}}
 apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
-  name: {{ .name }}
+  name: {{ $.Chart.Name }}
   namespace:  {{ $namespace }}
 spec:
   selector:
     matchLabels:
-      app: {{ .name }}
+      app: {{ default $.Chart.Name .name }}
   endpoints:
     - port: {{ default "8889" $port | quote }}
       interval: 120s
