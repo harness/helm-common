@@ -1,6 +1,6 @@
-apiVersion: v2
+#apiVersion: v2
 name: harness-common
-description: Helm Common library for Harness Helm Charts
+#description: Helm Common library for Harness Helm Charts
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -15,12 +15,54 @@ type: library
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 1.3.0
+version: 1.3.1
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "0.0.0"
-
+description: Helm Chart for deploying Harness.
+name: harness
+type: application
+version: 0.11.0
 dependencies:
+- condition: global.ccm.enabled
+  name: ccm
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.cd.enabled
+  name: cd
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.cet.enabled
+  name: cet
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.chaos.enabled
+  name: chaos
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.ci.enabled
+  name: ci
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.ff.enabled
+  name: ff
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- name: platform
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.srm.enabled
+  name: srm
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.sto.enabled
+  name: sto
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
+- condition: global.ssca.enabled
+  name: ssca
+  repository: https://harness.github.io/helm-charts
+  version: 0.11.0
