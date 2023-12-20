@@ -471,3 +471,129 @@ REQUIRED:
         {{- end }}
     {{- end }}
 {{- end }}
+
+{{/*
+Outputs the filepath prefix based on db type and db name
+
+USAGE:
+{{ include "harnesscommon.dbv3.filepathprefix" (dict "context" $ "dbType" "redis" "dbName" "") }}
+*/}}
+{{- define "harnesscommon.dbv3.filepathprefix" }}
+  {{- $dbType := lower .dbType }}
+  {{- $database := (default "default" .dbName) }}
+  {{- if eq $database "" }}
+    {{- printf "%s" $dbType }}
+  {{- else }}
+    {{- printf "%s-%s" $dbType $database }}
+  {{- end }}
+{{- end }}
+
+{{/*
+Outputs env variables for SSL
+
+USAGE:
+{{ include "harnesscommon.dbv3.sslEnv" (dict "context" $ "dbType" "redis" "dbName" "" "variableNames" ( dict "sslEnabled" "REDIS_SSL_ENABLED" "sslCATrustStorePath" "REDIS_SSL_CA_TRUST_STORE_PATH" "sslCATrustStorePassword" "REDIS_SSL_CA_TRUST_STORE_PASSWORD" "sslCACertPath" "REDIS_SSL_CA_CERT_PATH")) | indent 12 }}
+*/}}
+{{- define "harnesscommon.dbv3.sslEnv" }}
+  {{- $ := .context }}
+  {{- $dbType := lower .dbType }}
+  {{- $database := (default "default" .dbName) }}
+  {{- $globalCtx := (index $.Values.global.database $dbType) }}
+  {{- $localCtx := default $globalCtx (index $.Values $dbType) }}
+  {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
+  {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
+  {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
+  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $installed := $mergedCtx.installed }}
+  {{- if not $installed }}
+    {{- $sslEnabled := $mergedCtx.ssl.enabled }}
+    {{- if $sslEnabled }}
+    {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+    {{- if .variableNames.sslEnabled }}
+- name: {{ .variableNames.sslEnabled }}
+  value: {{ printf "%v" $mergedCtx.ssl.enabled | quote }}
+    {{- end }}
+    {{- if and .variableNames.sslCATrustStorePath $mergedCtx.ssl.trustStoreKey }}
+- name: {{ .variableNames.sslCATrustStorePath }}
+  value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca-truststore" $dbType $database $filepathprefix | quote }}
+    {{- end }}
+    {{- if and .variableNames.sslCACertPath $mergedCtx.ssl.caFileKey }}
+- name: {{ .variableNames.sslCACertPath }}
+  value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca" $dbType $database $filepathprefix | quote }}
+    {{- end }}
+    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey }}
+- name: {{ .variableNames.sslCATrustStorePassword }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $mergedCtx.ssl.secret }}
+      key: {{ $mergedCtx.ssl.trustStorePasswordKey }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
+Outputs volumes which load trustStore and CA file from a secret
+
+USAGE:
+{{ include "harnesscommon.dbv3.sslVolume" (dict "context" $ "dbType" "redis" "dbName" "") | indent 12 }}
+*/}}
+{{- define "harnesscommon.dbv3.sslVolume" }}
+  {{- $ := .context }}
+  {{- $dbType := lower .dbType }}
+  {{- $database := (default "default" .dbName) }}
+  {{- $globalCtx := (index $.Values.global.database $dbType) }}
+  {{- $localCtx := default $globalCtx (index $.Values $dbType) }}
+  {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
+  {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
+  {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
+  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $installed := $mergedCtx.installed }}
+  {{- if not $installed }}
+    {{- $sslEnabled := $mergedCtx.ssl.enabled }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret}}
+    {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+- name: {{ printf "%s-ssl" $filepathprefix }}
+  secret:
+    secretName: {{ $mergedCtx.ssl.secret }}
+    items:
+    {{- if $mergedCtx.ssl.trustStoreKey }}
+      - key: {{ $mergedCtx.ssl.trustStoreKey }}
+        path: {{ printf "%s-ca-truststore" $filepathprefix }}
+    {{- end }}
+    {{- if $mergedCtx.ssl.caFileKey }}
+      - key: {{ $mergedCtx.ssl.caFileKey }}
+        path: {{ printf "%s-ca" $filepathprefix -}}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+
+{{/*
+Outputs volumeMounts which use above volumes
+
+USAGE:
+{{ include "harnesscommon.dbv3.sslVolumeMount" (dict "context" $ "dbType" "redis" "dbName" "") | indent 12 }}
+*/}}
+{{- define "harnesscommon.dbv3.sslVolumeMount" }}
+  {{- $ := .context }}
+  {{- $dbType := lower .dbType }}
+  {{- $database := (default "default" .dbName) }}
+  {{- $globalCtx := (index $.Values.global.database $dbType) }}
+  {{- $localCtx := default $globalCtx (index $.Values $dbType) }}
+  {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
+  {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
+  {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
+  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $installed := $mergedCtx.installed }}
+  {{- if not $installed }}
+    {{- $sslEnabled := $mergedCtx.ssl.enabled }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret }}
+    {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+- name: {{ printf "%s-ssl" $filepathprefix }}
+  mountPath: {{ printf "/opt/harness/svc/ssl/%s/%s" $dbType $database | quote }}
+  readOnly: true
+    {{- end }}
+  {{- end }}
+{{- end }}
