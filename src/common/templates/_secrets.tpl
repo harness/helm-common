@@ -11,7 +11,21 @@
   {{- if hasKey $secretData .key }}
     {{- $password = index $secretData .key | quote }}
   {{- else }}
-    {{- printf "\nPASSWORDS ERROR: The secret \"%s\" does not contain the key \"%s\"\n" .secret .key | fail -}}
+    {{- if $providedPasswordValue }}
+        {{- $password = $providedPasswordValue | toString | b64enc | quote }}
+    {{- else }}
+        {{- if .context.Values.enabled }}
+            {{- $subchart = $chartName }}
+        {{- end -}}
+        {{- if .strong }}
+            {{- $subStr := list (lower (randAlpha 1)) (randNumeric 1) (upper (randAlpha 1)) | join "_" }}
+            {{- $password = randAscii $passwordLength }}
+            {{- $password = regexReplaceAllLiteral "\\W" $password "@" | substr 5 $passwordLength }}
+            {{- $password = printf "%s%s" $subStr $password | toString | shuffle | b64enc | quote }}
+        {{- else }}
+            {{- $password = randAlphaNum $passwordLength | b64enc | quote }}
+        {{- end }}
+    {{- end -}}
   {{- end -}}
 {{- else if $providedPasswordValue }}
   {{- $password = $providedPasswordValue | toString | b64enc | quote }}
