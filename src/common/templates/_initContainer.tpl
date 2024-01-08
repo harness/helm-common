@@ -21,7 +21,6 @@ Params:
   args: ['while [[ $(kubectl get pods -l app=$(APP) -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done']
 {{- end -}}
 
-
 {{/*
 
 Create initContainer with wait for label app
@@ -29,7 +28,7 @@ Usage: {{ include "common.initContainer.waitForContainer" (dict "root" . "contai
 
 Params:
   - values - Object - Required. helm values
-  - containerName - String - Required. name of the container to set
+  - containerName - String - Optional. name of the container to set
   - appName - String - Required. name of the app to wait for
 */}}
 
@@ -39,42 +38,27 @@ Params:
 {{- $global := $values.global.waitForInitContainer }}
 {{- $containerNameDerived := printf "wait-for-%s" $.appName }}
 {{- if .containerName }}
-  {{- $containerNameDerived = $.containerName }}
+  {{- $containerNameDerived = .containerName }}
 {{- end }}
-
+{{- $globalCopy := deepCopy $global }}
+{{- $waitForContainer := $globalCopy }}
 {{- if $local }}
-  {{- if $local.enabled }}
+    {{- $waitForContainer = deepCopy $local | mergeOverwrite $globalCopy }}
+{{- end }}
+{{- if and $waitForContainer $waitForContainer.enabled }}
 - name: {{ $containerNameDerived }}
-  image: {{ include "common.images.image" (dict "imageRoot" $local.image "global" $values.global) }}
-  imagePullPolicy: {{ $local.image.pullPolicy }}
-  {{- if $local.resources }}
+  image: {{ include "common.images.image" (dict "imageRoot" $waitForContainer.image "global" $values.global) }}
+  imagePullPolicy: {{ $waitForContainer.image.pullPolicy }}
+  {{- if $waitForContainer.resources }}
   resources:
-    {{- include "harnesscommon.tplvalues.render" (dict "value" $local.resources "context" .root) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" $waitForContainer.resources "context" .root) | nindent 4 }}
   {{- end }}
-  {{- if $local.containerSecurityContext }}
+  {{- if $waitForContainer.containerSecurityContext }}
   securityContext:
-    {{- toYaml $local.containerSecurityContext | nindent 4 }}
+    {{- toYaml $waitForContainer.containerSecurityContext | nindent 4 }}
   {{- end }}
   args:
     - "pod"
     - "-lapp={{ .appName }}"
-  {{- end }}
-{{- else }}
-  {{- if and $global $global.enabled }}
-- name: {{ $containerNameDerived }}
-  image: {{ include "common.images.image" (dict "imageRoot" $global.image "global" $values.global) }}
-  imagePullPolicy: {{ $global.image.pullPolicy }}
-  {{- if $global.resources }}
-  resources:
-    {{- include "harnesscommon.tplvalues.render" (dict "value" $global.resources "context" .root) | nindent 4 }}
-  {{- end }}
-  {{- if $global.containerSecurityContext }}
-  securityContext:
-    {{- toYaml $global.containerSecurityContext | nindent 4 }}
-  {{- end }}
-  args:
-    - "pod"
-    - "-lapp={{ .appName }}"
-  {{- end }}
 {{- end }}
 {{- end }}
