@@ -24,7 +24,7 @@ Params:
 {{/*
 
 Create initContainer with wait for label app
-Usage: {{ include "common.initContainer.waitForContainer" (dict "root" . "containerName" "container-name" "appName" "app-name") }}
+Usage: {{ include "harnesscommon.initContainer.waitForContainer" (dict "root" . "containerName" "container-name" "appName" "app-name") }}
 
 Params:
   - values - Object - Required. helm values
@@ -32,7 +32,7 @@ Params:
   - appName - String - Required. name of the app to wait for
 */}}
 
-{{- define "common.initContainer.waitForContainer" -}}
+{{- define "harnesscommon.initContainer.waitForContainer" -}}
 {{- $values := .root.Values }}
 {{- $local := $values.waitForInitContainer }}
 {{- $global := $values.global.waitForInitContainer }}
