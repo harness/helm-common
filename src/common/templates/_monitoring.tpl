@@ -65,7 +65,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{ default .label }}: {{ default $.Chart.Name .name }}
+      {{ .label }}: {{ default $.Chart.Name .name }}
   endpoints:
     - port: {{ default "8889" $port | quote }}
       interval: 120s
