@@ -43,3 +43,32 @@ prometheus.io/scrape: {{ $enabled | quote}}
   protocol: "TCP"
 {{- end }}
 {{- end -}}
+
+{{/* Podmonitor template to be added for Google Managed prometheus
+{{ include "harnesscommon.monitoring.podMonitor" (dict "name" "ng-manager" "ctx" $ "label" "app.kubernetes.io/name") }}
+*/}}
+{{- define "harnesscommon.monitoring.podMonitor" -}}
+{{- $ := .ctx }}
+{{- $enabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "google") -}}
+{{- $localMonitoring := default (dict) ((pluck "monitoring" $.Values) | first) -}}
+{{- $globalMonitoring := default (dict) ((pluck "monitoring" $.Values.global) | first) -}}
+{{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
+{{- $port := (pluck "port" $monitoring) | first }}
+{{- $path := (pluck "path" $monitoring) | first }}
+{{- $namespace := $.Release.Namespace }}
+{{- if $enabled -}}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ $.Chart.Name }}
+  namespace:  {{ $namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{ .label }}: {{ default $.Chart.Name .name }}
+  endpoints:
+    - port: {{ default "8889" $port | quote }}
+      interval: 120s
+      path: {{ default "/metrics" $path | quote }}
+{{- end }}
+{{- end -}}
