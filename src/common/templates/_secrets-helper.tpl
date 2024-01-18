@@ -103,3 +103,35 @@ USAGE:
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
 {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
 {{- end }}
+
+
+{{/*
+The function and its warpper to add the K8S Secret created by external secret controller to serve as Env Var Ref
+
+USAGE:
+{{- include "harnesscommon.secrets.generateExternalSecretRef" . }}
+*/}}
+
+{{- define "harnesscommon.secrets.generateExternalSecretRefInternal"}}
+{{- $ := .ctx }}
+{{- $secretNamePrefix := .secretNamePrefix }}
+{{- if and .secretsCtx .secretsCtx.secretManagement .secretsCtx.secretManagement.externalSecretsOperator }}
+    {{- with .secretsCtx.secretManagement.externalSecretsOperator }}
+        {{- range $esoSecretIdx, $esoSecret := . }}
+          {{- if eq (include "harnesscommon.secrets.hasValidESOSecret" (dict "esoSecretCtx" .)) "true" }}
+            {{- $esoSecretName := (printf "%s-%d" $secretNamePrefix $esoSecretIdx) }}
+- secretRef:
+    name: {{ $esoSecretName }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+
+{{- define "harnesscommon.secrets.generateExternalSecretRef"}}
+{{- if eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" .Values.secrets)) "true" }}
+{{- $localESOSecretIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+{{- include "harnesscommon.secrets.generateExternalSecretRefInternal" (dict "secretsCtx" .Values.secrets "secretNamePrefix" $localESOSecretIdentifier) }}
+{{- end }}
+{{- end }}
