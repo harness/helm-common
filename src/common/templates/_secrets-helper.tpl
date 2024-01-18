@@ -105,12 +105,7 @@ USAGE:
 {{- end }}
 
 
-{{/*
-The function and its warpper to add the K8S Secret created by external secret controller to serve as Env Var Ref
 
-USAGE:
-{{- include "harnesscommon.secrets.generateExternalSecretRef" . }}
-*/}}
 
 {{- define "harnesscommon.secrets.generateExternalSecretRefInternal"}}
 {{- $ := .ctx }}
@@ -129,6 +124,12 @@ USAGE:
 {{- end }}
 
 
+{{/*
+Function and its warpper to add the K8S Secret created by external secret controller to serve as Env Var Ref
+
+USAGE:
+{{- include "harnesscommon.secrets.generateExternalSecretRef" . }}
+*/}}
 {{- define "harnesscommon.secrets.generateExternalSecretRef"}}
 {{- if eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" .Values.secrets)) "true" }}
 {{- $localESOSecretIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
