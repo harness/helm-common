@@ -499,9 +499,10 @@ USAGE:
     {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.postgres.extraArgs" ".Values.postgres.extraArgs"))) }}
     {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
     {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+    {{- $sslMode := default "disable" .passwordVariableName }}
     {{- if $installed }}
         {{- if $keywordValueConnectionString }}
-            {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=disable" "postgres" $userVariableName $passwordVariableName .database) }}
+            {{- $connectionString := (printf " host=%s user=$%s password=$%s dbname=%s sslmode=%s" "postgres" $userVariableName $passwordVariableName .database $sslMode) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
             {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" "postgres" $userVariableName $passwordVariableName "postgres:5432" .database .args) }}
@@ -518,7 +519,7 @@ USAGE:
         {{- $firsthostport := (index $hosts 0) -}}
         {{- $hostport := split ":" $firsthostport -}}
         {{- if $keywordValueConnectionString }}
-            {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=disable" $hostport._0 $userVariableName $passwordVariableName .database) }}
+            {{- $connectionString := (printf " host=%s user=$%s password=$%s dbname=%s sslmode=%s" $hostport._0 $userVariableName $passwordVariableName .database $sslMode) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
             {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
