@@ -498,8 +498,8 @@ USAGE:
     {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.postgres.protocol" ".Values.postgres.protocol"))) }}
     {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.postgres.extraArgs" ".Values.postgres.extraArgs"))) }}
     {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
-    {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .sslMode }}
-    {{- $sslMode := default "disable" .passwordVariableName }}
+    {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+    {{- $sslMode := default "disable" .sslMode }}
     {{- if $installed }}
         {{- if $keywordValueConnectionString }}
             {{- $connectionString := (printf " host=%s user=$%s password=$%s dbname=%s sslmode=%s" "postgres" $userVariableName $passwordVariableName .database $sslMode) }}
