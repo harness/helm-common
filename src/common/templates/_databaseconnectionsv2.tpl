@@ -502,7 +502,7 @@ USAGE:
     {{- $sslMode := default "disable" .sslMode }}
     {{- if $installed }}
         {{- if $keywordValueConnectionString }}
-            {{- $connectionString := (printf "host=%s user=$%s password=$%s dbname=%s sslmode=%s" "postgres" $userVariableName $passwordVariableName .database $sslMode) }}
+            {{- $connectionString := (printf "host=%s user=%s password=%s dbname=%s sslmode=%s" "postgres" $userVariableName $passwordVariableName .database $sslMode) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
             {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" "postgres" $userVariableName $passwordVariableName "postgres:5432" .database .args) }}
@@ -519,7 +519,7 @@ USAGE:
         {{- $firsthostport := (index $hosts 0) -}}
         {{- $hostport := split ":" $firsthostport -}}
         {{- if $keywordValueConnectionString }}
-            {{- $connectionString := (printf "host=%s user=$%s password=$%s dbname=%s sslmode=%s" $hostport._0 $userVariableName $passwordVariableName .database $sslMode) }}
+            {{- $connectionString := (printf "host=%s user=%s password=%s dbname=%s sslmode=%s" $hostport._0 $userVariableName $passwordVariableName .database $sslMode) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
             {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
