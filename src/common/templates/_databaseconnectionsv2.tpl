@@ -548,3 +548,39 @@ USAGE:
     {{- printf "%s" (index $hosts 0) }}
     {{- end }}
 {{- end }}
+
+{{- define "harnesscommon.dbconnectionv2.postgresHost" }}
+  {{- $ := .context }}
+  {{- $connectionString := "" }}
+  {{- $type := "postgres" }}
+  {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+  {{- if $installed }}
+      {{- print "postgres" }}
+  {{- else }}
+      {{- $hosts := list }}
+      {{- if gt (len $.Values.postgres.hosts) 0 }}
+          {{- $hosts = $.Values.postgres.hosts }}
+      {{- else }}
+          {{- $hosts = $.Values.global.database.postgres.hosts }}
+      {{- end }}
+  {{- printf "%s" (split ":" (index $hosts 0))._0 }}
+  {{- end }}
+{{- end }}
+
+{{- define "harnesscommon.dbconnectionv2.postgresPort" }}
+    {{- $ := .context }}
+    {{- $connectionString := "" }}
+    {{- $type := "postgres" }}
+    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- if $installed }}
+        {{- printf "%s" "5432" }}
+    {{- else }}
+    {{- $hosts := list }}
+    {{- if gt (len $.Values.postgres.hosts) 0 }}
+        {{- $hosts = $.Values.postgres.hosts }}
+    {{- else }}
+        {{- $hosts = $.Values.global.database.postgres.hosts }}
+    {{- end }}
+  {{- printf "%s" (split ":" (index $hosts 0))._1 }}
+  {{- end }}
+{{- end }}
