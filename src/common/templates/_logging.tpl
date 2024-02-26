@@ -15,10 +15,10 @@ Usage example:
 {{- if $fileLoggingConfig.enabled }}
     {{- println "FILE_LOGGING_ENABLED: 'true'" }}
     {{- if $fileLoggingConfig.logFilename }}
-        {{- printf "FILE_LOGGING_FILENAME: '%s'\n" $fileLoggingConfig.logFilename }}
+        {{- printf "LOG_FILENAME: '%s'\n" $fileLoggingConfig.logFilename }}
     {{- end }}
     {{- if $fileLoggingConfig.maxFileSize }}
-        {{- printf "FILE_LOGGING_MAX_FILE_SIZE: '%s'\n" $fileLoggingConfig.maxFileSize }}
+        {{- printf "LOG_MAX_FILE_SIZE: '%s'\n" $fileLoggingConfig.maxFileSize }}
     {{- end }}
     {{- if $fileLoggingConfig.maxBackupFileCount }}
         {{- printf "LOG_MAX_FILE_COUNT: '%v'\n" $fileLoggingConfig.maxBackupFileCount }}
