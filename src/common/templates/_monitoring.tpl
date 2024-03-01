@@ -67,7 +67,7 @@ spec:
     matchLabels:
       {{ .label }}: {{ default $.Chart.Name .name }}
   endpoints:
-    - port: {{ default 8889 $port }}
+    - port: {{ default "8889" $port }}
       interval: 120s
       path: {{ default "/metrics" $path | quote }}
 {{- end }}
