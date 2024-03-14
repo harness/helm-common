@@ -184,6 +184,7 @@ OPTIONAL:
                 {{- $hosts := $localDBCtx.hosts }}
                 {{- $protocol := $localDBCtx.protocol }}
                 {{- $extraArgs := $localDBCtx.extraArgs }}
+                {{- $database = default $database $localDBCtx.database }}
                 {{- $args := (printf "/%s?%s" $database $extraArgs ) -}}
                 {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
             {{- else if $installed }}
