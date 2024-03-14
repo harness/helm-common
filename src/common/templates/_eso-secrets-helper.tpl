@@ -266,9 +266,18 @@ USAGE:
 {{- $hasAtleastOneSecret := false }}
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
 {{- $defaultSecretList := .ctx.Values.secrets.default }}
-{{- $kubernetesSecretsList := (index .ctx.Values.secrets.kubernetesSecrets 0).keys }}
-{{- $ESOSecretsList := (index .ctx.Values.secrets.secretManagement.externalSecretsOperator 0).remoteKeys }}
-{{- $fileSecretMap := (index .ctx.Values.secrets.fileSecret 0).keys }}
+{{- $kubernetesSecretsList := dict }}
+{{- range $ind := .ctx.Values.secrets.kubernetesSecrets }}
+    {{- $kubernetesSecretsList = merge $kubernetesSecretsList $ind.keys }}
+{{- end}}
+{{- $ESOSecretsList := dict }}
+{{- range $ind := .ctx.Values.secrets.secretManagement.externalSecretsOperator }}
+    {{- $ESOSecretsList = merge $ESOSecretsList $ind.remoteKeys }}
+{{- end}}
+{{- $fileSecretMap := list }}
+{{- range $ind := .ctx.Values.secrets.fileSecret }}
+    {{- $fileSecretMap = concat $fileSecretMap $ind.keys }}
+{{- end}}
 {{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
 {{- range $key := $mergedSecretKeys }}
     {{- if not (has $key $fileSecretMap) }}
@@ -284,60 +293,97 @@ USAGE:
 */}}
 {{- define "harnesscommon.renderSecretsAsVolumes" }}
 {{- $ := .ctx }}
-{{- $hasAtleastOneSecret := false }}
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- $fileSecretMap := (index .ctx.Values.secrets.fileSecret 0).keys }}
-{{- $defaultFileSecretIdentifier := (printf "%s-default-mount" $.Chart.Name) }}
-{{- $extKubernetesFileSecretIdentifier := (printf "%s-ext-mount" $.Chart.Name) }}
-{{- $esoFileSecretIdentifier := (printf "%s-eso-mount" $.Chart.Name) }}
-{{- $localESOSecretIdentifier := (printf "%s-ext-secret-0" $.Chart.Name) }}
-{{- $defaultFileSecretMap := list }}
-{{- $extKubernetesFileSecretMap := list }}
-{{- $esoFileSecretMap := list }}
-{{- $extKubernetesSecretName := (index .ctx.Values.secrets.kubernetesSecrets 0).secretName }}
-{{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- $esoSecretCtxs := (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))}}
-{{- $extKubernetesSecretCtxs := (list $.Values.secrets.kubernetesSecrets) }}
-{{- range $key := $fileSecretMap }}
-    {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $key  "esoSecretCtxs" $esoSecretCtxs)) "true" }}
-    {{- $esoFileSecretMap = (append $esoFileSecretMap $key) }}
+{{- range $ind, $indexvalue := .ctx.Values.secrets.fileSecret }}
+{{- $keys := $indexvalue.keys }}
+{{- $defaultSecretList := list }}
+{{- $extKubernetesSecretsList := list }}
+{{- $extKubernetesSecretCtxs := list ($.Values.secrets.kubernetesSecrets) }}
+{{- $extKubernetesSecretsMap := list }}
+{{- $esoSecretsList := list }}
+{{- $esoSecretCtxs := list (dict "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator) }}
+{{- $esoSecretsMap := list }}
+{{- range $key := $keys }}
+    {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $key "esoSecretCtxs" $esoSecretCtxs)) "true" }}
+        {{- $esoSecretsList = append $esoSecretsList $key }}
     {{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" $key "extKubernetesSecretCtxs" $extKubernetesSecretCtxs)) "true" }}
-    {{- $extKubernetesFileSecretMap = (append $extKubernetesFileSecretMap $key) }}
-    {{- else }}
-     {{- $defaultFileSecretMap = (append $defaultFileSecretMap $key) }}
+        {{- $extKubernetesSecretsList = append $extKubernetesSecretsList $key }}
+    {{- else if hasKey $.Values.secrets.default $key }}
+        {{- $defaultSecretList = append $defaultSecretList $key }}
     {{- end }}
 {{- end }}
-{{- if gt (len $fileSecretMap) 0 }}
-- name: all-secrets-mount
+{{- range $value := $extKubernetesSecretCtxs }}
+    {{- range $v := $value }}
+        {{- $secretListMap := list }}
+        {{- $secretFound := false }}
+        {{- range $variableName := $extKubernetesSecretsList }}
+            {{- if and $v $v.secretName $v.keys }}
+                    {{- if and (hasKey $v.keys $variableName) (get $v.keys $variableName) }}
+                        {{- $secretListMap = append $secretListMap (dict "keyName" $variableName "secretKeyName" (get $v.keys $variableName)) }}
+                        {{- $secretFound = true }}
+                    {{- end }}
+            {{- end }}
+        {{- end }}
+        {{- if $secretFound }}
+            {{- $secretName:= .secretName }}
+            {{- $extKubernetesSecretsMap = append $extKubernetesSecretsMap (dict $secretName $secretListMap) }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- range $esoSecretCtxs }}
+    {{- $secretCtx := .secretCtx }}
+        {{- range $idx, $idxvalue := $secretCtx }}
+        {{- $secretName := printf "%s-%s" $localESOSecretCtxIdentifier ($idx |toString) }}
+        {{- $secretListMap := list }}
+        {{- $secretFound := false}}
+        {{- range $variableName := $esoSecretsList }}
+            {{- if and $idxvalue $idxvalue.secretStore $idxvalue.secretStore.name $idxvalue.secretStore.kind }}
+                    {{- $remoteKeyName := (dig "remoteKeys" $variableName "name" "" $idxvalue) }}
+                    {{- if $remoteKeyName }}
+                        {{- $secretListMap = append $secretListMap (dict "keyName" $variableName "secretKeyName" $remoteKeyName) }}
+                        {{- $secretFound = true }}
+                    {{- end -}}
+            {{- end -}}
+        {{- end -}}
+        {{- if $secretFound }}
+            {{- $esoSecretsMap = append $esoSecretsMap (dict $secretName $secretListMap) }}
+        {{- end -}}
+    {{- end }}
+{{- end }}
+- name: all-secrets-mount-{{ $ind }}
   projected:
     sources:
-{{- if gt (len $defaultFileSecretMap) 0 }}
+    {{- if gt (len $defaultSecretList) 0 }}
     - secret:
         name: {{ $.Chart.Name }}
         items:
-        {{- range $key := $defaultFileSecretMap }}
+        {{- range $key := $defaultSecretList }}
         - key: {{ $key }}
           path: {{ $key }}
         {{- end }}
-{{- end }}
-{{- if gt (len $extKubernetesFileSecretMap) 0 }}
+    {{- end }}
+    {{- range $value := $extKubernetesSecretsMap }}
+    {{- range $k,$v := $value }}
     - secret:
-        name: {{ $extKubernetesSecretName }}
+        name: {{ $k }}
         items:
-        {{- range $key := $extKubernetesFileSecretMap }}
-        - key: {{ $key }}
-          path: {{ $key }}
+        {{- range $v }}
+        - key: {{ .secretKeyName }}
+          path: {{ .keyName }}
         {{- end }}
-{{- end }}
-{{- if gt (len $esoFileSecretMap) 0 }}
+    {{- end }}
+    {{- end }}
+    {{- range $value := $esoSecretsMap }}
+    {{- range $k,$v := $value }}
     - secret:
-        name: {{ $localESOSecretIdentifier }}
+        name: {{ $k }}
         items:
-        {{- range $key := $esoFileSecretMap }}
-        - key: {{ $key }}
-          path: {{ $key }}
+        {{- range $v }}
+        - key: {{ .secretKeyName }}
+          path: {{ .keyName }}
         {{- end }}
-{{- end }}
+    {{- end }}
+    {{- end }}
 {{- end }}
 {{- end }}
 
@@ -348,32 +394,10 @@ USAGE:
 */}}
 {{- define "harnesscommon.mountRenderedSecretsAsVolumeMounts" }}
 {{- $ := .ctx }}
-{{- $hasAtleastOneSecret := false }}
-{{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- $fileSecretMap := (index .ctx.Values.secrets.fileSecret 0).keys }}
-{{- $defaultFileSecretIdentifier := (printf "%s-default-mount" $.Chart.Name) }}
-{{- $extKubernetesFileSecretIdentifier := (printf "%s-ext-mount" $.Chart.Name) }}
-{{- $esoFileSecretIdentifier := (printf "%s-eso-mount" $.Chart.Name) }}
-{{- $volumeMount := (index .ctx.Values.secrets.fileSecret 0).volumeMountPath }}
-{{- $defaultFileSecretMap := list }}
-{{- $extKubernetesFileSecretMap := list }}
-{{- $esoFileSecretMap := list }}
-{{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-{{- $esoSecretCtxs := (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))}}
-{{- $extKubernetesSecretCtxs := (list $.Values.secrets.kubernetesSecrets) }}
-{{- range $key := $fileSecretMap }}
-    {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $key  "esoSecretCtxs" $esoSecretCtxs)) "true" }}
-    {{- $esoFileSecretMap = (append $esoFileSecretMap $key) }}
-    {{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" $key "extKubernetesSecretCtxs" $extKubernetesSecretCtxs)) "true" }}
-    {{- $extKubernetesFileSecretMap = (append $extKubernetesFileSecretMap $key) }}
-    {{- else }}
-     {{- $defaultFileSecretMap = (append $defaultFileSecretMap $key) }}
-    {{- end }}
-{{- end }}
-{{- if gt (len $fileSecretMap) 0 }}
-- name: all-secrets-mount
-  mountPath: {{ $volumeMount | quote }}
-{{- end }}
+{{- range $ind, $indexvalue := .ctx.Values.secrets.fileSecret }}
+- name: all-secrets-mount-{{ $ind }}
+  mountPath: {{ $indexvalue.volumeMountPath | quote }}
+{{- end}}
 {{- end }}
 
 
