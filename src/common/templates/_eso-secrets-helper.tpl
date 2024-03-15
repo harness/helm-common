@@ -276,7 +276,10 @@ USAGE:
 {{- end}}
 {{- $fileSecretMap := list }}
 {{- range $ind := .ctx.Values.secrets.fileSecret }}
-    {{- $fileSecretMap = concat $fileSecretMap $ind.keys }}
+    {{- range $ind.keys }}
+        {{- $fileSecretMap = append $fileSecretMap .key }}
+    {{- end}}
+    
 {{- end}}
 {{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
 {{- range $key := $mergedSecretKeys }}
@@ -303,13 +306,13 @@ USAGE:
 {{- $esoSecretsList := list }}
 {{- $esoSecretCtxs := list (dict "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator) }}
 {{- $esoSecretsMap := list }}
-{{- range $key := $keys }}
-    {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $key "esoSecretCtxs" $esoSecretCtxs)) "true" }}
-        {{- $esoSecretsList = append $esoSecretsList $key }}
-    {{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" $key "extKubernetesSecretCtxs" $extKubernetesSecretCtxs)) "true" }}
-        {{- $extKubernetesSecretsList = append $extKubernetesSecretsList $key }}
-    {{- else if hasKey $.Values.secrets.default $key }}
-        {{- $defaultSecretList = append $defaultSecretList $key }}
+{{- range $index := $keys }}
+    {{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" $index.key "esoSecretCtxs" $esoSecretCtxs)) "true" }}
+        {{- $esoSecretsList = append $esoSecretsList $index.key }}
+    {{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" $index.key "extKubernetesSecretCtxs" $extKubernetesSecretCtxs)) "true" }}
+        {{- $extKubernetesSecretsList = append $extKubernetesSecretsList $index.key }}
+    {{- else if hasKey $.Values.secrets.default $index.key }}
+        {{- $defaultSecretList = append $defaultSecretList $index.key }}
     {{- end }}
 {{- end }}
 {{- range $value := $extKubernetesSecretCtxs }}
@@ -358,8 +361,14 @@ USAGE:
         name: {{ $.Chart.Name }}
         items:
         {{- range $key := $defaultSecretList }}
+        {{- $path := $key }}
+        {{- range $k := $keys }}
+            {{- if eq $k.key $key }}
+                {{- $path = default $path $k.path }}
+            {{- end }}
+        {{- end }}
         - key: {{ $key }}
-          path: {{ $key }}
+          path: {{ $path }}
         {{- end }}
     {{- end }}
     {{- range $value := $extKubernetesSecretsMap }}
@@ -367,9 +376,15 @@ USAGE:
     - secret:
         name: {{ $k }}
         items:
-        {{- range $v }}
-        - key: {{ .secretKeyName }}
-          path: {{ .keyName }}
+        {{- range $contents := $v }}
+        {{- $path := $contents.keyName }}
+        {{- range $k := $keys }}
+            {{- if eq $k.key $contents.keyName }}
+                {{- $path = default $path $k.path }}
+            {{- end }}
+        {{- end }}
+        - key: {{ $contents.secretKeyName }}
+          path: {{ $path }}
         {{- end }}
     {{- end }}
     {{- end }}
@@ -378,9 +393,15 @@ USAGE:
     - secret:
         name: {{ $k }}
         items:
-        {{- range $v }}
-        - key: {{ .secretKeyName }}
-          path: {{ .keyName }}
+        {{- range $contents := $v }}
+        {{- $path := $contents.keyName }}
+        {{- range $k := $keys }}
+            {{- if eq $k.key $contents.keyName }}
+                {{- $path = default $path $k.path }}
+            {{- end }}
+        {{- end }}
+        - key: {{ $contents.secretKeyName }}
+          path: {{ $path }}
         {{- end }}
     {{- end }}
     {{- end }}
@@ -399,5 +420,3 @@ USAGE:
   mountPath: {{ $indexvalue.volumeMountPath | quote }}
 {{- end}}
 {{- end }}
-
-
