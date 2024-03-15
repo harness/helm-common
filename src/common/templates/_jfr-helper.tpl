@@ -106,7 +106,8 @@ USAGE:
 {{- define "harnesscommon.jfr.v1.printJavaAdvancedFlags" }}
 {{- $ := .ctx }}
 {{- $javaAdvancedFlags := default "" $.Values.javaAdvancedFlags }}
-{{- $jfrFlags := "-Xms64M -XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=/opt/harness/POD_NAME/jfr_dumponexit.jfr,settings=/opt/java/openjdk/lib/jfr/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=/opt/harness/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED"}}
+{{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
+{{- $jfrFlags := printf "-Xms64M -XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=/opt/java/openjdk/lib/jfr/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED"  $jfrDumpRootLocation $jfrDumpRootLocation}}
 {{- if $.Values.global.jfr.enabled }}
 {{- $javaAdvancedFlags = printf "%s %s" $javaAdvancedFlags $jfrFlags }}
 {{- end }}
