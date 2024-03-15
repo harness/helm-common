@@ -279,7 +279,6 @@ USAGE:
     {{- range $ind.keys }}
         {{- $fileSecretMap = append $fileSecretMap .key }}
     {{- end}}
-    
 {{- end}}
 {{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
 {{- range $key := $mergedSecretKeys }}
