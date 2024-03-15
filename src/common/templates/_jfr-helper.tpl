@@ -111,7 +111,7 @@ USAGE:
 {{- if $.Values.global.jfr.enabled }}
 {{- $javaAdvancedFlags = printf "%s %s" $javaAdvancedFlags $jfrFlags }}
 {{- end }}
-{{ printf "%s" $javaAdvancedFlags }}
+{{- printf "%s" $javaAdvancedFlags }}
 {{- end }}
 
 {{/*
