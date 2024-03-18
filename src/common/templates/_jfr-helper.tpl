@@ -20,9 +20,9 @@ USAGE:
 
 {{/*
 USAGE:
-{{- include "harnesscommon.jfr.v1.renderLifecycleHooks" (dict "ctx" $) }}
+{{- include "harnesscommon.v1.renderLifecycleHooks" (dict "ctx" $) }}
 */}}
-{{- define "harnesscommon.jfr.v1.renderLifecycleHooks" }}
+{{- define "harnesscommon.v1.renderLifecycleHooks" }}
 {{- $ := .ctx }}
 {{- if $.Values.lifecycleHooks }}
 {{ include "harnesscommon.tplvalues.render" (dict "value" $.Values.lifecycleHooks "context" $) }}
