@@ -107,7 +107,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- $javaAdvancedFlags := default "" $.Values.javaAdvancedFlags }}
 {{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
-{{- $jfrFlags := printf "-Xms64M -XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=/opt/java/openjdk/lib/jfr/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED"  $jfrDumpRootLocation $jfrDumpRootLocation}}
+{{- $jfrFlags := printf "-Xms64M -XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=/opt/harness/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED"  $jfrDumpRootLocation $jfrDumpRootLocation}}
 {{- if $.Values.global.jfr.enabled }}
 {{- $javaAdvancedFlags = printf "%s %s" $javaAdvancedFlags $jfrFlags }}
 {{- end }}
