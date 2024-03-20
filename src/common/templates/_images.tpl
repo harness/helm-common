@@ -11,8 +11,9 @@ Return the proper image name
 {{- $repositoryName := .imageRoot.repository -}}
 {{- $separator := ":" -}}
 {{- $termination := .imageRoot.tag | toString -}}
+{{- $ignoreGlobalImageRegistry := default false .imageRoot.ignoreGlobalImageRegistry }}
 {{- if .global }}
-    {{- if .global.imageRegistry }}
+    {{- if and .global.imageRegistry (not $ignoreGlobalImageRegistry) }}
      {{- $registryName = .global.imageRegistry -}}
     {{- end -}}
 {{- end -}}
