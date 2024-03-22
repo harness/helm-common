@@ -38,7 +38,7 @@ spec:
               name: {{ $serviceName }}
               port:
                 number: {{ $servicePort }}
-          path: {{ $idx.path }}
+          path: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
           pathType: {{ $pathType }}
         {{- end }}
     {{- else }}
@@ -69,5 +69,4 @@ spec:
       secretName: {{ $.Values.global.ingress.tls.secretName }}
   {{- end }}
 {{- end }}
-
-{{- end}}
+{{- end }}
