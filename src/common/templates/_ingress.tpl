@@ -5,11 +5,11 @@ USAGE:
 {{- define "harnesscommon.v1.renderIngress" }}
 {{- $ := .ctx }}
 {{- if $.Values.global.ingress.enabled -}}
-{{- range $idx, $object := $.Values.ingress.objects }}
+{{- range $index, $object := $.Values.ingress.objects }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}-{{ $idx }}
+  name: {{ dig "name" ((cat (default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-") "-" $index)| nospace)  $object }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
