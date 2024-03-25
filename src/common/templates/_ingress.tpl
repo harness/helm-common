@@ -5,15 +5,18 @@ USAGE:
 {{- define "harnesscommon.v1.renderIngress" }}
 {{- $ := .ctx }}
 {{- if $.Values.global.ingress.enabled -}}
+{{- range $idx, $object := $.Values.ingress.objects }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
+  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}-{{$idx}}
+  namespace: {{ $.Release.Namespace }}
+  {{- if $.Values.global.commonLabels }}
   labels:
-    {{- if $.Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   annotations:
+    {{- include "harnesscommon.tplvalues.render" (dict "value" $object.annotations "context" $) | nindent 4 }}
     {{- if $.Values.ingress.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $.Values.ingress.annotations "context" $) | nindent 4 }}
     {{- end }}
@@ -29,10 +32,10 @@ spec:
     {{- if $.Values.global.ingress.disableHostInIngress }}
     - http:
         paths:
-        {{- range $idx := $.Values.ingress.paths }}
+        {{- range $idx := $object.paths }}
         {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
         {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
-        {{- $pathType := dig "pathType" "ImplementationSpecific" $idx }}
+        {{- $pathType := dig "pathType" (default "ImplementationSpecific" $.Values.global.ingress.pathType) $idx }}
         - backend:
             service:
               name: {{ $serviceName }}
@@ -46,16 +49,16 @@ spec:
     - host: {{ . | quote }}
       http:
         paths:
-        {{- range $idx := $.Values.ingress.paths }}
+        {{- range $idx := $object.paths }}
         {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
         {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
-        {{- $pathType := dig "pathType" "ImplementationSpecific" $idx }}
+        {{- $pathType := dig "pathType" (default "ImplementationSpecific" $.Values.global.ingress.pathType) $idx }}
         - backend:
             service:
               name: {{ $serviceName }}
               port:
                 number: {{ $servicePort }}
-          path: {{ $idx.path }}
+          path: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
           pathType: {{ $pathType }}
         {{- end }}
     {{- end }}
@@ -68,5 +71,7 @@ spec:
         {{- end }}
       secretName: {{ $.Values.global.ingress.tls.secretName }}
   {{- end }}
+---
+{{- end }}
 {{- end }}
 {{- end }}
