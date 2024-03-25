@@ -598,3 +598,101 @@ USAGE:
     {{- end }}
   {{- end }}
 {{- end }}
+
+
+
+{{- define "harnesscommon.dbconnectionv3.timescaleHost" }}
+    {{- $ := .context }}
+    {{- $connectionString := "" }}
+    {{- $type := "timescaledb" }}
+    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- $hosts := list ("timescaledb-single-chart:5432") }}
+    {{- $localTimescaleDBCtx := $.Values.timescaledb }}
+        {{- if .localTimescaleDBCtx }}
+            {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
+        {{- end }}
+    {{- if $installed }}
+        {{- if gt (len $localTimescaleDBCtx.hosts) 0 }}
+            {{- $hosts = $localTimescaleDBCtx.hosts }}
+        {{- end }}
+    {{- else }}
+        {{- if gt (len $localTimescaleDBCtx.hosts) 0 }}
+            {{- $hosts = $localTimescaleDBCtx.hosts }}
+        {{- else }}
+            {{- $hosts = $.Values.global.database.timescaledb.hosts }}
+        {{- end }}
+    {{- end }}
+    {{- printf "%s" (split ":" (index $hosts 0))._0 }}
+{{- end }}
+
+{{- define "harnesscommon.dbconnectionv3.timescalePort" }}
+    {{- $ := .context }}
+    {{- $connectionString := "" }}
+    {{- $type := "timescaledb" }}
+    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- $hosts := list ("timescaledb-single-chart:5432") }}
+    {{- $localTimescaleDBCtx := $.Values.timescaledb }}
+        {{- if .localTimescaleDBCtx }}
+            {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
+        {{- end }}
+    {{- if $installed }}
+        {{- if gt (len $localTimescaleDBCtx.hosts) 0 }}
+            {{- $hosts = $localTimescaleDBCtx.hosts }}
+        {{- end }}
+    {{- else }}
+        {{- if gt (len $localTimescaleDBCtx.hosts) 0 }}
+            {{- $hosts = $localTimescaleDBCtx.hosts }}
+        {{- else }}
+            {{- $hosts = $.Values.global.database.timescaledb.hosts }}
+        {{- end }}
+    {{- end }}
+    {{- printf "%s" (split ":" (index $hosts 0))._1 }}
+{{- end }}
+{{- define "harnesscommon.dbconnectionv3.timescaleConnection" }}
+    {{- $addSSLModeArg := default false .addSSLModeArg }}
+    {{- $sslEnabled := false }}
+    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
+    {{- if eq $sslEnabledVar "true" }}
+        {{- $sslEnabled = true }}
+    {{- end }}
+    {{- $localTimescaleDBCtx := .context.Values.timescaledb }}
+    {{- if .localTimescaleDBCtx }}
+        {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
+    {{- end }}
+    {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $port := include "harnesscommon.dbconnectionv2.timescalePort" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $connectionString := "" }}
+    {{- $protocol := "" }}
+    {{- if not (empty .protocol) }}
+        {{- $protocol = (printf "%s://" .protocol) }}
+    {{- end }}
+    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+    {{- if not (empty $protocolVar) }}
+        {{- $protocol = (printf "%s://" $protocolVar) }}
+    {{- end }}
+    {{- $userAndPassField := "" }}
+    {{- if and (.userVariableName) (.passwordVariableName) }}
+        {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+    {{- end }}
+    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
+    {{- if .args }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
+            {{- end }}
+        {{- else }}    
+            {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
+        {{- end }}
+    {{- else }}
+        {{- if $addSSLModeArg }}
+            {{- if $sslEnabled }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=require") }}
+            {{- else }}
+                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=disable") }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- printf "%s" $connectionString -}}
+{{- end }}
