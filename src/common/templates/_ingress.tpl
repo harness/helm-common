@@ -9,7 +9,7 @@ USAGE:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}-{{$idx}}
+  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}-{{ $idx }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
