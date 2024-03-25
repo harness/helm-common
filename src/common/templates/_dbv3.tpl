@@ -659,8 +659,8 @@ USAGE:
     {{- if .localTimescaleDBCtx }}
         {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
     {{- end }}
-    {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
-    {{- $port := include "harnesscommon.dbconnectionv2.timescalePort" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $host := include "harnesscommon.dbconnectionv3.timescaleHost" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $port := include "harnesscommon.dbconnectionv3.timescalePort" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
     {{- $connectionString := "" }}
     {{- $protocol := "" }}
     {{- if not (empty .protocol) }}
