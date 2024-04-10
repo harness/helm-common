@@ -399,7 +399,7 @@ USAGE:
                 {{- $path = default $path $k.path }}
             {{- end }}
         {{- end }}
-        - key: {{ $contents.secretKeyName }}
+        - key: {{ $contents.keyName }}
           path: {{ $path }}
         {{- end }}
     {{- end }}
