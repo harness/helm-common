@@ -459,6 +459,9 @@ OPTIONAL:
         {{- if eq $globalDBCtx.installed true }}
             {{- $installed = $globalDBCtx.installed }}
         {{- end }}
+        {{- if eq $localDBCtx.enabled true }}
+            {{- $installed = false }}
+        {{- end }}
         {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
         {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
         {{- $localMongoESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "postgres" )) }}
@@ -486,6 +489,9 @@ USAGE:
     {{- $dbType := upper $type }}
     {{- $installed := true }}
     {{- if eq $.Values.global.database.postgres.installed false }}
+        {{- $installed = false }}
+    {{- end }}
+    {{- if eq $.Values.postgres.enabled true }}
         {{- $installed = false }}
     {{- end }}
     {{- $hosts := list }}
@@ -535,7 +541,7 @@ USAGE:
     {{- $ := .context }}
     {{- $connectionString := "" }}
     {{- $type := "postgres" }}
-    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- $installed := and ( (pluck $type $.Values.global.database | first).installed ) (not (pluck $type $.Values | first).enabled ) }}
     {{- if $installed }}
         {{- print "postgres:5432" }}
     {{- else }}
@@ -553,7 +559,7 @@ USAGE:
   {{- $ := .context }}
   {{- $connectionString := "" }}
   {{- $type := "postgres" }}
-  {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+  {{- $installed := and ( (pluck $type $.Values.global.database | first).installed ) (not (pluck $type $.Values | first).enabled ) }}
   {{- if $installed }}
       {{- print "postgres" }}
   {{- else }}
@@ -571,7 +577,7 @@ USAGE:
     {{- $ := .context }}
     {{- $connectionString := "" }}
     {{- $type := "postgres" }}
-    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- $installed := and ( (pluck $type $.Values.global.database | first).installed ) (not (pluck $type $.Values | first).enabled ) }}
     {{- if $installed }}
         {{- printf "%s" "5432" }}
     {{- else }}
