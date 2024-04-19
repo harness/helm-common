@@ -590,3 +590,84 @@ USAGE:
   {{- printf "%s" (split ":" (index $hosts 0))._1 }}
   {{- end }}
 {{- end }}
+
+
+{{/*
+Generates Postgres environment variables
+USAGE:
+{{- include "harnesscommon.dbconnectionv2.elasticEnv" (dict "ctx" $ "userVariableName" "ELASTIC_USERNAME" "passwordVariableName" "ELASTIC_PASSWORD" "apiKeyVariableName" "ELASTIC_API_KEY") | indent 12 }}
+
+INPUT ARGUMENTS:
+REQUIRED:
+1. ctx
+
+OPTIONAL:
+1. localElasticCtx
+   Default: $.Values.elastic
+2. globalElasticCtx
+   Default: $.Values.global.database.mongo
+3. userVariableName
+   Default: ELASTIC_USERNAME
+4. passwordVariableName
+   Default: ELASTIC_PASSWORD
+5. apiKeyVariableName
+   Default: ELASTIC_API_KEY
+
+*/}}
+{{- define "harnesscommon.dbconnectionv2.elasticEnv" }}
+    {{- $ := .ctx }}
+    {{- $type := "elastic" }}
+    {{- $dbType := $type | upper}}
+    {{- $userVariableName := .userVariableName }}
+    {{- $passwordVariableName := .passwordVariableName }}
+    {{- $apiKeyVariableName:= .apiKeyVariableName }}
+    {{- $localElasticCtx := $.Values.elastic }}
+    {{- if .localElasticCtx }}
+        {{- $localElasticCtx = .localElasticCtx }}
+    {{- end }}
+    {{- $globalElasticCtx := $.Values.global.database.elastic }}
+    {{- if .globalElasticCtx }}
+        {{- $globalElasticCtx = .globalElasticCtx }}
+    {{- end }}
+    {{- if and $ $localElasticCtx $globalElasticCtx }}
+        {{- $installed := false }}
+        {{- if eq $globalElasticCtx.installed true }}
+            {{- $installed = $globalElasticCtx.installed }}
+        {{- end }}
+        {{- if eq $localElasticCtx.enabled true }}
+            {{- $installed = false }}
+        {{- end }}
+        {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+        {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+        {{- $apiKeyVariableName := default (printf "%s_API_KEY" $dbType) .apiKeyVariableName }}
+        {{- $localElasticESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" "elastic" )) }}
+        {{- $globalElasticESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "elastic" )) }}
+        {{- if not $installed }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "ELASTIC_USER" "overrideEnvName" $userVariableName "defaultKubernetesSecretName" $globalElasticCtx.secretName "defaultKubernetesSecretKey" $globalElasticCtx.userKey "extKubernetesSecretCtxs" (list $globalElasticCtx.secrets.kubernetesSecrets $localElasticCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalElasticESOSecretIdentifier "secretCtx" $globalElasticCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localElasticESOSecretCtxIdentifier "secretCtx" $localElasticCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "ELASTIC_PASSWORD" "overrideEnvName" $passwordVariableName "defaultKubernetesSecretName" $globalElasticCtx.secretName "defaultKubernetesSecretKey" $globalElasticCtx.passwordKey "extKubernetesSecretCtxs" (list $globalElasticCtx.secrets.kubernetesSecrets $localElasticCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalElasticESOSecretIdentifier "secretCtx" $globalElasticCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localElasticESOSecretCtxIdentifier "secretCtx" $localElasticCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "ELASTIC_API_KEY" "overrideEnvName" $apiKeyVariableName "defaultKubernetesSecretName" $globalElasticCtx.secretName "defaultKubernetesSecretKey" $globalElasticCtx.apiKey "extKubernetesSecretCtxs" (list $globalElasticCtx.secrets.kubernetesSecrets $localElasticCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalElasticESOSecretIdentifier "secretCtx" $globalElasticCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localElasticESOSecretCtxIdentifier "secretCtx" $localElasticCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- end }}
+    {{- else }}
+        {{- fail (printf "invalid input") }}
+    {{- end }}
+{{- end }}
+
+
+{{/*
+Define environment variable value based on ENABLE_ELASTIC
+*/}}
+{{- define "harnesscommon.dbconnectionv2.elasticConnection" -}}
+    {{- $ := .context }}
+    {{- $connectionString := "" }}
+    {{- $type := "elastic" }}
+    {{- $installed := (pluck $type $.Values.global.database | first).installed }}
+    {{- if not $installed }}
+        {{- $hosts := list }}
+        {{- if gt (len $.Values.elastic.hosts) 0 }}
+            {{- $hosts = $.Values.elastic.hosts }}
+        {{- else }}
+            {{- $hosts = $.Values.global.database.elastic.hosts }}
+        {{- end }}
+    {{- printf "%s" (index $hosts 0) }}
+    {{- end }}
+{{- end -}}
