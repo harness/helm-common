@@ -280,10 +280,18 @@ USAGE:
         {{- $fileSecretMap = append $fileSecretMap .key }}
     {{- end}}
 {{- end}}
+{{- $conditionsList := .ctx.Values.secrets }}
 {{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
 {{- range $key := $mergedSecretKeys }}
     {{- if not (has $key $fileSecretMap) }}
+    {{- $diggedCondition := dig "conditions" $key "NOTFOUND" $conditionsList }}
+    {{- $condition := "true" }}
+        {{- if ne $diggedCondition "NOTFOUND" }}
+            {{- $condition = include "harnesscommon.utils.getValueFromKey" (dict "key" $diggedCondition "context" $ ) }}
+        {{- end }}
+        {{- if $condition }}
 {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" $key "defaultKubernetesSecretName" $.Chart.Name "defaultKubernetesSecretKey" $key)}}
+        {{- end }}
     {{- end }}
 {{- end }}
 {{- end }}
