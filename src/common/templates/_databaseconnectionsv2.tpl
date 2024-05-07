@@ -671,3 +671,66 @@ Define environment variable value based on ENABLE_ELASTIC
     {{- printf "%s" (index $hosts 0) }}
     {{- end }}
 {{- end -}}
+
+
+
+{{- define "harnesscommon.dbconnectionv3.postgresEnv" }}
+    {{- $ := .ctx }}
+    {{- $type := "postgres" }}
+    {{- $dbType := $type | upper}}
+    {{- $userVariableName := .userVariableName }}
+    {{- $passwordVariableName := .passwordVariableName }}
+    {{- $localDBCtx := $.Values.postgres }}
+    {{- if .localDBCtx }}
+        {{- $localDBCtx = .localDBCtx }}
+    {{- end }}
+    {{- $globalDBCtx := $.Values.global.database.postgres }}
+    {{- if .globalDBCtx }}
+        {{- $globalDBCtx = .globalDBCtx }}
+    {{- end }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $installed := false }}
+        {{- if eq $globalDBCtx.installed true }}
+            {{- $installed = $globalDBCtx.installed }}
+        {{- end }}
+        {{- if eq $localDBCtx.enabled true }}
+            {{- $installed = false }}
+        {{- end }}
+        {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+        {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+        {{- $localMongoESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ "additionalCtxIdentifier" (default "postgres" .additionalCtxIdentifier) )) }}
+        {{- $globalMongoESOSecretIdentifier := (include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "postgres" )) }}
+        {{- if $installed }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "POSTGRES_USER" "overrideEnvName" $userVariableName "defaultValue" "postgres" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "POSTGRES_PASSWORD" "overrideEnvName" $passwordVariableName "defaultKubernetesSecretName" "postgres" "defaultKubernetesSecretKey" "postgres-password" "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- else }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "POSTGRES_USER" "overrideEnvName" $userVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.userKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "POSTGRES_PASSWORD" "overrideEnvName" $passwordVariableName "defaultKubernetesSecretName" $globalDBCtx.secretName "defaultKubernetesSecretKey" $globalDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalDBCtx.secrets.kubernetesSecrets $localDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMongoESOSecretIdentifier "secretCtx" $globalDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localMongoESOSecretCtxIdentifier "secretCtx" $localDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+        {{- end }}
+    {{- else }}
+        {{- fail (printf "invalid input") }}
+    {{- end }}
+{{- end }}
+
+
+{{- define "harnesscommon.dbconnectionv3.postgresHost" }}
+  {{- $ := .context }}
+  {{- $connectionString := "" }}
+  {{- $type := "postgres" }}
+  {{- $localDBCtx := $.Values.postgres }}
+  {{- if .localDBCtx }}
+      {{- $localDBCtx = .localDBCtx }}
+  {{- end }}
+  {{- $installed := and ( (pluck $type $.Values.global.database | first).installed ) (not $localDBCtx.enabled) }}
+  {{- if $installed }}
+      {{- print "postgres" }}
+  {{- else }}
+      {{- $hosts := list }}
+      {{- if gt (len $localDBCtx.hosts) 0 }}
+          {{- $hosts = $localDBCtx.hosts }}
+      {{- else }}
+          {{- $hosts = $.Values.global.database.postgres.hosts }}
+      {{- end }}
+  {{- printf "%s" (split ":" (index $hosts 0))._0 }}
+  {{- end }}
+{{- end }}
