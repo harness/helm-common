@@ -252,7 +252,8 @@ USAGE:
 {{- range $key, $value := .ctx.Values.secrets.default }}
     {{- $hasAtleastOneSecret = true }}
     {{- $pathTosSecret := printf "secrets.default.%s" $key }}
-{{ $key }}: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" $.Chart.Name "key" $key "providedValues" (list $pathTosSecret ) "length" 10 "context" $) }}
+{{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
+{{ $key }}: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" $defaultSecretName "key" $key "providedValues" (list $pathTosSecret ) "length" 10 "context" $) }}
 {{- end }}
 {{- end }}
 
@@ -360,12 +361,13 @@ USAGE:
         {{- end -}}
     {{- end }}
 {{- end }}
+{{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
 - name: all-secrets-mount-{{ $ind }}
   projected:
     sources:
     {{- if gt (len $defaultSecretList) 0 }}
     - secret:
-        name: {{ $.Chart.Name }}
+        name: {{ $defaultSecretName }}
         items:
         {{- range $key := $defaultSecretList }}
         {{- $path := $key }}
