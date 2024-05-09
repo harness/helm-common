@@ -6,6 +6,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- if $.Values.global.istio.enabled -}}
 {{- range $index, $object := $.Values.virtualService.objects }}
+{{- if or (and (eq $object.pathMatchType "regex") $.Values.global.istio.enableRegexRoutes) (eq $object.pathMatchType "prefix") (eq $object.pathMatchType "exact") }}
 {{- $objName := dig "name" ((cat (default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-") "-" $index)| nospace)  $object }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -62,6 +63,7 @@ spec:
           number: {{ $servicePort }}
   {{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
