@@ -6,6 +6,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- if $.Values.global.istio.enabled -}}
 {{- range $index, $object := $.Values.virtualService.objects }}
+{{- if or (and (eq $object.pathMatchType "regex") $.Values.global.istio.enableRegexRoutes) (eq $object.pathMatchType "prefix") (eq $object.pathMatchType "exact") }}
 {{- $objName := dig "name" ((cat (default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-") "-" $index)| nospace)  $object }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -46,7 +47,7 @@ spec:
         {{ $object.pathMatchType }}: {{ include "harnesscommon.tplvalues.render" ( dict "value" $path.path "context" $) }}
     name: {{ (cat $objName "-" $i) | nospace }}
     rewrite:
-    {{- if eq $object.pathMatchType "regex" }}
+    {{- if (eq $object.pathMatchType "regex") }}
       uriRegexRewrite:
         match: {{ include "harnesscommon.tplvalues.render" ( dict "value" $path.path "context" $) }}
         rewrite: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
@@ -62,6 +63,7 @@ spec:
           number: {{ $servicePort }}
   {{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
