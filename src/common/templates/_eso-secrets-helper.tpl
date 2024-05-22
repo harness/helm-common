@@ -220,13 +220,13 @@ spec:
       data:
         {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
           {{- if not (empty $remoteKey.name) }}
-        {{ $remoteKeyName }}: "{{ printf "{{ .%s }}" (lower $remoteKeyName) }}"
+        {{ $remoteKeyName }}: "{{ printf "{{ .%s }}" (lower $remoteKeyName | replace "-" "_") }}"
           {{- end }}
         {{- end }}
   data:
   {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
     {{- if not (empty $remoteKey.name) }}
-  - secretKey: {{ lower $remoteKeyName }}
+  - secretKey: {{ lower $remoteKeyName | replace "-" "_" }}
     remoteRef:
       key: {{ $remoteKey.name }}
       {{- if not (empty $remoteKey.property) }}
