@@ -19,7 +19,7 @@ metadata:
   {{- end }}
   annotations:
     {{- include "harnesscommon.tplvalues.render" (dict "value" $object.annotations "context" $) | nindent 4 }}
-    {{- if $.Values.ingress.annotations }}
+    {{- if $.Values.virtualService.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $.Values.virtualService.annotations "context" $) | nindent 4 }}
     {{- end }}
     {{- if $.Values.global.commonAnnotations }}
