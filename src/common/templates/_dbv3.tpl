@@ -714,7 +714,7 @@ USAGE:
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
   {{- $mergedCtx := $globalDbCtx }}
   {{- if $localDbCtx.enabled }}
-    {{- $mergedCtx := $localDbCtx }}
+    {{- $mergedCtx = $localDbCtx }}
   {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
@@ -761,7 +761,7 @@ USAGE:
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
   {{- $mergedCtx := $globalDbCtx }}
   {{- if $localDbCtx.enabled }}
-    {{- $mergedCtx := $localDbCtx }}
+    {{- $mergedCtx = $localDbCtx }}
   {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
@@ -802,7 +802,7 @@ USAGE:
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
   {{- $mergedCtx := $globalDbCtx }}
   {{- if $localDbCtx.enabled }}
-    {{- $mergedCtx := $localDbCtx }}
+    {{- $mergedCtx = $localDbCtx }}
   {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
