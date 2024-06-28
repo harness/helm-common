@@ -712,7 +712,10 @@ USAGE:
   {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
   {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
-  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $mergedCtx := $globalDbCtx }}
+  {{- if $localDbCtx.enabled }}
+    {{- $mergedCtx := $localDbCtx }}
+  {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
@@ -756,7 +759,10 @@ USAGE:
   {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
   {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
-  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $mergedCtx := $globalDbCtx }}
+  {{- if $localDbCtx.enabled }}
+    {{- $mergedCtx := $localDbCtx }}
+  {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
@@ -794,7 +800,10 @@ USAGE:
   {{- $localDbCtx := default $localCtx (index $localCtx $database) }}
   {{- $globalDbCtx := default $globalCtx (index $globalCtx $database) }}
   {{- $globalDbCtxCopy := deepCopy $globalDbCtx }}
-  {{- $mergedCtx := deepCopy $localDbCtx | mergeOverwrite $globalDbCtxCopy }}
+  {{- $mergedCtx := $globalDbCtx }}
+  {{- if $localDbCtx.enabled }}
+    {{- $mergedCtx := $localDbCtx }}
+  {{- end }}
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
