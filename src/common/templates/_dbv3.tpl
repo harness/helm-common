@@ -359,7 +359,7 @@ OPTIONAL:
 Outputs Redis Port based on global and local values.
 
 USAGE:
-{{ include "harnesscommon.dbv3.redisConnection" (dict "ctx" $ "database" "cache") | quote }}
+{{ include "harnesscommon.dbv3.redisPort" (dict "ctx" $ "database" "example") | quote }}
 
 PARAMETERS:
 REQUIRED:
