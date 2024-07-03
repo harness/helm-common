@@ -46,7 +46,7 @@ REQUIRED:
 {{- end }}
 
 {{/*
-Generate DB ESO Context Identifier 
+Generate DB ESO Context Identifier
 
 USAGE:
 {{- include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" "mongo" "scope" "" "instanceName" "") }}
@@ -347,9 +347,51 @@ OPTIONAL:
                 {{- $hostParts := split ":" $host }}
                 {{- $updatedHosts = append $updatedHosts $hostParts._0 }}
             {{- end }}
-            {{- $host = $updatedHosts }}
+            {{- $hosts = $updatedHosts }}
         {{- end }}
         {{- include "harnesscommon.dbconnection.connection" (dict "type" $dbType "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+    {{- else }}
+        {{- fail (printf "ERROR: invalid contexts") }}
+    {{- end }}
+{{- end }}
+
+{{/*
+Outputs Redis Port based on global and local values.
+
+USAGE:
+{{ include "harnesscommon.dbv3.redisPort" (dict "ctx" $ "database" "example") | quote }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+2. database
+*/}}
+{{- define "harnesscommon.dbv3.redisPort" }}
+    {{- $ := .ctx }}
+    {{- $database := .database }}
+    {{- if empty $database }}
+        {{- fail "ERROR: missing input argument - database" }}
+    {{- end }}
+    {{- $instanceName := $database }}
+    {{- if empty $instanceName }}
+        {{- fail "ERROR: invalid instanceName value" }}
+    {{- end }}
+    {{- $localDBCtx := get $.Values.database.redis $instanceName }}
+    {{- $globalDBCtx := $.Values.global.database.redis }}
+    {{- if and $ $localDBCtx $globalDBCtx }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- $installed := dig "installed" true $globalDBCtx }}
+        {{- $hosts := list }}
+        {{- if $localEnabled }}
+            {{- $hosts = $localDBCtx.hosts }}
+        {{- else if not $installed }}
+            {{- $hosts = $globalDBCtx.hosts }}
+        {{- else }}
+            {{- $hosts = list "redis-sentinel-harness-announce-0:26379" "redis-sentinel-harness-announce-1:26379" "redis-sentinel-harness-announce-2:26379" }}
+        {{- end }}
+        {{- $firsthost := (index $hosts 0) -}}
+        {{- $parts := split ":" $firsthost -}}
+        {{- printf "%s" $parts._1 -}}
     {{- else }}
         {{- fail (printf "ERROR: invalid contexts") }}
     {{- end }}
@@ -682,7 +724,7 @@ USAGE:
             {{- else }}
                 {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
             {{- end }}
-        {{- else }}    
+        {{- else }}
             {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
         {{- end }}
     {{- else }}
