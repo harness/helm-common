@@ -522,7 +522,7 @@ USAGE:
             {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=%s%s" "postgres" $userVariableName $passwordVariableName $database $sslMode $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
-            {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" "postgres" $userVariableName $passwordVariableName "postgres:5432" $database $args) }}
+            {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" "postgres" $userVariableName $passwordVariableName "postgres:5432" $database $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- end }}
     {{- else }}
