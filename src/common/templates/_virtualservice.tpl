@@ -28,7 +28,7 @@ metadata:
 spec:
   gateways:
     {{- if or (not $.Values.global.istio.virtualService.gateways) ($.Values.global.istio.gateway.create) }}
-    - {{ .Values.global.istio.gateway.namespace | default "istio-system" }}/{{ .Values.global.istio.gateway.name | default "public" }}
+    - {{ $.Values.global.istio.gateway.namespace | default "istio-system" }}/{{ $.Values.global.istio.gateway.name | default "public" }}
     {{- else }}
     {{- range $.Values.global.istio.virtualService.gateways }}
     - {{ . }}
