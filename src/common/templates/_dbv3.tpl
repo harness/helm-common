@@ -693,7 +693,7 @@ USAGE:
 {{- define "harnesscommon.dbconnectionv3.timescaleConnection" }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
     {{- $sslEnabled := false }}
-    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
+    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
     {{- if eq $sslEnabledVar "true" }}
         {{- $sslEnabled = true }}
     {{- end }}
@@ -708,7 +708,7 @@ USAGE:
     {{- if not (empty .protocol) }}
         {{- $protocol = (printf "%s://" .protocol) }}
     {{- end }}
-    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
     {{- if not (empty $protocolVar) }}
         {{- $protocol = (printf "%s://" $protocolVar) }}
     {{- end }}
