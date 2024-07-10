@@ -739,6 +739,56 @@ USAGE:
     {{- printf "%s" $connectionString -}}
 {{- end }}
 
+
+{{- define "harnesscommon.dbconnectionv4.timescaleConnection" }}
+    {{- $ := .context }}
+    {{- $addSSLModeArg := default false .addSSLModeArg }}
+    {{- $globalTimescaleDBCtx := $.Values.global.database.timescaledb }}
+    {{- if $globalTimescaleDBCtx.installed }}
+        {{- $globalTimescaleDBCtx = dict }}
+    {{- end }}
+    {{- $localTimescaleDBCtx := default $.Values.timescaledb .localTimescaleDBCtx }}
+    {{- $mergedTimescaleDBCtx := $globalTimescaleDBCtx }}
+    {{- if $localTimescaleDBCtx.enabled }}
+        {{- $mergedTimescaleDBCtx = $localTimescaleDBCtx }}
+    {{- end }}
+    {{- $sslMode := default "disable" $mergedTimescaleDBCtx.sslMode }}
+    {{- $sslModeString := ""}}
+    {{- if .addSSLModeArg }}
+        {{- $sslModeString = (printf "sslmode=%s" $sslMode) }}
+    {{- end }}
+    {{- $sslEnabled := default false $mergedTimescaleDBCtx.sslEnabled }}
+    {{- $host := include "harnesscommon.dbconnectionv3.timescaleHost" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $port := include "harnesscommon.dbconnectionv3.timescalePort" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
+    {{- $connectionString := "" }}
+    {{- $protocol := "" }}
+    {{- if not (empty .protocol) }}
+        {{- $protocol = (printf "%s://" .protocol) }}
+    {{- end }}
+    {{- $userAndPassField := "" }}
+    {{- if and (.userVariableName) (.passwordVariableName) }}
+        {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+    {{- end }}
+    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
+    {{- $finalArgs := default "" $mergedTimescaleDBCtx.args }}
+    {{- if .args }}
+        {{- if $finalArgs }}
+            {{- $finalArgs = (printf "%s&%s" $finalArgs .args) }}
+        {{- else }}
+            {{- $finalArgs = (printf "%s" .args) }}
+        {{- end}}
+    {{- end }}
+    {{- if $sslModeString }}
+        {{- if $finalArgs }}
+            {{- $finalArgs = (printf "%s&%s" $finalArgs $sslModeString) }}
+        {{- else }}
+            {{- $finalArgs = (printf "%s" $sslModeString) }}
+        {{- end}}
+    {{- end }}
+    {{- $connectionString = (printf "%s?%s" $connectionString $finalArgs ) }}
+    {{- printf "%s" $connectionString -}}
+{{- end }}
+
 {{/*
 Outputs env variables for SSL
 
