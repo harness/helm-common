@@ -19,7 +19,7 @@ OPTIONAL:
     DEFAULT: TIMESCALEDB_PASSWORD
 5. sslModeVariableName
 6. sslModeValue
-7. certVariableName 
+7. certVariableName
 8. certPathVariableName
 9. certPathValue
 
@@ -77,7 +77,7 @@ OPTIONAL:
 - name: {{ print $enableSslVariableName }}
   value: "true"
             {{- end }}
-        {{- else if $handleSSLModeDisable }} 
+        {{- else if $handleSSLModeDisable }}
             {{- $sslModeValue = "disable" }}
 - name: {{ print $sslModeVariableName }}
   value: {{ print $sslModeValue }}
@@ -132,7 +132,7 @@ USAGE:
 {{- define "harnesscommon.dbconnectionv2.timescaleConnection" }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
     {{- $sslEnabled := false }}
-    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
+    {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
     {{- if eq $sslEnabledVar "true" }}
         {{- $sslEnabled = true }}
     {{- end }}
@@ -143,7 +143,7 @@ USAGE:
     {{- if not (empty .protocol) }}
         {{- $protocol = (printf "%s://" .protocol) }}
     {{- end }}
-    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
     {{- if not (empty $protocolVar) }}
         {{- $protocol = (printf "%s://" $protocolVar) }}
     {{- end }}
@@ -159,7 +159,7 @@ USAGE:
             {{- else }}
                 {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
             {{- end }}
-        {{- else }}    
+        {{- else }}
             {{- $connectionString = (printf "%s?%s" $connectionString .args) }}
         {{- end }}
     {{- else }}
@@ -215,7 +215,7 @@ USAGE:
 {{- end }}
 
 {{/*
-Generates Redis Connection string. 
+Generates Redis Connection string.
 If userVariableName or passwordVariableName are not provided, a connection string is generated without creds
 
 USAGE:
@@ -545,7 +545,7 @@ USAGE:
 {{- end }}
 
 {{/*
- Postgres Host Port 
+ Postgres Host Port
 
 */}}
 {{- define "harnesscommon.dbconnectionv2.PostgresHostPort" }}
