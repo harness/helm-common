@@ -281,6 +281,7 @@ USAGE:
         {{- $fileSecretMap = append $fileSecretMap .key }}
     {{- end}}
 {{- end}}
+{{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
 {{- $conditionsList := .ctx.Values.secrets }}
 {{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
 {{- range $key := $mergedSecretKeys }}
@@ -291,7 +292,7 @@ USAGE:
             {{- $condition = include "harnesscommon.utils.getValueFromKey" (dict "key" $diggedCondition "context" $ ) }}
         {{- end }}
         {{- if $condition }}
-{{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" $key "defaultKubernetesSecretName" $.Chart.Name "defaultKubernetesSecretKey" $key)}}
+{{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" $key "defaultKubernetesSecretName" $defaultSecretName "defaultKubernetesSecretKey" $key)}}
         {{- end }}
     {{- end }}
 {{- end }}
