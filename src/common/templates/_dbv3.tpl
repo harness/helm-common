@@ -707,10 +707,11 @@ USAGE:
     {{- $protocol := "" }}
     {{- if not (empty .protocol) }}
         {{- $protocol = (printf "%s://" .protocol) }}
-    {{- end }}
-    {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
-    {{- if not (empty $protocolVar) }}
-        {{- $protocol = (printf "%s://" $protocolVar) }}
+    {{- else }}
+        {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+        {{- if not (empty $protocolVar) }}
+            {{- $protocol = (printf "%s://" $protocolVar) }}
+        {{- end }}
     {{- end }}
     {{- $userAndPassField := "" }}
     {{- if and (.userVariableName) (.passwordVariableName) }}
