@@ -26,7 +26,7 @@ metadata:
     {{- if $.Values.global.ingress.objects.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $.Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
     {{- end }}
-    {{- if $.Values.ingress.serviceUpStream.enabled }}
+    {{- if $.Values.ingress.serviceUpStream.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $.Values.ingress.serviceUpStream.annotations "context" $) | nindent 4 }}
     {{- end }}
 spec:
