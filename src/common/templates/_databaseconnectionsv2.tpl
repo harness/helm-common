@@ -492,6 +492,8 @@ USAGE:
     {{- $type := "postgres" }}
     {{- $dbType := upper $type }}
     {{- $installed := true }}
+    {{- $globalDBCtx := $.Values.global.database.postgres }}
+    {{- $mergedDBCtx := $globalDBCtx }}
     {{- $localDBCtx := $.Values.postgres }}
     {{- if .localDBCtx }}
         {{- $localDBCtx = .localDBCtx }}
@@ -501,6 +503,7 @@ USAGE:
         {{- $installed = false }}
     {{- end }}
     {{- if eq $localDBCtx.enabled true }}
+        {{- $mergedDBCtx = $localDBCtx }}
         {{- $installed = false }}
     {{- end }}
     {{- $hosts := list }}
@@ -522,7 +525,7 @@ USAGE:
     {{- if .setPasswordEmpty }}
         {{- $passwordVariableName = "" }}
     {{- end }}
-    {{- $sslMode := default "disable" (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.postgres.sslMode" "$localDBCtx.sslMode"))) }}
+    {{- $sslMode := default "disable" $mergedDBCtx.sslMode }}
     {{- $database := default .database $localDBCtx.database }}
     {{- if $installed }}
         {{- if $keywordValueConnectionString }}
