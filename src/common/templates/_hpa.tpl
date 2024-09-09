@@ -1,5 +1,5 @@
 {{- define "harnesscommon.hpa.metrics.apiVersion" -}}
-{{- if or .Values.autoscaling.targetMemory .Values.autoscaling.targetCPU }}
+  {{- if or .Values.autoscaling.targetMemory .Values.autoscaling.targetCPU }}
   metrics:
     {{- if .Values.autoscaling.targetMemory }}
     - type: Resource
@@ -24,6 +24,17 @@
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetCPU }}
         {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.autoscaling.behavior }}
+  behavior:
+    {{- if .Values.autoscaling.behavior.scaleUp }}
+    scaleUp:
+    {{- toYaml .Values.autoscaling.behavior.scaleUp | nindent 6 }}
+    {{- end }}
+    {{- if .Values.autoscaling.behavior.scaleDown }}
+    scaleDown:
+    {{- toYaml .Values.autoscaling.behavior.scaleDown | nindent 6 }}
     {{- end }}
   {{- end }}
 {{- end -}}
