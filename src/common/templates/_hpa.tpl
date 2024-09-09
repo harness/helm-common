@@ -28,13 +28,6 @@
   {{- end }}
   {{- if .Values.autoscaling.behavior }}
   behavior:
-    {{- if .Values.autoscaling.behavior.scaleUp }}
-    scaleUp:
-    {{- toYaml .Values.autoscaling.behavior.scaleUp | nindent 6 }}
-    {{- end }}
-    {{- if .Values.autoscaling.behavior.scaleDown }}
-    scaleDown:
-    {{- toYaml .Values.autoscaling.behavior.scaleDown | nindent 6 }}
-    {{- end }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.autoscaling.behavior "context" $) | nindent 4 }}
   {{- end }}
 {{- end -}}
