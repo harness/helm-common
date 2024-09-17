@@ -12,10 +12,10 @@ metadata:
   name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
-  labels: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  labels: {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
   {{- end }}
   {{- if $.Values.global.commonAnnotations }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   {{- $minAvailable := "50%" }}
