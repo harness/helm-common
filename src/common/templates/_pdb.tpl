@@ -40,7 +40,7 @@ spec:
   {{- if $maxUnavailable }}
   maxUnavailable: {{ $maxUnavailable }}
   {{- end }}
-  {{- $selectorFunction := printf "%s.selectorLabels" $.Chart.Name }}
+  {{- $selectorFunction := printf "%s.selectorLabels" (default $.Chart.Name $.Values.nameOverride) }}
   selector:
     matchLabels: {{ include $selectorFunction $ | nindent 6 }}
 {{- end }}
