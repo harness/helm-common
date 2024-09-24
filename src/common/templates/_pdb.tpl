@@ -6,13 +6,15 @@ Usage example:
 {{- define "harnesscommon.pdb.renderPodDistributionBudget" -}}
 {{- $ := .ctx }}
 {{- if or $.Values.global.pdb.create $.Values.pdb.create }}
+{{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
   namespace: {{ $.Release.Namespace }}
+  labels: {{ include $labelsFunction $ | nindent 4 }}
   {{- if $.Values.global.commonLabels }}
-  labels: {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
   {{- end }}
   {{- if $.Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
