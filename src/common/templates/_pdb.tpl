@@ -20,7 +20,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- $minAvailable := "50%" }}
+  {{- $minAvailable := "" }}
   {{- $maxUnavailable := "" }}
 
   {{- if $.Values.global.pdb.minAvailable }}
@@ -38,9 +38,12 @@ spec:
 
   {{- if $minAvailable }}
   minAvailable: {{ $minAvailable }}
-  {{- end }}
+  {{- else }}
   {{- if $maxUnavailable }}
   maxUnavailable: {{ $maxUnavailable }}
+  {{- else }}
+  minAvailable: "50%"
+  {{- end }}
   {{- end }}
   {{- $selectorFunction := printf "%s.selectorLabels" (default $.Chart.Name $.Values.nameOverride) }}
   selector:
