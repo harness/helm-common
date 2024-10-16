@@ -1,15 +1,21 @@
 {{/*
 USAGE:
 {{- include "harnesscommon.v1.renderIngress" (dict "ctx" $) }}
+or
+{{- include "harnesscommon.v1.renderIngress" (dict "ingress" .Values.other.ingress "ctx" $) }}
 */}}
 {{- define "harnesscommon.v1.renderIngress" }}
 {{- $ := .ctx }}
+{{- $ingress := $.Values.ingress }}
+{{- if .ingress -}}
+    {{- $ingress = .ingress }}
+{{- end }}
 {{- if $.Values.global.ingress.enabled -}}
-{{- range $index, $object := $.Values.ingress.objects }}
+{{- range $index, $object := $ingress.objects }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ dig "name" ((cat (default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-") "-" $index)| nospace)  $object }}
+  name: {{ dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
@@ -17,8 +23,8 @@ metadata:
   {{- end }}
   annotations:
     {{- include "harnesscommon.tplvalues.render" (dict "value" $object.annotations "context" $) | nindent 4 }}
-    {{- if $.Values.ingress.annotations }}
-    {{- include "harnesscommon.tplvalues.render" (dict "value" $.Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- if $ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" $ingress.annotations "context" $) | nindent 4 }}
     {{- end }}
     {{- if $.Values.global.commonAnnotations }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
