@@ -54,30 +54,45 @@ Required because there was a change between supported versions
 {{- include "harnesscommon.hpa.metrics.apiVersion" . }}
 */}}
 {{- define "harnesscommon.hpa.metrics.apiVersion" -}}
-  {{- if or .Values.autoscaling.targetMemory .Values.autoscaling.targetCPU }}
+  {{- $targetMemory := "" }}
+  {{- $targetCPU := "" }}
+
+  {{- if $.Values.global.autoscaling.targetMemory }}
+      {{- $targetMemory = $.Values.global.autoscaling.targetMemory }}
+  {{- end }}
+  {{- if $.Values.autoscaling.targetMemory }}
+      {{- $targetMemory = $.Values.autoscaling.targetMemory }}
+  {{- end }}
+  {{- if $.Values.global.autoscaling.targetCPU }}
+      {{- $targetCPU = $.Values.global.autoscaling.targetCPU }}
+  {{- end }}
+  {{- if $.Values.autoscaling.targetCPU }}
+      {{- $targetCPU = $.Values.autoscaling.targetCPU }}
+  {{- end }}
+  {{- if or $targetMemory $targetCPU }}
   metrics:
-    {{- if .Values.autoscaling.targetMemory }}
+    {{- if $targetMemory }}
     - type: Resource
       resource:
         name: memory
         {{- if semverCompare "<1.23-0" (include "harnesscommon.capabilities.kubeVersion" .) }}
-        targetAverageUtilization: {{ .Values.autoscaling.targetMemory }}
+        targetAverageUtilization: {{ $targetMemory }}
         {{- else }}
         target:
           type: Utilization
-          averageUtilization: {{ .Values.autoscaling.targetMemory }}
+          averageUtilization: {{ $targetMemory }}
         {{- end }}
     {{- end }}
-    {{- if .Values.autoscaling.targetCPU }}
+    {{- if $targetCPU }}
     - type: Resource
       resource:
         name: cpu
         {{- if semverCompare "<1.23-0" (include "harnesscommon.capabilities.kubeVersion" .) }}
-        targetAverageUtilization: {{ .Values.autoscaling.targetCPU }}
+        targetAverageUtilization: {{ $targetCPU }}
         {{- else }}
         target:
           type: Utilization
-          averageUtilization: {{ .Values.autoscaling.targetCPU }}
+          averageUtilization: {{ $targetCPU }}
         {{- end }}
     {{- end }}
   {{- end }}
