@@ -56,15 +56,17 @@ Required because there was a change between supported versions
 {{- define "harnesscommon.hpa.metrics.apiVersion" -}}
   {{- $targetMemory := "" }}
   {{- $targetCPU := "" }}
-
-  {{- if $.Values.global.autoscaling.targetMemory }}
-      {{- $targetMemory = $.Values.global.autoscaling.targetMemory }}
+  {{/* For backward compatibility */}}
+  {{- if .Values.global.autoscaling }}
+    {{- if $.Values.global.autoscaling.targetMemory }}
+        {{- $targetMemory = $.Values.global.autoscaling.targetMemory }}
+    {{- end }}
+    {{- if $.Values.global.autoscaling.targetCPU }}
+      {{- $targetCPU = $.Values.global.autoscaling.targetCPU }}
+    {{- end }}
   {{- end }}
   {{- if $.Values.autoscaling.targetMemory }}
       {{- $targetMemory = $.Values.autoscaling.targetMemory }}
-  {{- end }}
-  {{- if $.Values.global.autoscaling.targetCPU }}
-      {{- $targetCPU = $.Values.global.autoscaling.targetCPU }}
   {{- end }}
   {{- if $.Values.autoscaling.targetCPU }}
       {{- $targetCPU = $.Values.autoscaling.targetCPU }}
