@@ -108,20 +108,22 @@ USAGE:
 {{- $javaAdvancedFlags := default "" $.Values.javaAdvancedFlags }}
 {{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
 {{- $maxage := "12h" }}
-{{- if and (hasKey $.Values "jfr") (hasKey $.Values.jfr "maxage") }}
-  {{- $maxage = $.Values.jfr.maxage }}
-{{- end }}
 {{- $jfcFilePath := "/opt/harness/profile.jfc" }}
-{{- if and (hasKey $.Values "jfr") (hasKey $.Values.jfr "jfcFilePath") }}
-  {{- $jfcFilePath = $.Values.jfr.jfcFilePath }}
-{{- end }}
 {{- $maxchunksize := "20M" }}
-{{- if and (hasKey $.Values "jfr") (hasKey $.Values.jfr "maxchunksize") }}
-  {{- $maxchunksize = $.Values.jfr.maxchunksize }}
-{{- end }}
 {{- $memorysize := "20M" }}
-{{- if and (hasKey $.Values "jfr") (hasKey $.Values.jfr "memorysize") }}
-  {{- $memorysize = $.Values.jfr.memorysize }}
+{{- if hasKey $.Values "jfr" }}
+  {{- if hasKey $.Values.jfr "maxage" }}
+    {{- $maxage = $.Values.jfr.maxage }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "jfcFilePath" }}
+    {{- $jfcFilePath = $.Values.jfr.jfcFilePath }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "maxchunksize" }}
+    {{- $maxchunksize = $.Values.jfr.maxchunksize }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "memorysize" }}
+    {{- $memorysize = $.Values.jfr.memorysize }}
+  {{- end }}
 {{- end }}
 {{- $jfrFlags := printf "-Xms64M -XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=%s,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=%s -XX:FlightRecorderOptions=maxchunksize=%s,memorysize=%s,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED -Dotel.instrumentation.redisson.enabled=false"  $maxage $jfrDumpRootLocation $jfcFilePath $maxchunksize $memorysize $jfrDumpRootLocation}}
 {{- if $.Values.global.jfr.enabled }}
