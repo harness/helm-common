@@ -701,6 +701,7 @@ USAGE:
     {{- if .localTimescaleDBCtx }}
         {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
     {{- end }}
+    {{- $database := default .database $localTimescaleDBCtx.database }}
     {{- $host := include "harnesscommon.dbconnectionv3.timescaleHost" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
     {{- $port := include "harnesscommon.dbconnectionv3.timescalePort" (dict "context" .context "localTimescaleDBCtx" $localTimescaleDBCtx ) }}
     {{- $connectionString := "" }}
@@ -717,7 +718,7 @@ USAGE:
     {{- if and (.userVariableName) (.passwordVariableName) }}
         {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
     {{- end }}
-    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
+    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port $database) }}
     {{- if .args }}
         {{- if $addSSLModeArg }}
             {{- if $sslEnabled }}

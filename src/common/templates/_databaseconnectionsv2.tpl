@@ -130,6 +130,7 @@ USAGE:
 {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $ "addSSLModeArg" false) }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleConnection" }}
+    {{- $database := default .database .context.Values.timescaledb.database }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
     {{- $sslEnabled := false }}
     {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
@@ -152,7 +153,7 @@ USAGE:
     {{- if and (.userVariableName) (.passwordVariableName) }}
         {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
     {{- end }}
-    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
+    {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port $database) }}
     {{- if .args }}
         {{- if $addSSLModeArg }}
             {{- if $sslEnabled }}
