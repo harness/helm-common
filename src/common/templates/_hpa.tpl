@@ -5,7 +5,8 @@ Usage example:
 */}}
 {{- define "harnesscommon.hpa.renderHPA" -}}
 {{- $ := .ctx }}
-{{- $targetRefName := default (default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-") .targetRefNameOverride }}
+{{- $serviceName := default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- $targetRefName := default $serviceName .targetRefNameOverride }}
 {{- if or $.Values.global.autoscaling.enabled $.Values.autoscaling.enabled }}
 {{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
 {{- $minReplicas := 2 }}
@@ -26,7 +27,7 @@ Usage example:
 apiVersion: {{ include "harnesscommon.capabilities.hpa.apiVersion" ( dict "context" $ ) }}
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $targetRefName }}
+  name: {{ $serviceName }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include $labelsFunction $ | nindent 4 }}
