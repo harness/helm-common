@@ -46,6 +46,7 @@ spec:
     - uri:
         {{ $object.pathMatchType }}: {{ include "harnesscommon.tplvalues.render" ( dict "value" $path.path "context" $) }}
     name: {{ (cat $objName "-" $i) | nospace }}
+    {{- if $object.pathRewrite }}
     rewrite:
     {{- if eq $object.pathMatchType "regex" }}
       uriRegexRewrite:
@@ -55,6 +56,7 @@ spec:
       uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
     {{- else }}
       uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
+    {{- end }}
     {{- end }}
     route:
     - destination:
