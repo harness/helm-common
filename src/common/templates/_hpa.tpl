@@ -1,13 +1,14 @@
 {{/*
 Create Horizontal Pod Autoscaler Configuration
 Usage example:
-{{- include "harnesscommon.hpa.renderHPA" . (dict "ctx" .  "kind" "deployment") }}
+{{- include "harnesscommon.hpa.renderHPA" . (dict "ctx" .  "kind" "deployment" "targetRefNameOverride" "custom-target-name") }}
 */}}
 {{- define "harnesscommon.hpa.renderHPA" -}}
 {{- $ := .ctx }}
+{{- $serviceName := default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- $targetRefName := default $serviceName .targetRefNameOverride }}
 {{- if or $.Values.global.autoscaling.enabled $.Values.autoscaling.enabled }}
 {{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
-{{- $serviceName := default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- $minReplicas := 2 }}
 {{- $maxReplicas := 100 }}
 
@@ -40,13 +41,12 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: {{ .kind }}
-    name: {{ $serviceName }}
+    name: {{ $targetRefName }}
   minReplicas: {{ $minReplicas }}
   maxReplicas: {{ $maxReplicas }}
   {{- include "harnesscommon.hpa.metrics.apiVersion" $ }}
 {{- end }}
 {{- end }}
-
 
 {{/*
 Define targetCPU and targetMemory based on K8s version
