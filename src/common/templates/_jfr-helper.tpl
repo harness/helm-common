@@ -41,8 +41,11 @@ preStop:
     - /bin/sh
     - -c
     - |
+      ## Endpoints are disabled.  Give clients 30 seconds to refresh & remove from the LB, then start disabling background processes and other operations
+      sleep 30;
+      ## Triggers MaintenanceController to stop background processes and notify persistent clients of impending shutdown.
       touch shutdown;
-      sleep 20;
+      sleep 30;
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
