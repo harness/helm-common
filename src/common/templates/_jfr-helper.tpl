@@ -42,7 +42,7 @@ preStop:
     - -c
     - |
       touch shutdown;
-      sleep 20;
+      sleep 60;
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
