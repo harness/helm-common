@@ -1,4 +1,4 @@
-{{/* Configurations to be added for java based applications' configmaps
+{{/* Configurations to be added for all applications' configmaps
 {{ include "harnesscommon.monitoring.config" . }}
 */}}
 {{- define "harnesscommon.monitoring.config" -}}
@@ -11,7 +11,7 @@ ENABLE_PROMETHEUS_COLLECTOR: {{ default "false" $enabled | quote }}
 PROMETHEUS_COLLECTOR_PORT: {{ default "8889" $port | quote }}
 {{- end -}}
 
-{{/* Generates monitoring annotations to be added for java based deployments
+{{/* Generates monitoring annotations to be added all deployments
 {{ include "harnesscommon.monitoring.annotations" . }}
 */}}
 {{- define "harnesscommon.monitoring.annotations" -}}
@@ -28,7 +28,7 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- end }}
 {{- end -}}
 
-{{/* Port to be added in deployment.yaml for java based applications
+{{/* Port to be added in deployment.yaml for all applications
 {{ include "harnesscommon.monitoring.containerPort" . }}
 */}}
 {{- define "harnesscommon.monitoring.containerPort" -}}
@@ -44,24 +44,27 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- end }}
 {{- end -}}
 
-{{/* Podmonitor template to be added for Google Managed prometheus
+{{/* Podmonitor template to be added for Different prometheus CRDs google or oss
 {{ include "harnesscommon.monitoring.podMonitor" (dict "name" "ng-manager" "ctx" $ "label" "app.kubernetes.io/name") }}
 */}}
 {{- define "harnesscommon.monitoring.podMonitor" -}}
 {{- $ := .ctx }}
-{{- $enabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "google") -}}
+{{- $googleEnabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "google") -}}
+{{- $ossEnabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "oss") -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" $.Values) | first) -}}
 {{- $globalMonitoring := default (dict) ((pluck "monitoring" $.Values.global) | first) -}}
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
 {{- $port := (pluck "port" $monitoring) | first }}
 {{- $path := (pluck "path" $monitoring) | first }}
+{{- $interval := (pluck "interval" $monitoring) | first }}
 {{- $namespace := $.Release.Namespace }}
-{{- if $enabled -}}
+{{- $podMonitorName := default $.Chart.Name .podMonitorName}}
+{{- if $googleEnabled -}}
 apiVersion: monitoring.googleapis.com/v1
 kind: PodMonitoring
 metadata:
-  name: {{ $.Chart.Name }}
-  namespace:  {{ $namespace }}
+  name: {{ $podMonitorName }}
+  namespace: {{ $namespace }}
 spec:
   selector:
     matchLabels:
@@ -70,5 +73,41 @@ spec:
     - port: {{ default "8889" $port }}
       interval: 120s
       path: {{ default "/metrics" $path | quote }}
+{{- end }}
+{{- if $ossEnabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ $podMonitorName }}
+  namespace: {{ $namespace }}
+  {{- if or (((.Values).monitoring).labels) (((.Values).global).commonLabels) }}
+  labels:
+    {{- if (((.Values).global).commonLabels) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonLabels) "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if (((.Values).monitoring).labels) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).labels) "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or (((.Values).monitoring).annotations) (((.Values).global).commonAnnotations) }}
+  annotations:
+    {{- if (((.Values).monitoring).annotations) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).annotations) "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if (((.Values).global).commonAnnotations) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonAnnotations) "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{ .label }}: {{ default $.Chart.Name .name }}
+  podMetricsEndpoints:
+    - port: {{ default "8889" $port | quote }}
+      interval: {{ default "120s" $interval }}
+      path: {{ default "/metrics" $path | quote }}
+      {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).PodMetricsEndpointsConfig) "context" $ ) | nindent 6 }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).additionalPodMetricsEndpoints) "context" $ ) | nindent 4 }}
+  {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).additionalPodMonitorSpec) "context" $ ) | nindent 2 }}
 {{- end }}
 {{- end -}}
