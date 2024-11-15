@@ -4,6 +4,12 @@ USAGE:
 */}}
 {{- define "harnesscommon.jfr.v1.renderEnvironmentVars" }}
 {{- $ := .ctx }}
+{{- $waitTime := "20" }}
+{{- if hasKey $.Values "jfr" }}
+  {{- if hasKey $.Values.jfr "sleep" }}
+    {{- $waitTime = $.Values.jfr.sleep }}
+  {{- end }}
+{{- end }}
 {{- if $.Values.global.jfr.enabled }}
 - name: POD_NAME
   valueFrom:
@@ -15,8 +21,8 @@ USAGE:
   value: {{ default "default" $.Values.envType }}
 - name: JFR_DUMP_ROOT_LOCATION
   value: {{ default "/opt/harness" $.Values.jfrDumpRootLocation }}
-- name: WAIT_TIMER
-  value: {{ default "20" $.Values.jfr.sleep }}
+- name: WAIT_TIME
+  value: $waitTime
 {{- end }}
 {{- end }}
 
@@ -44,7 +50,7 @@ preStop:
     - -c
     - |
       touch shutdown;
-      sleep $WAIT_TIMER;
+      sleep ${WAIT_TIME};
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
