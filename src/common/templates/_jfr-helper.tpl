@@ -15,6 +15,8 @@ USAGE:
   value: {{ default "default" $.Values.envType }}
 - name: JFR_DUMP_ROOT_LOCATION
   value: {{ default "/opt/harness" $.Values.jfrDumpRootLocation }}
+- name: WAIT_TIMER
+  value: {{ default "20" $.Values.jfr.sleep }}
 {{- end }}
 {{- end }}
 
@@ -42,7 +44,7 @@ preStop:
     - -c
     - |
       touch shutdown;
-      sleep 20;
+      sleep $WAIT_TIMER;
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
