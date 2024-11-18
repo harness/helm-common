@@ -22,7 +22,7 @@ USAGE:
 - name: JFR_DUMP_ROOT_LOCATION
   value: {{ default "/opt/harness" $.Values.jfrDumpRootLocation }}
 - name: WAIT_TIME
-  value: $waitTime
+  value: {{ $waitTime }}
 {{- end }}
 {{- end }}
 
