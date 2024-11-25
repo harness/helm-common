@@ -8,6 +8,7 @@ USAGE:
 - name: POD_NAME
   valueFrom:
     fieldRef:
+      apiVersion: v1
       fieldPath: metadata.name
 - name: SERVICE_NAME
   value: {{ $.Chart.Name }}
