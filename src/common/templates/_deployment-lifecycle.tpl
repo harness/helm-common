@@ -24,7 +24,7 @@ preStop:
     - |
       ## The pod is out of service at this point in Endpoints (nominally).  Allow time before we start signally process
       ## stops and termination via the shutdown file.
-      sleep {{- default "30" (default dict $.Values.lifecycleHooks).terminationTime }};
+      sleep 30;
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
@@ -56,7 +56,7 @@ preStop:
 
       ## Once JFR is caught, drop maintenace file & sleep final for grace period & complete termination
       touch shutdown;
-      sleep {{- default "30" (default dict $.Values.lifecycleHooks).terminationGraceTime }};
+      sleep 30;
       ## Send SIGTERM which starts JVM Shutdown hooks & upon completion will exit
       kill -15 $PID;
 {{- else }}
@@ -72,9 +72,9 @@ preStop:
     - |
       ## The pod is out of service at this point in Endpoints (nominally).  Allow time before we stop processing async
       ## and trigger termination or processes via the shutdown file.
-      sleep {{- default "30" (default dict $.Values.lifecycleHooks).terminationTime }};
+      sleep 30;
       touch shutdown;
-      sleep {{- default "30" (default dict $.Values.lifecycleHooks).terminationGraceTime }};
+      sleep 30;
 {{- end }}
 {{- end }}
 
