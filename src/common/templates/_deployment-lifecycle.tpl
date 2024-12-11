@@ -5,7 +5,7 @@ A JFR hook can be automatically added if JFR is enabled
 */}}
 {{- define "harnesscommon.v1.renderLifecycleHooks" }}
 {{- $ := .ctx }}
-{{- if $.Values.lifecycleHooks }}
+{{- if hasKey $.Values "lifecycleHooks" }}
 {{ include "harnesscommon.tplvalues.render" (dict "value" $.Values.lifecycleHooks "context" $) }}
 {{- else if $.Values.global.jfr.enabled }}
 postStart:
