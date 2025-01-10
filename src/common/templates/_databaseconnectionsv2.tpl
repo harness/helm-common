@@ -494,13 +494,16 @@ USAGE:
     {{- $dbType := upper $type }}
     {{- $installed := true }}
     {{- $globalDBCtx := $.Values.global.database.postgres }}
+    {{- if .globalDBCtx }}
+        {{- $globalDBCtx = .globalDBCtx }}
+    {{- end }}
     {{- $mergedDBCtx := $globalDBCtx }}
     {{- $localDBCtx := $.Values.postgres }}
     {{- if .localDBCtx }}
         {{- $localDBCtx = .localDBCtx }}
     {{- end }}
     {{- $args := default "" .args }}
-    {{- if eq $.Values.global.database.postgres.installed false }}
+    {{- if eq $globalDBCtx.installed false }}
         {{- $installed = false }}
     {{- end }}
     {{- if eq $localDBCtx.enabled true }}
@@ -511,7 +514,7 @@ USAGE:
     {{- if gt (len $localDBCtx.hosts) 0 }}
         {{- $hosts = $localDBCtx.hosts }}
     {{- else }}
-        {{- $hosts = $.Values.global.database.postgres.hosts }}
+        {{- $hosts = $globalDBCtx.hosts }}
     {{- end }}
     {{- $keywordValueConnectionString := .keywordValueConnectionString }}
     {{- $protocol := default "postgres" .protocol }}
