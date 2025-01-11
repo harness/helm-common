@@ -744,12 +744,22 @@ Define environment variable value based on ENABLE_ELASTIC
 {{- define "harnesscommon.dbconnectionv3.postgresHost" }}
   {{- $ := .context }}
   {{- $connectionString := "" }}
+  {{- $globalDBCtx := $.Values.global.database.postgres }}
+    {{- if .globalDBCtx }}
+        {{- $globalDBCtx = .globalDBCtx }}
+    {{- end }}
   {{- $type := "postgres" }}
   {{- $localDBCtx := $.Values.postgres }}
   {{- if .localDBCtx }}
       {{- $localDBCtx = .localDBCtx }}
   {{- end }}
-  {{- $installed := and ( (pluck $type $.Values.global.database | first).installed ) (not $localDBCtx.enabled) }}
+  {{- $installed := false }}
+    {{- if eq $globalDBCtx.installed true }}
+        {{- $installed = $globalDBCtx.installed }}
+    {{- end }}
+    {{- if eq $localDBCtx.enabled true }}
+        {{- $installed = false }}
+    {{- end }}
   {{- if $installed }}
       {{- print "postgres" }}
   {{- else }}
@@ -757,7 +767,7 @@ Define environment variable value based on ENABLE_ELASTIC
       {{- if gt (len $localDBCtx.hosts) 0 }}
           {{- $hosts = $localDBCtx.hosts }}
       {{- else }}
-          {{- $hosts = $.Values.global.database.postgres.hosts }}
+          {{- $hosts = $globalDBCtx.hosts }}
       {{- end }}
   {{- printf "%s" (split ":" (index $hosts 0))._0 }}
   {{- end }}
