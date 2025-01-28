@@ -9,6 +9,16 @@
 {{- $port := (pluck "port" $monitoring) | first -}}
 ENABLE_PROMETHEUS_COLLECTOR: {{ default "false" $enabled | quote }}
 PROMETHEUS_COLLECTOR_PORT: {{ default "8889" $port | quote }}
+{{- $otelEnabled := default false (or ((.Values.monitoring).otel).enabled (((.Values.global).monitoring).otel).enabled) }}
+{{- $enableOtelVariable := default "ENABLE_OPENTELEMETRY" .enableOtelVariable }}
+{{- $otelCollectorEndpoint := default "http://opentelemetry-collector-service.otel.svc.cluster.local:4317/" (default (((.Values.global).monitoring).otel).collectorEndpoint ((.Values.monitoring).otel).collectorEndpoint) }}
+{{- $otelCollectorVariable := default "OTEL_EXPORTER_OTLP_ENDPOINT" .otelCollectorVariable }}
+{{- $otelServiceNameVariable := default "OTEL_SERVICE_NAME" .otelServiceNameVariable}}
+{{- if $otelEnabled }}
+{{- printf "\n%s: '%s'" $otelCollectorVariable $otelCollectorEndpoint}}
+{{- printf "\n%s: '%s'" $otelServiceNameVariable .Chart.Name }}
+{{- printf "\n%s: '%t'" $enableOtelVariable $otelEnabled }}
+{{- end }}
 {{- end -}}
 
 {{/* Generates monitoring annotations to be added all deployments
