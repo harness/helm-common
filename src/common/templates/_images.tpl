@@ -10,16 +10,32 @@ Return the proper image name
 {{- $registryName := .imageRoot.registry -}}
 {{- $repositoryName := .imageRoot.repository -}}
 {{- $separator := ":" -}}
-{{- $termination := .imageRoot.tag | toString -}}
+{{- $termination := "" -}}
 {{- $ignoreGlobalImageRegistry := default false .imageRoot.ignoreGlobalImageRegistry }}
+{{- $tag := .imageRoot.tag | toString | default "" -}}
+{{- $digest := .imageRoot.digest | toString | default "" -}}
+{{- $preferDigest := default false .imageRoot.preferDigest }} # Default to not preferring digest unless specified
 {{- if .global }}
     {{- if and .global.imageRegistry (not $ignoreGlobalImageRegistry) }}
      {{- $registryName = .global.imageRegistry -}}
     {{- end -}}
 {{- end -}}
-{{- if .imageRoot.digest }}
+{{- if and (ne $tag "") (ne $digest "") }}
+    {{- if $preferDigest }}
+        {{- $separator = "@" -}}
+        {{- $termination = $digest -}}
+    {{- else }}
+        {{- $separator = ":" -}}
+        {{- $termination = $tag -}}
+    {{- end -}}
+{{- else if ne $digest "" }}
     {{- $separator = "@" -}}
-    {{- $termination = .imageRoot.digest | toString -}}
+    {{- $termination = $digest -}}
+{{- else if ne $tag "" }}
+    {{- $separator = ":" -}}
+    {{- $termination = $tag -}}
+{{- else }}
+    {{- fail "Error: Either tag or digest must be provided for the image!" -}}
 {{- end -}}
 {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
 {{- end -}}
