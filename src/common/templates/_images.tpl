@@ -22,6 +22,9 @@ Return the proper image name
 {{- end -}}
 {{- if and (ne $tag "") (ne $digest "") }}
     {{- if $preferDigest }}
+        {{- if not (hasPrefix "sha256:" $digest) }}
+            {{- fail (printf "Error: Digest must start with 'sha256:', got '%s'" $digest) -}}
+        {{- end -}}
         {{- $separator = "@" -}}
         {{- $termination = $digest -}}
     {{- else }}
@@ -29,6 +32,9 @@ Return the proper image name
         {{- $termination = $tag -}}
     {{- end -}}
 {{- else if ne $digest "" }}
+    {{- if not (hasPrefix "sha256:" $digest) }}
+        {{- fail (printf "Error: Digest must start with 'sha256:', got '%s'" $digest) -}}
+    {{- end -}}
     {{- $separator = "@" -}}
     {{- $termination = $digest -}}
 {{- else if ne $tag "" }}
