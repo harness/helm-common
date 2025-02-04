@@ -10,16 +10,38 @@ Return the proper image name
 {{- $registryName := .imageRoot.registry -}}
 {{- $repositoryName := .imageRoot.repository -}}
 {{- $separator := ":" -}}
-{{- $termination := .imageRoot.tag | toString -}}
+{{- $termination := "" -}}
 {{- $ignoreGlobalImageRegistry := default false .imageRoot.ignoreGlobalImageRegistry }}
+{{- $tag := .imageRoot.tag | toString | default "" -}}
+{{- $digest := .imageRoot.digest | toString | default "" -}}
+{{- $preferDigest := default false .global.preferDigest }}
 {{- if .global }}
     {{- if and .global.imageRegistry (not $ignoreGlobalImageRegistry) }}
      {{- $registryName = .global.imageRegistry -}}
     {{- end -}}
 {{- end -}}
-{{- if .imageRoot.digest }}
+{{- if and (ne $tag "") (ne $digest "") }}
+    {{- if $preferDigest }}
+        {{- if not (hasPrefix "sha256:" $digest) }}
+            {{- fail (printf "Error: Digest must start with 'sha256:', got '%s'" $digest) -}}
+        {{- end -}}
+        {{- $separator = "@" -}}
+        {{- $termination = $digest -}}
+    {{- else }}
+        {{- $separator = ":" -}}
+        {{- $termination = $tag -}}
+    {{- end -}}
+{{- else if ne $digest "" }}
+    {{- if not (hasPrefix "sha256:" $digest) }}
+        {{- fail (printf "Error: Digest must start with 'sha256:', got '%s'" $digest) -}}
+    {{- end -}}
     {{- $separator = "@" -}}
-    {{- $termination = .imageRoot.digest | toString -}}
+    {{- $termination = $digest -}}
+{{- else if ne $tag "" }}
+    {{- $separator = ":" -}}
+    {{- $termination = $tag -}}
+{{- else }}
+    {{- fail "Error: Either tag or digest must be provided for the image!" -}}
 {{- end -}}
 {{- printf "%s/%s%s%s" $registryName $repositoryName $separator $termination -}}
 {{- end -}}
