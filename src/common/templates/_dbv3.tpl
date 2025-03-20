@@ -172,6 +172,8 @@ OPTIONAL:
     {{- end }}
     {{- $localDBCtx := get $.Values.database.mongo $instanceName }}
     {{- $globalDBCtx := $.Values.global.database.mongo }}
+    {{- $databasePrefix := default "" ($globalDBCtx).databasePrefix }}
+    {{- $database = (printf "%s%s" $databasePrefix $database )}}
     {{- if and $ $localDBCtx $globalDBCtx }}
         {{- $userNameEnvName := default (include "harnesscommon.dbv3.generateDBEnvName" (dict "name" "USER" "dbType" "mongo" "instanceName" $instanceName)) .userVariableName }}
         {{- $passwordEnvName := default (include "harnesscommon.dbv3.generateDBEnvName" (dict "name" "PASSWORD" "dbType" "mongo" "instanceName" $instanceName)) .passwordVariableName }}
