@@ -25,6 +25,7 @@ global:
       extraArgs: ""
     mongo:
       installed: true
+      databasePrefix: ""
       protocol: mongodb
       hosts: []
       secretName: ""
