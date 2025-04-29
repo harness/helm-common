@@ -12,14 +12,8 @@ Return the proper image name
 {{- $separator := ":" -}}
 {{- $termination := "" -}}
 {{- $ignoreGlobalImageRegistry := default false .imageRoot.ignoreGlobalImageRegistry }}
-{{- $digest := "" -}}
-{{- if hasKey .imageRoot "digest" -}}
-  {{- $digest = .imageRoot.digest | default "" -}}
-{{- end -}}
-{{- $tag := "" -}}
-{{- if hasKey .imageRoot "tag" -}}
-  {{- $tag = .imageRoot.tag | default "" -}}
-{{- end -}}
+{{- $tag := default "" .imageRoot.tag -}}
+{{- $digest := default "" .imageRoot.digest -}}
 {{- $preferDigest := default false .global.preferDigest }}
 {{- if .global }}
     {{- if and .global.imageRegistry (not $ignoreGlobalImageRegistry) }}
