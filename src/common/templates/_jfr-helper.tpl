@@ -5,6 +5,12 @@ USAGE:
 {{- define "harnesscommon.jfr.v1.renderEnvironmentVars" }}
 {{- $ := .ctx }}
 {{- if $.Values.global.jfr.enabled }}
+{{- $waitTime := "20" }}
+{{- if hasKey $.Values "jfr" }}
+  {{- if hasKey $.Values.jfr "sleep" }}
+    {{- $waitTime = $.Values.jfr.sleep }}
+  {{- end }}
+{{- end }}
 - name: POD_NAME
   valueFrom:
     fieldRef:
@@ -16,6 +22,8 @@ USAGE:
   value: {{ default "default" $.Values.envType }}
 - name: JFR_DUMP_ROOT_LOCATION
   value: {{ default "/opt/harness" $.Values.jfrDumpRootLocation }}
+- name: WAIT_TIME
+  value: {{ $waitTime }}
 {{- end }}
 {{- end }}
 
@@ -43,7 +51,7 @@ preStop:
     - -c
     - |
       touch shutdown;
-      sleep 20;
+      sleep ${WAIT_TIME};
       ts=$(date '+%s');
       loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
       mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
@@ -108,7 +116,25 @@ USAGE:
 {{- $ := .ctx }}
 {{- $javaAdvancedFlags := default "" $.Values.javaAdvancedFlags }}
 {{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
-{{- $jfrFlags := printf "-XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=/opt/harness/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED -Dotel.instrumentation.redisson.enabled=false"  $jfrDumpRootLocation $jfrDumpRootLocation}}
+{{- $maxage := "12h" }}
+{{- $jfcFilePath := "/opt/harness/profile.jfc" }}
+{{- $maxchunksize := "20M" }}
+{{- $memorysize := "20M" }}
+{{- if hasKey $.Values "jfr" }}
+  {{- if hasKey $.Values.jfr "maxage" }}
+    {{- $maxage = $.Values.jfr.maxage }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "jfcFilePath" }}
+    {{- $jfcFilePath = $.Values.jfr.jfcFilePath }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "maxchunksize" }}
+    {{- $maxchunksize = $.Values.jfr.maxchunksize }}
+  {{- end }}
+  {{- if hasKey $.Values.jfr "memorysize" }}
+    {{- $memorysize = $.Values.jfr.memorysize }}
+  {{- end }}
+{{- end }}
+{{- $jfrFlags := printf "-XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=%s,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=%s -XX:FlightRecorderOptions=maxchunksize=%s,memorysize=%s,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED -Dotel.instrumentation.redisson.enabled=false"  $maxage $jfrDumpRootLocation $jfcFilePath $maxchunksize $memorysize $jfrDumpRootLocation}}
 {{- if $.Values.global.jfr.enabled }}
 {{- $javaAdvancedFlags = printf "%s %s" $javaAdvancedFlags $jfrFlags }}
 {{- end }}
