@@ -5,12 +5,6 @@ USAGE:
 {{- define "harnesscommon.jfr.v1.renderEnvironmentVars" }}
 {{- $ := .ctx }}
 {{- if $.Values.global.jfr.enabled }}
-{{- $waitTime := "20" }}
-{{- if hasKey $.Values "jfr" }}
-  {{- if hasKey $.Values.jfr "sleep" }}
-    {{- $waitTime = $.Values.jfr.sleep }}
-  {{- end }}
-{{- end }}
 - name: POD_NAME
   valueFrom:
     fieldRef:
@@ -23,7 +17,7 @@ USAGE:
 - name: JFR_DUMP_ROOT_LOCATION
   value: {{ default "/opt/harness" $.Values.jfrDumpRootLocation }}
 - name: WAIT_TIME
-  value: {{ $waitTime }}
+  value: {{ default "20" $.Values.jfr.sleep | quote }}
 {{- end }}
 {{- end }}
 
