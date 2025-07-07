@@ -1,8 +1,8 @@
 {{/*
 USAGE:
-lifecycle: {{- include "harnesscommon.v1.renderLifecycleHooks" (dict "ctx" $) | nindent 10 }}
+lifecycle: {{- include "harnesscommon.v2.renderLifecycleHooks" (dict "ctx" $) | nindent 10 }}
 */}}
-{{- define "harnesscommon.v1.renderLifecycleHooks" -}}
+{{- define "harnesscommon.v2.renderLifecycleHooks" -}}
 {{- $ := .ctx -}}
 {{/*
   Check if lifecycle hooks should be disabled:
