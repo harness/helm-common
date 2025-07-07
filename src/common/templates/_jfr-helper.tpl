@@ -21,61 +21,6 @@ USAGE:
 
 {{/*
 USAGE:
-{{- include "harnesscommon.v1.renderLifecycleHooks" (dict "ctx" $) }}
-*/}}
-{{- define "harnesscommon.v1.renderLifecycleHooks" }}
-{{- $ := .ctx }}
-{{- if $.Values.lifecycleHooks }}
-{{ include "harnesscommon.tplvalues.render" (dict "value" $.Values.lifecycleHooks "context" $) }}
-{{- else if $.Values.global.jfr.enabled }}
-postStart:
-  exec:
-    command: 
-    - /bin/sh
-    - -c
-    - |
-      mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-      ln -s ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME ;
-preStop:
-  exec:
-    command:
-    - /bin/sh
-    - -c
-    - |
-      touch shutdown;
-      sleep 20;
-      ts=$(date '+%s');
-      loc=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/$ts/${POD_NAME};
-      mkdir -p $loc; sleep 1; echo $ts > $loc/restart;
-      echo $(date '+%s') > $loc/begin;
-      PID=$(jps|grep -vi jps|awk '{ print $1}');
-      #Copy GC log file
-      cp mygclogfilename.gc $loc/;
-
-      #Retry 10 times to take thread dump. Unsuccessful attempt has just 1 line with java process id in the output.
-      for ((n=0;n<10;n++)); do
-      jcmd $PID Thread.print -e > $loc/thread-dump-attempt-$n.txt;
-      if [ $(wc -l < $loc/thread-dump-attempt-$n.txt) -gt 1 ]; then break; fi;
-      done
-
-      #10 retries to take heap histogram. Unsuccessful attempt has just 1 line with java process id in the output.
-      for ((n=0;n<10;n++)); do
-      jcmd $PID GC.class_histogram -all > $loc/heap-histogram-attempt-$n.txt;
-      if [ $(wc -l < $loc/heap-histogram-attempt-$n.txt) -gt 1 ]; then break; fi;
-      done
-
-      jcmd $PID VM.native_memory  > $loc/native-memory-dump.txt;
-
-      #Dump latest chunk of JFR recording
-      jcmd $PID JFR.dump name=jfrRecording filename=${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}/container_termination_$(date +%Y_%m_%d_%H_%M_%S).jfr > $loc/jfr_done.txt
-
-      echo $(date '+%s') > $loc/end
-      kill -15 $PID;
-{{- end }}
-{{- end }}
-
-{{/*
-USAGE:
 {{- include "harnesscommon.jfr.v1.volumes" (dict "ctx" $) }}
 */}}
 {{- define "harnesscommon.jfr.v1.volumes" }}
