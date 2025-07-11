@@ -25,9 +25,9 @@ USAGE:
 */}}
 {{- define "harnesscommon.v1.renderLifecycleHooks" }}
 {{- $ := .ctx }}
-{{- if $.Values.lifecycleHooks }}
+{{- if $.Values.lifecycleHooks -}}
 {{ include "harnesscommon.tplvalues.render" (dict "value" $.Values.lifecycleHooks "context" $) }}
-{{- else if $.Values.global.jfr.enabled }}
+{{- else if $.Values.global.jfr.enabled -}}
 postStart:
   exec:
     command: 
@@ -71,6 +71,15 @@ preStop:
 
       echo $(date '+%s') > $loc/end
       kill -15 $PID;
+{{- else -}}
+preStop:
+  exec:
+    command:
+    - /bin/sh
+    - '-c'
+    - >
+      touch shutdown;
+      sleep 60;
 {{- end }}
 {{- end }}
 
