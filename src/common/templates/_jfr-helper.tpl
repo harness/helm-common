@@ -71,6 +71,15 @@ preStop:
 
       echo $(date '+%s') > $loc/end
       kill -15 $PID;
+{{- else if $.Values.shutdownHooksEnabled -}}
+preStop:
+  exec:
+    command:
+    - /bin/sh
+    - '-c'
+    - >
+      touch shutdown;
+      sleep 60;
 {{- end }}
 {{- end }}
 
