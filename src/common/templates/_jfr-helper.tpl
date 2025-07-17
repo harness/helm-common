@@ -27,7 +27,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- if $.Values.lifecycleHooks }}
 {{ include "harnesscommon.tplvalues.render" (dict "value" $.Values.lifecycleHooks "context" $) }}
-{{- else if $.Values.global.jfr.enabled }}
+{{- else if and $.Values.global.jfr $.Values.global.jfr.enabled }}
 postStart:
   exec:
     command: 
