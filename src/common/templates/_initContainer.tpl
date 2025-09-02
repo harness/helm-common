@@ -77,6 +77,9 @@ Params:
   - securityContext: Object - Optional. Security context for the container.
 */}}
 {{- define "harnesscommon.initContainer.setupWritable" -}}
+{{- $sourcePath := required "initContainer.setupWritable: sourcePath is required" .sourcePath }}
+{{- $destinationPath := required "initContainer.setupWritable: destinationPath is required" .destinationPath }}
+{{- $volumeName := required "initContainer.setupWritable: volumeName is required" .volumeName }}
 {{- $values := .root.Values }}
 - name: setup-harness-writable
   image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" .root.global) }}

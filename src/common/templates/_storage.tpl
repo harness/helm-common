@@ -31,7 +31,7 @@ Params:
 */}}
 {{- define "harnesscommon.volumes" -}}
 {{- range .volumes }}
-- name: {{ .name }}
+- name: {{ required "harnesscommon.volumes: name is required" .name }}
   emptyDir: {}
 {{- end }}
 {{- end }}
@@ -48,7 +48,7 @@ Params:
 */}}
 {{- define "harnesscommon.volumeMounts" -}}
 {{- range .mounts }}
-- name: {{ .name }}
-  mountPath: {{ .mountPath }}
+- name: {{ required "harnesscommon.volumeMounts: name is required" .name }}
+  mountPath: {{ required "harnesscommon.volumeMounts: mountPath is required" .mountPath }}
 {{- end }}
 {{- end }}
