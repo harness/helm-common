@@ -62,3 +62,34 @@ Params:
     - "-lapp={{ .appName }}"
 {{- end }}
 {{- end }}
+{{/*
+Create an initContainer to copy files from a source to a destination.
+
+Usage:
+{{ include "harnesscommon.initContainer.setupWritable" (dict "image" .Values.image "imagePullPolicy" .Values.image.pullPolicy "sourcePath" "/opt/harness" "destinationPath" "/shared/volume" "volumeName" "harness-opt" "securityContext" .Values.securityContext "context" $) }}
+
+Params:
+  - image: String - Required. Container image.
+  - imagePullPolicy: String - Optional. Image pull policy.
+  - sourcePath: String - Required. Source path to copy from.
+  - destinationPath: String - Required. Destination path to copy to.
+  - volumeName: String - Required. Name of the volume to mount.
+  - securityContext: Object - Optional. Security context for the container.
+*/}}
+{{- define "harnesscommon.initContainer.setupWritable" -}}
+{{- $values := .root.Values }}
+- name: setup-harness-writable
+  image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" .root.global) }}
+  imagePullPolicy: {{ $values.imagePullPolicy | default "IfNotPresent" }}
+  command: ["/bin/sh", "-c"]
+  args:
+    - |
+      cp -r {{ .sourcePath }}/. {{ .destinationPath }}/
+  volumeMounts:
+    - name: {{ .volumeName }}
+      mountPath: {{ .destinationPath }}
+  {{- if $values.securityContext }}
+  securityContext:
+    {{- toYaml $values.securityContext | nindent 4 }}
+  {{- end }}
+{{- end }}
