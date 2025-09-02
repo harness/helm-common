@@ -23,29 +23,16 @@
 Define a list of volumes for a pod.
 
 Usage:
-{{ include "harnesscommon.volumes" (dict "volumes" (list (dict "name" "harness-opt" "type" "emptyDir") (dict "name" "tmp" "type" "emptyDir")) ) }}
+{{ include "harnesscommon.volumes" (dict "volumes" (list (dict "name" "harness-opt") (dict "name" "tmp")) ) }}
 
 Params:
   - volumes: List - Required. List of volume definitions, each as a dict:
       - name: String - Required.
-      - type: String - Required. One of "emptyDir", "hostPath", "persistentVolumeClaim".
-      - [optional fields depending on type]
 */}}
 {{- define "harnesscommon.volumes" -}}
 {{- range .volumes }}
 - name: {{ .name }}
-  {{- if eq .type "emptyDir" }}
   emptyDir: {}
-  {{- else if eq .type "hostPath" }}
-  hostPath:
-    path: {{ .path | quote }}
-    {{- if .hostPathType }}
-    type: {{ .hostPathType | quote }}
-    {{- end }}
-  {{- else if eq .type "persistentVolumeClaim" }}
-  persistentVolumeClaim:
-    claimName: {{ .claimName | quote }}
-  {{- end }}
 {{- end }}
 {{- end }}
 {{/*
