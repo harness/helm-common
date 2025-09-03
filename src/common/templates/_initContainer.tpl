@@ -82,7 +82,7 @@ Params:
 {{- $volumeName := required "initContainer.setupWritable: volumeName is required" .volumeName }}
 {{- $values := .root.Values }}
 - name: setup-harness-writable
-  image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" .root.global) }}
+  image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" $values.global) }}
   imagePullPolicy: {{ $values.imagePullPolicy | default "IfNotPresent" }}
   command: ["/bin/sh", "-c"]
   args:
