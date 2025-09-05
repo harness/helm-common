@@ -63,36 +63,34 @@ Params:
 {{- end }}
 {{- end }}
 {{/*
-Create an initContainer to copy files from a source to a destination.
-
-Usage:
-{{ include "harnesscommon.initContainer.setupWritable" (dict "image" .Values.image "imagePullPolicy" .Values.image.pullPolicy "sourcePath" "/opt/harness" "destinationPath" "/shared/volume" "volumeName" "harness-opt" "securityContext" .Values.securityContext "context" $) }}
-
-Params:
-  - image: String - Required. Container image.
-  - imagePullPolicy: String - Optional. Image pull policy.
-  - sourcePath: String - Required. Source path to copy from.
-  - destinationPath: String - Required. Destination path to copy to.
-  - volumeName: String - Required. Name of the volume to mount.
-  - securityContext: Object - Optional. Security context for the container.
+Create a single initContainer to copy files from multiple sources to destinations.
 */}}
 {{- define "harnesscommon.initContainer.setupWritable" -}}
-{{- $sourcePath := required "initContainer.setupWritable: sourcePath is required" .sourcePath }}
-{{- $destinationPath := required "initContainer.setupWritable: destinationPath is required" .destinationPath }}
-{{- $volumeName := required "initContainer.setupWritable: volumeName is required" .volumeName }}
+{{- $copySpecs := required "initContainer.setupWritable: copySpecs is required and must be a non-empty list" .copySpecs }}
+{{- if not (kindIs "slice" $copySpecs) }}
+  {{- fail "initContainer.setupWritable: copySpecs must be a list" }}
+{{- end }}
+{{- if eq (len $copySpecs) 0 }}
+  {{- fail "initContainer.setupWritable: copySpecs must not be empty" }}
+{{- end }}
 {{- $values := .root.Values }}
 - name: setup-harness-writable
-  image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" $values.global) }}
-  imagePullPolicy: {{ $values.imagePullPolicy | default "IfNotPresent" }}
+  image: {{ include "common.images.image" (dict "imageRoot" .image "global" $values.global) }}
+  imagePullPolicy: {{ .imagePullPolicy | default "IfNotPresent" }}
   command: ["/bin/sh", "-c"]
   args:
     - |
-      cp -r {{ .sourcePath }}/. {{ .destinationPath }}/
+      set -e
+      {{- range $spec := $copySpecs }}
+      cp -r "{{ $spec.sourcePath }}/." "{{ $spec.destinationPath }}/"
+      {{- end }}
   volumeMounts:
-    - name: {{ .volumeName }}
-      mountPath: {{ .destinationPath }}
-  {{- if $values.securityContext }}
+    {{- range $spec := $copySpecs | uniq }}
+    - name: {{ $spec.volumeName }}
+      mountPath: {{ $spec.destinationPath }}
+    {{- end }}
+  {{- if .securityContext }}
   securityContext:
-    {{- toYaml $values.securityContext | nindent 4 }}
+    {{- toYaml .securityContext | nindent 4 }}
   {{- end }}
-{{- end }}
+{{- end -}}
