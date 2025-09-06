@@ -63,23 +63,38 @@ Params:
 {{- end }}
 {{- end }}
 {{/*
-Create an initContainer to copy files from a source to a destination.
+Create an initContainer to copy files from one or more sources to one or more destinations.
 
-Usage:
-{{ include "harnesscommon.initContainer.setupWritable" (dict "image" .Values.image "imagePullPolicy" .Values.image.pullPolicy "sourcePath" "/opt/harness" "destinationPath" "/shared/volume" "volumeName" "harness-opt" "securityContext" .Values.securityContext "context" $) }}
+USAGE EXAMPLES:
 
-Params:
-  - image: String - Required. Container image.
+# 1. Single Mount (Legacy/Backward Compatible)
+{{ include "harnesscommon.initContainer.setupWritable" (dict
+  "root" .
+  "destinationPath" "/shared/volume"
+  "sourcePath" "/opt/harness"
+  "volumeName" "harness-opt"
+) | nindent 8 }}
+
+# 2. Multiple Mounts (Recommended for multiple sources/destinations)
+{{ include "harnesscommon.initContainer.setupWritable" (dict
+  "root" .
+  "mounts" (list
+    (dict "sourcePath" "/opt/ng-auth-ui" "destinationPath" "/shared/volume" "volumeName" "ng-auth-ui-opt")
+    (dict "sourcePath" "/etc/nginx" "destinationPath" "/shared/nginx" "volumeName" "nginx-etc")
+  )
+) | nindent 8 }}
+
+PARAMS:
+  - root: Object - Required. Helm context scope (usually .)
+  - sourcePath: String - Required for single mount. Source path to copy from.
+  - destinationPath: String - Required for single mount. Destination path to copy to.
+  - volumeName: String - Required for single mount. Name of the volume to mount.
+  - mounts: List - Optional. List of maps, each with sourcePath, destinationPath, and volumeName.
+  - image: String - Optional. Container image.
   - imagePullPolicy: String - Optional. Image pull policy.
-  - sourcePath: String - Required. Source path to copy from.
-  - destinationPath: String - Required. Destination path to copy to.
-  - volumeName: String - Required. Name of the volume to mount.
   - securityContext: Object - Optional. Security context for the container.
 */}}
 {{- define "harnesscommon.initContainer.setupWritable" -}}
-{{- $sourcePath := required "initContainer.setupWritable: sourcePath is required" .sourcePath }}
-{{- $destinationPath := required "initContainer.setupWritable: destinationPath is required" .destinationPath }}
-{{- $volumeName := required "initContainer.setupWritable: volumeName is required" .volumeName }}
 {{- $values := .root.Values }}
 - name: setup-harness-writable
   image: {{ include "common.images.image" (dict "imageRoot" $values.image "global" $values.global) }}
@@ -87,10 +102,31 @@ Params:
   command: ["/bin/sh", "-c"]
   args:
     - |
-      cp -r {{ .sourcePath }}/. {{ .destinationPath }}/
+      {{- if .mounts }}
+      {{- range $i, $mnt := .mounts }}
+        {{- $src := required (printf "initContainer.setupWritable: mounts[%d].sourcePath is required" $i) $mnt.sourcePath }}
+        {{- $dst := required (printf "initContainer.setupWritable: mounts[%d].destinationPath is required" $i) $mnt.destinationPath }}
+        {{- $vol := required (printf "initContainer.setupWritable: mounts[%d].volumeName is required" $i) $mnt.volumeName }}
+      cp -r {{ $src }}/. {{ $dst }}/
+      {{- end }}
+      {{- else }}
+        {{- $src := required "initContainer.setupWritable: sourcePath is required" .sourcePath }}
+        {{- $dst := required "initContainer.setupWritable: destinationPath is required" .destinationPath }}
+        {{- $vol := required "initContainer.setupWritable: volumeName is required" .volumeName }}
+      cp -r {{ $src }}/. {{ $dst }}/
+      {{- end }}
   volumeMounts:
+    {{- if .mounts }}
+    {{- range $i, $mnt := .mounts }}
+      {{- $vol := required (printf "initContainer.setupWritable: mounts[%d].volumeName is required" $i) $mnt.volumeName }}
+      {{- $dst := required (printf "initContainer.setupWritable: mounts[%d].destinationPath is required" $i) $mnt.destinationPath }}
+    - name: {{ $vol }}
+      mountPath: {{ $dst }}
+    {{- end }}
+    {{- else }}
     - name: {{ .volumeName }}
       mountPath: {{ .destinationPath }}
+    {{- end }}
   {{- if $values.securityContext }}
   securityContext:
     {{- toYaml $values.securityContext | nindent 4 }}
