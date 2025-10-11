@@ -85,48 +85,14 @@ spec:
       interval: 120s
       path: {{ default "/metrics" $path | quote }}
 {{- end }}
-{{- if $ossEnabled -}}
+{{- if $prometheusPodMonitorEnabled }}
+---
+{{- end }}
+{{- if (or $ossEnabled $prometheusPodMonitorEnabled) -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ $podMonitorName }}
-  namespace: {{ $namespace }}
-  {{- if or (((.Values).monitoring).labels) (((.Values).global).commonLabels) }}
-  labels:
-    {{- if (((.Values).global).commonLabels) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonLabels) "context" $ ) | nindent 4 }}
-    {{- end }}
-    {{- if (((.Values).monitoring).labels) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).labels) "context" $ ) | nindent 4 }}
-    {{- end }}
-  {{- end }}
-  {{- if or (((.Values).monitoring).annotations) (((.Values).global).commonAnnotations) }}
-  annotations:
-    {{- if (((.Values).monitoring).annotations) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).annotations) "context" $ ) | nindent 4 }}
-    {{- end }}
-    {{- if (((.Values).global).commonAnnotations) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonAnnotations) "context" $ ) | nindent 4 }}
-    {{- end }}
-  {{- end }}
-spec:
-  selector:
-    matchLabels:
-      {{ .label }}: {{ default $.Chart.Name .name }}
-  podMetricsEndpoints:
-    - targetPort: {{ default 8889 (int $port) }}
-      interval: {{ default "120s" $interval }}
-      path: {{ default "/metrics" $path | quote }}
-      {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).PodMetricsEndpointsConfig) "context" $ ) | nindent 6 }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).additionalPodMetricsEndpoints) "context" $ ) | nindent 4 }}
-  {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).additionalPodMonitorSpec) "context" $ ) | nindent 2 }}
-{{- end }}
----
-{{- if $prometheusPodMonitorEnabled -}}
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: {{ $podMonitorName }}-prometheus
   namespace: {{ $namespace }}
   {{- if or (((.Values).monitoring).labels) (((.Values).global).commonLabels) }}
   labels:
