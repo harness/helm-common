@@ -61,6 +61,7 @@ prometheus.io/scrape: {{ $enabled | quote}}
 {{- $ := .ctx }}
 {{- $googleEnabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "google") -}}
 {{- $ossEnabled := and $.Values.global.monitoring.enabled (eq $.Values.global.monitoring.managedPlatform "oss") -}}
+{{- $prometheusPodMonitorEnabled := and $.Values.global.monitoring.enabled $.Values.global.monitoring.prometheusPodMonitor $.Values.global.monitoring.prometheusPodMonitor.enabled -}}
 {{- $localMonitoring := default (dict) ((pluck "monitoring" $.Values) | first) -}}
 {{- $globalMonitoring := default (dict) ((pluck "monitoring" $.Values.global) | first) -}}
 {{- $monitoring := (mergeOverwrite $globalMonitoring $localMonitoring ) }}
@@ -84,7 +85,10 @@ spec:
       interval: 120s
       path: {{ default "/metrics" $path | quote }}
 {{- end }}
-{{- if $ossEnabled -}}
+{{- if $prometheusPodMonitorEnabled }}
+---
+{{- end }}
+{{- if (or $ossEnabled $prometheusPodMonitorEnabled) -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
