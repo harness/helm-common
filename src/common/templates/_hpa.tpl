@@ -5,11 +5,12 @@ Usage examples:
     {{- include "harnesscommon.hpa.renderHPA" (dict "ctx" .  "kind" "Deployment" "targetRefNameOverride" "custom-target-name") }}
 
   Multi-deployment with configPath:
-    {{- include "harnesscommon.hpa.renderHPA" (dict "ctx" . "kind" "Deployment" "targetRefNameOverride" "worker" "configPath" .Values.worker) }}
+    {{- include "harnesscommon.hpa.renderHPA" (dict "ctx" . "kind" "Deployment" "nameOverride" "my-worker" "targetRefNameOverride" "my-worker" "configPath" .Values.worker) }}
 
 Parameters:
   - ctx: Required. The root context (usually .)
   - kind: Required. The kind of resource to target (e.g., "Deployment", "StatefulSet")
+  - nameOverride: Optional. Override the HPA resource name (useful for multi-deployment to avoid name collisions)
   - targetRefNameOverride: Optional. Override the target reference name
   - configPath: Optional. Custom values path for multi-deployment scenarios. If not provided, uses $.Values (legacy behavior)
 
@@ -47,6 +48,10 @@ Example with custom metrics:
 {{- define "harnesscommon.hpa.renderHPA" -}}
 {{- $ := .ctx }}
 {{- $serviceName := default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- $hpaName := $serviceName }}
+{{- if .nameOverride }}
+  {{- $hpaName = .nameOverride }}
+{{- end }}
 {{- $targetRefName := default $serviceName .targetRefNameOverride }}
 
 {{/* Determine config source: use configPath if provided, otherwise use root $.Values (legacy) */}}
@@ -92,7 +97,7 @@ Example with custom metrics:
 apiVersion: {{ include "harnesscommon.capabilities.hpa.apiVersion" ( dict "context" $ ) }}
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ $serviceName }}
+  name: {{ $hpaName }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include $labelsFunction $ | nindent 4 }}

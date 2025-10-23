@@ -5,11 +5,12 @@ Usage examples:
     {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict "ctx" .) }}
 
   Multi-deployment with configPath:
-    {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict "ctx" . "configPath" .Values.worker) }}
+    {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict "ctx" . "configPath" .Values.worker "nameOverride" "my-worker") }}
 
 Parameters:
   - ctx: Required. The root context (usually .)
   - configPath: Optional. Custom values path for multi-deployment scenarios. If not provided, uses $.Values (legacy behavior)
+  - nameOverride: Optional. Override the PDB resource name (useful for multi-deployment to avoid name collisions)
 
 Supported PDB values:
   - create: Enable/disable PDB creation
@@ -37,10 +38,14 @@ Supported PDB values:
 
 {{- if $pdbCreate }}
 {{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
+{{- $pdbName := default $.Chart.Name $.Values.nameOverride }}
+{{- if .nameOverride }}
+  {{- $pdbName = .nameOverride }}
+{{- end }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ default $.Chart.Name $.Values.nameOverride | trunc 63 | trimSuffix "-" }}
+  name: {{ $pdbName | trunc 63 | trimSuffix "-" }}
   namespace: {{ $.Release.Namespace }}
   labels: {{ include $labelsFunction $ | nindent 4 }}
   {{- if $.Values.global.commonLabels }}
