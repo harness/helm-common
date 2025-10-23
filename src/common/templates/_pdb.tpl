@@ -88,7 +88,11 @@ spec:
   minAvailable: "50%"
   {{- end }}
   {{- end }}
-  {{- $selectorFunction := printf "%s.selectorLabels" (default $.Chart.Name $.Values.nameOverride) }}
+  {{- $selectorLabelsBase := default $.Chart.Name $.Values.nameOverride }}
+  {{- if .nameOverride }}
+    {{- $selectorLabelsBase = .nameOverride }}
+  {{- end }}
+  {{- $selectorFunction := printf "%s.selectorLabels" $selectorLabelsBase }}
   selector:
     matchLabels: {{ include $selectorFunction $ | nindent 6 }}
   {{- $unhealthyPodEvictionPolicy := "" }}
