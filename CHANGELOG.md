@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.2] - 2025-01-23
+
+### Fixed
+- **Critical PDB Selector Bug**: Fixed PDB template to respect `nameOverride` parameter for selector labels
+  - **Issue**: When creating multiple PDBs with different `nameOverride` values, all PDBs were using the same `matchLabels` selector, causing them to target the same pods instead of their respective deployments
+  - **Impact**: Multi-deployment PDB configurations were non-functional - both PDBs would apply to the same pod set
+  - **Fix**: PDB selector now correctly uses the `nameOverride` parameter to generate unique selector labels for each PDB
+  - **Breaking Change**: None - this fixes a bug in the 1.4.1 implementation
+  - Updated documentation to emphasize the importance of `nameOverride` for multi-PDB scenarios
+
+### Changed
+- Updated `MULTI_DEPLOYMENT_EXAMPLE.md` to include `nameOverride` in all multi-PDB examples
+- Added "Common Pitfalls" section documenting the selector issue and correct usage
+
+---
+
 ## [1.4.1] - 2025-01-23
 
 ### Fixed

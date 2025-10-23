@@ -70,6 +70,7 @@ worker:
 {{- include "harnesscommon.hpa.renderHPA" (dict
     "ctx" .
     "kind" "Deployment"
+    "nameOverride" "my-api"
     "targetRefNameOverride" "my-api"
     "configPath" .Values.api
 ) }}
@@ -78,12 +79,14 @@ worker:
 {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
     "ctx" .
     "configPath" .Values.api
+    "nameOverride" "my-api"
 ) }}
 
 # templates/worker-hpa.yaml
 {{- include "harnesscommon.hpa.renderHPA" (dict
     "ctx" .
     "kind" "Deployment"
+    "nameOverride" "my-worker"
     "targetRefNameOverride" "my-worker"
     "configPath" .Values.worker
 ) }}
@@ -92,6 +95,7 @@ worker:
 {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
     "ctx" .
     "configPath" .Values.worker
+    "nameOverride" "my-worker"
 ) }}
 ```
 
@@ -169,6 +173,10 @@ worker:
 
 - `ctx` (required): The root context, typically `.`
 - `configPath` (optional): Custom values path for multi-deployment scenarios
+- `nameOverride` (optional): Override the PDB resource name AND selector labels
+  - **IMPORTANT**: When using multiple PDBs, you MUST use `nameOverride` to ensure each PDB targets the correct pods
+  - Without `nameOverride`, multiple PDBs will use the same selector labels and target the same pods
+  - The `nameOverride` affects both the PDB resource name and the `matchLabels` selector
 
 ## Supported Configuration Values
 
@@ -273,3 +281,55 @@ api:
     # IfHealthyBudget: Only allow if healthy pods meet the budget
     unhealthyPodEvictionPolicy: "IfHealthyBudget"
 ```
+
+## Common Pitfalls
+
+### Multiple PDBs Without nameOverride
+
+**Problem**: Creating multiple PDBs without using `nameOverride` will cause all PDBs to target the same pods.
+
+```yaml
+# ❌ WRONG - Both PDBs will use the same selector labels!
+# templates/api-pdb.yaml
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.api
+) }}
+
+# templates/worker-pdb.yaml
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.worker
+) }}
+```
+
+**Result**: Both PDBs will have:
+
+- Different resource names (based on chart name)
+- **Same `matchLabels` selector** - both targeting the same pods!
+- This defeats the purpose of having separate PDBs
+
+**Solution**: Always use `nameOverride` when creating multiple PDBs:
+
+```yaml
+# ✅ CORRECT - Each PDB targets different pods
+# templates/api-pdb.yaml
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.api
+    "nameOverride" "my-api"
+) }}
+
+# templates/worker-pdb.yaml
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.worker
+    "nameOverride" "my-worker"
+) }}
+```
+
+**Result**: Each PDB will have:
+
+- Different resource names (`my-api`, `my-worker`)
+- Different `matchLabels` selectors (using `my-api.selectorLabels` and `my-worker.selectorLabels`)
+- Each PDB correctly targets its own deployment's pods
