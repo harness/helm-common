@@ -1,11 +1,41 @@
 {{/*
 Create Pod Distribution Budget Configurations
-Usage example:
-{{- include "harnesscommon.pdb.renderPodDistributionBudget" . }}
+Usage examples:
+  Legacy (backward compatible):
+    {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict "ctx" .) }}
+
+  Multi-deployment with configPath:
+    {{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict "ctx" . "configPath" .Values.worker) }}
+
+Parameters:
+  - ctx: Required. The root context (usually .)
+  - configPath: Optional. Custom values path for multi-deployment scenarios. If not provided, uses $.Values (legacy behavior)
+
+Supported PDB values:
+  - create: Enable/disable PDB creation
+  - minAvailable: Minimum number/percentage of pods that must be available
+  - maxUnavailable: Maximum number/percentage of pods that can be unavailable
+  - unhealthyPodEvictionPolicy: Policy for evicting unhealthy pods (AlwaysAllow or IfHealthyBudget, K8s 1.26+)
 */}}
 {{- define "harnesscommon.pdb.renderPodDistributionBudget" -}}
 {{- $ := .ctx }}
-{{- if or $.Values.global.pdb.create $.Values.pdb.create }}
+
+{{/* Determine config source: use configPath if provided, otherwise use root $.Values (legacy) */}}
+{{- $config := $.Values }}
+{{- if .configPath }}
+  {{- $config = .configPath }}
+{{- end }}
+
+{{/* Check if PDB creation is enabled - check both configPath and global */}}
+{{- $pdbCreate := false }}
+{{- if $.Values.global.pdb.create }}
+  {{- $pdbCreate = true }}
+{{- end }}
+{{- if $config.pdb.create }}
+  {{- $pdbCreate = true }}
+{{- end }}
+
+{{- if $pdbCreate }}
 {{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -23,17 +53,25 @@ spec:
   {{- $minAvailable := "" }}
   {{- $maxUnavailable := "" }}
 
+  {{/* Priority: global < legacy root < configPath */}}
   {{- if $.Values.global.pdb.minAvailable }}
       {{- $minAvailable = $.Values.global.pdb.minAvailable }}
   {{- end }}
-  {{- if $.Values.pdb.minAvailable }}
+  {{- if and (not .configPath) $.Values.pdb.minAvailable }}
       {{- $minAvailable = $.Values.pdb.minAvailable }}
   {{- end }}
+  {{- if and .configPath $config.pdb.minAvailable }}
+      {{- $minAvailable = $config.pdb.minAvailable }}
+  {{- end }}
+
   {{- if $.Values.global.pdb.maxUnavailable }}
       {{- $maxUnavailable = $.Values.global.pdb.maxUnavailable }}
   {{- end }}
-  {{- if $.Values.pdb.maxUnavailable }}
+  {{- if and (not .configPath) $.Values.pdb.maxUnavailable }}
       {{- $maxUnavailable = $.Values.pdb.maxUnavailable }}
+  {{- end }}
+  {{- if and .configPath $config.pdb.maxUnavailable }}
+      {{- $maxUnavailable = $config.pdb.maxUnavailable }}
   {{- end }}
 
   {{- if $minAvailable }}
@@ -48,5 +86,18 @@ spec:
   {{- $selectorFunction := printf "%s.selectorLabels" (default $.Chart.Name $.Values.nameOverride) }}
   selector:
     matchLabels: {{ include $selectorFunction $ | nindent 6 }}
+  {{- $unhealthyPodEvictionPolicy := "" }}
+  {{- if $.Values.global.pdb.unhealthyPodEvictionPolicy }}
+      {{- $unhealthyPodEvictionPolicy = $.Values.global.pdb.unhealthyPodEvictionPolicy }}
+  {{- end }}
+  {{- if and (not .configPath) $.Values.pdb.unhealthyPodEvictionPolicy }}
+      {{- $unhealthyPodEvictionPolicy = $.Values.pdb.unhealthyPodEvictionPolicy }}
+  {{- end }}
+  {{- if and .configPath $config.pdb.unhealthyPodEvictionPolicy }}
+      {{- $unhealthyPodEvictionPolicy = $config.pdb.unhealthyPodEvictionPolicy }}
+  {{- end }}
+  {{- if $unhealthyPodEvictionPolicy }}
+  unhealthyPodEvictionPolicy: {{ $unhealthyPodEvictionPolicy }}
+  {{- end }}
 {{- end }}
 {{- end }}
