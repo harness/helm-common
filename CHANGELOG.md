@@ -1,3 +1,50 @@
+# Changelog
+
+## [1.4.1] - 2025-01-23
+
+### Fixed
+- **Name Collision Fix**: Added `nameOverride` parameter to both HPA and PDB templates to prevent resource name collisions in multi-deployment scenarios
+  - When using `configPath` for multiple deployments (e.g., API + worker), HPAs and PDBs would have the same name causing Kubernetes conflicts
+  - Both templates now accept an optional `nameOverride` parameter for explicit name control
+  - 100% backwards compatible - parameter is optional and doesn't affect existing usage
+
+### Example Usage
+```yaml
+# Multiple HPAs with different names
+{{- include "harnesscommon.hpa.renderHPA" (dict
+    "ctx" .
+    "kind" "Deployment"
+    "nameOverride" "my-api"
+    "targetRefNameOverride" "my-api"
+    "configPath" .Values.api
+) }}
+
+{{- include "harnesscommon.hpa.renderHPA" (dict
+    "ctx" .
+    "kind" "Deployment"
+    "nameOverride" "my-worker"
+    "targetRefNameOverride" "my-worker"
+    "configPath" .Values.worker
+) }}
+
+# Multiple PDBs with different names
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.api
+    "nameOverride" "my-api"
+) }}
+
+{{- include "harnesscommon.pdb.renderPodDistributionBudget" (dict
+    "ctx" .
+    "configPath" .Values.worker
+    "nameOverride" "my-worker"
+) }}
+```
+
+---
+
+## [1.4.0] - Previous Release
+
 # HPA and PDB Template Enhancements
 
 ## Summary
