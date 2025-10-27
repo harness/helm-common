@@ -52,6 +52,9 @@ Example with custom metrics:
 {{- if .nameOverride }}
   {{- $hpaName = .nameOverride }}
 {{- end }}
+{{- if .targetRefNameOverride }}
+  {{- $hpaName = .targetRefNameOverride }}
+{{- end }}
 {{- $targetRefName := default $serviceName .targetRefNameOverride }}
 
 {{/* Determine config source: use configPath if provided, otherwise use root $.Values (legacy) */}}
