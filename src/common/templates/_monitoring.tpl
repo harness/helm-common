@@ -94,22 +94,22 @@ kind: PodMonitor
 metadata:
   name: {{ $podMonitorName }}
   namespace: {{ $namespace }}
-  {{- if or (((.Values).monitoring).labels) (((.Values).global).commonLabels) }}
+  {{- if or ((($.Values).monitoring).labels) ((($.Values).global).commonLabels) }}
   labels:
-    {{- if (((.Values).global).commonLabels) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonLabels) "context" $ ) | nindent 4 }}
+    {{- if ((($.Values).global).commonLabels) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).global).commonLabels) "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if (((.Values).monitoring).labels) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).labels) "context" $ ) | nindent 4 }}
+    {{- if ((($.Values).monitoring).labels) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).labels) "context" $ ) | nindent 4 }}
     {{- end }}
   {{- end }}
-  {{- if or (((.Values).monitoring).annotations) (((.Values).global).commonAnnotations) }}
+  {{- if or ((($.Values).monitoring).annotations) ((($.Values).global).commonAnnotations) }}
   annotations:
-    {{- if (((.Values).monitoring).annotations) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).monitoring).annotations) "context" $ ) | nindent 4 }}
+    {{- if ((($.Values).monitoring).annotations) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).annotations) "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if (((.Values).global).commonAnnotations) }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" (((.Values).global).commonAnnotations) "context" $ ) | nindent 4 }}
+    {{- if ((($.Values).global).commonAnnotations) }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).global).commonAnnotations) "context" $ ) | nindent 4 }}
     {{- end }}
   {{- end }}
 spec:
