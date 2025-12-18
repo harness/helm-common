@@ -42,20 +42,21 @@ spec:
   {{- range $i, $path := $object.paths }}
   {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $path }}
   {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $path }}
+  {{- $pathRewrite := dig "pathRewrite" $object.pathRewrite $path }}
   - match:
     - uri:
         {{ $object.pathMatchType }}: {{ include "harnesscommon.tplvalues.render" ( dict "value" $path.path "context" $) }}
     name: {{ (cat $objName "-" $i) | nospace }}
-    {{- if $object.pathRewrite }}
+    {{- if $pathRewrite }}
     rewrite:
     {{- if eq $object.pathMatchType "regex" }}
       uriRegexRewrite:
         match: {{ include "harnesscommon.tplvalues.render" ( dict "value" $path.path "context" $) }}
-        rewrite: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
+        rewrite: {{ include "harnesscommon.tplvalues.render" ( dict "value" $pathRewrite "context" $) }}
     {{- else if eq $object.pathMatchType "prefix" }}
-      uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
+      uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $pathRewrite "context" $) }}
     {{- else }}
-      uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $object.pathRewrite "context" $) }}
+      uri: {{ include "harnesscommon.tplvalues.render" ( dict "value" $pathRewrite "context" $) }}
     {{- end }}
     {{- end }}
     route:
