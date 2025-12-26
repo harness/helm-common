@@ -32,19 +32,16 @@ global:
         engine: ""
         overridePath: ""
         databaseRole: ""
-        instances: []
       redis:
         useDatabaseSecretsEngine: false
         engine: ""
         overridePath: ""
         databaseRole: ""
-        instances: []
       postgres:
         useDatabaseSecretsEngine: false
         engine: ""
         basePath: ""
         databaseRole: ""
-        instances: []
   database:
     postgres:
       ## - installed = true if installed within cluster

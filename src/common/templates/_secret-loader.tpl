@@ -148,7 +148,10 @@ Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" .) }}
 
 {{/* 
 Create configContent for secretsLoader
-Usage: {{ include "harnesscommon.secretsLoader.configContent" (dict "ctx" .) }}
+Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "databaseSecrets" (list 
+    (dict "dbtype" "mongo" "usernamesecrets" list("MONGODB_USER" "RESOURCE_GROUP_MONGO_USER") "passwordsecrets" list("MONGODB_PASSWORD" "RESOURCE_GROUP_MONGO_PASSWORD"))
+    (dict "dbtype" "redis" "usernamesecrets" list("REDIS_USERNAME" "RESOURCE_GROUP_REDIS_USERNAME") "passwordsecrets" list("REDIS_PASSWORD" "RESOURCE_GROUP_REDIS_PASSWORD"))
+  ))}}
 */}}
 
 {{- define "harnesscommon.secretsLoader.configContent" -}}
@@ -190,21 +193,27 @@ Usage: {{ include "harnesscommon.secretsLoader.configContent" (dict "ctx" .) }}
         outputPath: {{ dig "secrets" "fileSecrets" "outputPath" "/shared/files" $mergedSecrets | quote }}
         categories: {{ dig "secrets" "fileSecrets" "categories" (list "config") $mergedSecrets | toYaml | nindent 10 }}
     databases:
-      {{- $databases := dig "databases" dict $mergedSecrets -}}
-      {{- range $dbType, $dbConfig := $databases }}
-      {{- if eq $dbConfig.useDatabaseSecretsEngine true }}
-      - type: {{ $dbType | quote }}
-        useDatabaseSecretsEngine: {{ $dbConfig.useDatabaseSecretsEngine | default false | quote }}
-        engine: {{ $dbConfig.engine | quote }}
-        overridePath: {{ $dbConfig.overridePath | quote }}
-        databaseRole: {{ $dbConfig.databaseRole | quote }}
-        {{- if $dbConfig.instances }}
-        instances:
-        {{- range $dbConfig.instances }}
-          - name: {{ .name | quote }}
+    {{- $list := default (list) .databaseSecrets }}
+    {{- if $list }}
+      {{- range $i, $db := $list }}
+      {{- $dbtype := index $db "dbtype" }}
+      - type: {{ $dbtype | quote }}
+        useDatabaseSecretsEngine: {{ dig "databases" $dbtype "useDatabaseSecretsEngine" "false" $mergedSecrets | quote }}
+        engine: {{ dig "databases" $dbtype "engine" "" $mergedSecrets | quote }}
+        databaseRole: {{ dig "databases" $dbtype "databaseRole" "" $mergedSecrets | quote }}
+        {{- with (index $db "usernamesecrets") }}
+        userEnvSecrets:
+          {{- range $j, $u := . }}
+          - {{ $u | quote }}
+          {{- end }}
         {{- end }}
+        {{- with (index $db "passwordsecrets") }}
+        passwordEnvSecrets:
+          {{- range $j, $p := . }}
+          - {{ $p | quote }}
+          {{- end }}
         {{- end }}
       {{- end }}
-      {{- end }}      
+    {{- end }}
 {{- end -}}
 {{- end -}}
