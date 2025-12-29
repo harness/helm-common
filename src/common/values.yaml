@@ -7,7 +7,7 @@ global:
       enabled: false
       collectorURL: ""
   externalSecretsLoader:
-    enabled: true
+    enabled: false
     provider: "vault"
     image:
       repository: "repo/image"

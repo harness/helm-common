@@ -66,7 +66,12 @@ If connectionType is set other than "string" then protocol and credentials are a
   {{- if or (empty .userVariableName) (empty .passwordVariableName) }}
     {{- $connectionString = (printf "%s://%s" .protocol .host) -}}
   {{- else }}
-    {{- $connectionString = (printf "%s://$(%s):$(%s)@%s" .protocol .userVariableName .passwordVariableName .host) -}}
+    {{- $secretsEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if $secretsEnabled }}
+        {{- $connectionString = (printf "%s://${%s}:${%s}@%s" .protocol .userVariableName .passwordVariableName .host) }}
+    {{- else }}
+        {{- $connectionString = (printf "%s://$(%s):$(%s)@%s" .protocol .userVariableName .passwordVariableName .host) }}
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- printf "%s" $connectionString }}
