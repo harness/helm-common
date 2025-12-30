@@ -4,17 +4,19 @@ Usage: {{ include "harnesscommon.secretsLoader.enabled" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.enabled" -}}
-{{- $ctx := .ctx | default . -}}
 {{- $enabled := false -}}
+{{- if ne .ctx nil -}}
+{{- $ctx := default . .ctx -}}
 {{- if and $ctx $ctx.Values -}}
 {{- $global := index $ctx.Values "global" | default dict -}}
 {{- $globalSecrets := index $global "externalSecretsLoader" | default dict -}}
 {{- $localSecrets := index $ctx.Values "externalSecretsLoader" | default dict -}}
 {{- $globalEnabled := index $globalSecrets "enabled" | default false -}}
-{{- $enabled := $globalEnabled -}}
+{{- $enabled = $globalEnabled -}}
 {{- $localEnabled := index $localSecrets "enabled" | default nil -}}
 {{- if ne $localEnabled nil -}}
   {{- $enabled = $localEnabled -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- $enabled -}}
@@ -26,8 +28,8 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.initContainer" -}}
-{{- $ctx := .ctx | default . -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+{{- $ctx := default . .ctx -}}
 {{- $globalSecrets := index $ctx.Values.global "externalSecretsLoader" -}}
 {{- $mergedSecrets := deepCopy $globalSecrets -}}
 {{- $localSecrets := index $ctx.Values "externalSecretsLoader" -}}
@@ -62,8 +64,8 @@ Usage: {{ include "harnesscommon.secretsLoader.volumeMounts" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.volumeMounts" -}}
-{{- $ctx := .ctx | default . -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+{{- $ctx := default . .ctx -}}
 {{- $globalSecrets := index $ctx.Values.global "externalSecretsLoader" -}}
 {{- $mergedSecrets := deepCopy $globalSecrets -}}
 {{- $localSecrets := index $ctx.Values "externalSecretsLoader" -}}
@@ -92,8 +94,8 @@ Usage: {{ include "harnesscommon.secretsLoader.volumes" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.volumes" -}}
-{{- $ctx := .ctx | default . -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+{{- $ctx := default . .ctx -}}
 {{- $globalSecrets := index $ctx.Values.global "externalSecretsLoader" -}}
 {{- $mergedSecrets := deepCopy $globalSecrets -}}
 {{- $localSecrets := index $ctx.Values "externalSecretsLoader" -}}
@@ -131,8 +133,7 @@ Usage: {{ include "harnesscommon.secretsLoader.command" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.command" -}}
-{{- $ctx := .ctx | default . -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
 ["/bin/sh"]
 {{- end -}}
 {{- end -}}
@@ -143,9 +144,8 @@ Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.args" -}}
-{{- $ctx := .ctx | default . -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
-["-c", {{ include "harnesscommon.secretsLoader.mergeScript" $ctx | quote }}]
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+["-c", {{ include "harnesscommon.secretsLoader.mergeScript" .ctx | quote }}]
 {{- end -}}
 {{- end -}}
 
@@ -158,8 +158,8 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
 */}}
 
 {{- define "harnesscommon.secretsLoader.configContent" -}}
-{{- $ctx := .ctx -}}
-{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $ctx)) "true" }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+{{- $ctx := default . .ctx -}}
 {{- $globalSecrets := index $ctx.Values.global "externalSecretsLoader" -}}
 {{- $mergedSecrets := deepCopy $globalSecrets -}}
 {{- $localSecrets := index $ctx.Values "externalSecretsLoader" -}}
