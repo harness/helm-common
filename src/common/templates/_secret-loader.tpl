@@ -124,7 +124,8 @@ Usage: {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .) }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.mergeScript" -}}
-set -a && . /shared/env/.env && set +a && for var in $(env | grep '\\${' | cut -d= -f1); do eval "export $var='$(eval echo \\\"\\$$var\\\")'"; done && env && exec /opt/harness/run.sh
+{{- $entry := default "/opt/harness/run.sh" .entry_point -}}
+set -a && . /shared/env/.env && set +a && for var in $(env | grep '\\${' | cut -d= -f1); do eval "export $var='$(eval echo \\\"\\$$var\\\")'"; done && env && exec {{ $entry }}
 {{- end -}}
 
 {{/* 
@@ -145,7 +146,7 @@ Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" .) }}
 
 {{- define "harnesscommon.secretsLoader.args" -}}
 {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
-["-c", {{ include "harnesscommon.secretsLoader.mergeScript" .ctx | quote }}]
+["-c", {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .ctx "entry_point" .entry_point) | quote }}]
 {{- end -}}
 {{- end -}}
 
