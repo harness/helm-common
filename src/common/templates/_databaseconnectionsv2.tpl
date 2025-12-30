@@ -539,12 +539,7 @@ USAGE:
             {{- $connectionString := (printf "%s://%s/%s?%s" $protocol "postgres:5432" $database $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
-            {{- $secretsEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
-            {{- if $secretsEnabled }}
-                {{- $connectionString := (printf "%s://${%s}:${%s}@postgres:5432/%s?%s" $protocol $userVariableName $passwordVariableName $database $extraArgs) }}
-            {{- else }}
-                {{- $connectionString := (printf "%s://$(%s):$(%s)@postgres:5432/%s?%s" $protocol $userVariableName $passwordVariableName $database $extraArgs) }}
-            {{- end }}
+            {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" $protocol $userVariableName $passwordVariableName "postgres:5432" $database $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- end }}
     {{- else }}
