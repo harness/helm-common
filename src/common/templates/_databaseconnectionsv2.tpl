@@ -151,7 +151,11 @@ USAGE:
     {{- end }}
     {{- $userAndPassField := "" }}
     {{- if and (.userVariableName) (.passwordVariableName) }}
+    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+        {{- $userAndPassField = (printf "${%s}:${%s}@" .userVariableName .passwordVariableName) }}
+    {{- else }}
         {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+    {{- end }}
     {{- end }}
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port $database) }}
     {{- if .args }}
@@ -249,7 +253,7 @@ USAGE:
         {{- end }}
         {{- $extraArgs = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.redis.extraArgs" ".Values.redis.extraArgs"))) }}
     {{- end }}
-    {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+    {{- include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
 {{- end }}
 
 {{/*
@@ -290,7 +294,7 @@ USAGE:
         {{- $host = $updatedHosts }}
         {{- $extraArgs = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.mongo.extraArgs" ".Values.mongo.extraArgs"))) }}
     {{- end }}
-    {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+    {{- include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
 {{- end }}
 
 {{/*
@@ -412,13 +416,21 @@ USAGE:
     {{- if $installed }}
         {{- $namespace := $.Release.Namespace }}
         {{- if $.Values.global.ha }}
+        {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+        {{- printf "'mongodb://${%s}:${%s}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userVariableName $passwordVariableName $namespace $namespace $namespace .database }}
+        {{- else }}
         {{- printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userVariableName $passwordVariableName $namespace $namespace $namespace .database }}
+        {{- end }}
+        {{- else }}
+        {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+        {{- printf "'mongodb://${%s}:${%s}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userVariableName $passwordVariableName $namespace .database }}
         {{- else }}
             {{- printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userVariableName $passwordVariableName $namespace .database }}
         {{- end }}
+        {{- end }}
     {{- else }}
         {{- $args := (printf "/%s?%s" .database $extraArgs )}}
-        {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+        {{- include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
     {{- end }}
 {{- end }}
 
@@ -539,7 +551,10 @@ USAGE:
             {{- $connectionString := (printf "%s://%s/%s?%s" $protocol "postgres:5432" $database $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
-            {{- $connectionString := (printf "%s://$(%s):$(%s)@%s/%s?%s" $protocol $userVariableName $passwordVariableName "postgres:5432" $database $extraArgs) }}
+            {{- $connectionString := (printf "%s://$(%s):$(%s)@postgres:5432/%s?%s" $protocol $userVariableName $passwordVariableName $database $extraArgs) }}
+            {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+                {{- $connectionString = (printf "%s://${%s}:${%s}@postgres:5432/%s?%s" $protocol $userVariableName $passwordVariableName $database $extraArgs) }}
+            {{- end }}
             {{- printf "%s" $connectionString }}
         {{- end }}
     {{- else }}
@@ -556,7 +571,7 @@ USAGE:
             {{- $connectionString := (printf " host=%s user=%s password=%s dbname=%s sslmode=%s%s" $hostport._0 $userVariableName $passwordVariableName $database $sslMode $extraArgs) }}
             {{- printf "%s" $connectionString }}
         {{- else }}
-            {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+            {{- include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
         {{- end }}
     {{- end }}
 {{- end }}
