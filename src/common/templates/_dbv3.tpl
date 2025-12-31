@@ -188,20 +188,29 @@ OPTIONAL:
                 {{- $extraArgs := $localDBCtx.extraArgs }}
                 {{- $database = default $database $localDBCtx.database }}
                 {{- $args := (printf "/%s?%s" $database $extraArgs ) -}}
-                {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
+                {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
             {{- else if $installed }}
                 {{- $namespace := $.Release.Namespace }}
+                {{- $secretsEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
                 {{- if $.Values.global.ha }}
-                    {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userNameEnvName $passwordEnvName $namespace $namespace $namespace $database }}
+                    {{- if $secretsEnabled }}
+                        {{- $connectionURI = printf "'mongodb://${%s}:${%s}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userNameEnvName $passwordEnvName $namespace $namespace $namespace $database }}
+                    {{- else }}
+                        {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $userNameEnvName $passwordEnvName $namespace $namespace $namespace $database }}
+                    {{- end }}
                 {{- else }}
-                    {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userNameEnvName $passwordEnvName $namespace $database }}
+                    {{- if $secretsEnabled }}
+                        {{- $connectionURI = printf "'mongodb://${%s}:${%s}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userNameEnvName $passwordEnvName $namespace $database }}
+                    {{- else }}
+                        {{- $connectionURI = printf "'mongodb://$(%s):$(%s)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $userNameEnvName $passwordEnvName $namespace $database }}
+                    {{- end }}
                 {{- end }}
             {{- else }}
                 {{- $hosts := $globalDBCtx.hosts }}
                 {{- $protocol := $globalDBCtx.protocol }}
                 {{- $extraArgs := $globalDBCtx.extraArgs }}
                 {{- $args := (printf "/%s?%s" $database $extraArgs ) -}}
-                {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
+                {{- $connectionURI = include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" "mongo" "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userNameEnvName "passwordVariableName" $passwordEnvName)}}
             {{- end }}
 - name: {{ printf "%s" $connectionURIEnvName }}
   value: {{ printf "%s" $connectionURI }}
@@ -351,7 +360,7 @@ OPTIONAL:
             {{- end }}
             {{- $hosts = $updatedHosts }}
         {{- end }}
-        {{- include "harnesscommon.dbconnection.connection" (dict "type" $dbType "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+        {{- include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" $dbType "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
     {{- else }}
         {{- fail (printf "ERROR: invalid contexts") }}
     {{- end }}
@@ -554,19 +563,20 @@ USAGE:
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
     {{- if $sslEnabled }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
     {{- if .variableNames.sslEnabled }}
 - name: {{ .variableNames.sslEnabled }}
   value: {{ printf "%v" $mergedCtx.ssl.enabled | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePath $mergedCtx.ssl.trustStoreKey }}
+    {{- if and .variableNames.sslCATrustStorePath (or $mergedCtx.ssl.trustStoreKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca-truststore" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCACertPath $mergedCtx.ssl.caFileKey }}
+    {{- if and .variableNames.sslCACertPath (or $mergedCtx.ssl.caFileKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCACertPath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey }}
+    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (not $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePassword }}
   valueFrom:
     secretKeyRef:
@@ -596,7 +606,8 @@ USAGE:
   {{- $installed := $mergedCtx.installed }}
   {{- if not $installed }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret}}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret (not $secretsLoaderEnabled) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
 - name: {{ printf "%s-ssl" $filepathprefix }}
   secret:
@@ -634,9 +645,14 @@ USAGE:
   {{- $installed := $mergedCtx.installed }}
   {{- if not $installed }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $secretsLoaderEnabled (and (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret)) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
-- name: {{ printf "%s-ssl" $filepathprefix }}
+    {{- $volumeName := printf "%s-ssl" $filepathprefix }}
+    {{- if $secretsLoaderEnabled }}
+    {{- $volumeName = "shared-secrets-files" }}
+    {{- end }}
+- name: {{ $volumeName }}
   mountPath: {{ printf "/opt/harness/svc/ssl/%s/%s" $dbType $database | quote }}
   readOnly: true
     {{- end }}
@@ -718,7 +734,11 @@ USAGE:
     {{- end }}
     {{- $userAndPassField := "" }}
     {{- if and (.userVariableName) (.passwordVariableName) }}
+    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+        {{- $userAndPassField = (printf "${%s}:${%s}@" .userVariableName .passwordVariableName) }}
+    {{- else }}
         {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+    {{- end }}
     {{- end }}
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port $database) }}
     {{- if .args }}
@@ -771,7 +791,11 @@ USAGE:
     {{- end }}
     {{- $userAndPassField := "" }}
     {{- if and (.userVariableName) (.passwordVariableName) }}
+    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+        {{- $userAndPassField = (printf "${%s}:${%s}@" .userVariableName .passwordVariableName) }}
+    {{- else }}
         {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+    {{- end }}
     {{- end }}
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
     {{- $finalArgs := default "" $mergedTimescaleDBCtx.args }}
@@ -817,19 +841,20 @@ USAGE:
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
     {{- if $sslEnabled }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
     {{- if .variableNames.sslEnabled }}
 - name: {{ .variableNames.sslEnabled }}
   value: {{ printf "%v" $mergedCtx.ssl.enabled | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePath $mergedCtx.ssl.trustStoreKey }}
+    {{- if and .variableNames.sslCATrustStorePath (or $mergedCtx.ssl.trustStoreKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca-truststore" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCACertPath $mergedCtx.ssl.caFileKey }}
+    {{- if and .variableNames.sslCACertPath (or $mergedCtx.ssl.caFileKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCACertPath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey }}
+    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (not $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePassword }}
   valueFrom:
     secretKeyRef:
@@ -859,10 +884,11 @@ USAGE:
   {{- if $localDbCtx.enabled }}
     {{- $mergedCtx = $localDbCtx }}
   {{- end }}
-  {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
+  {{- $enableCondition := and (or (not $mergedCtx.installed) $mergedCtx.enabled) (eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "false")}}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret}}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret (not $secretsLoaderEnabled)}}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
 - name: {{ printf "%s-ssl" $filepathprefix }}
   secret:
@@ -903,9 +929,14 @@ USAGE:
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $secretsLoaderEnabled (and (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret)) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
-- name: {{ printf "%s-ssl" $filepathprefix }}
+    {{- $volumeName := printf "%s-ssl" $filepathprefix }}
+    {{- if $secretsLoaderEnabled }}
+    {{- $volumeName = "shared-secrets-files" }}
+    {{- end }}
+- name: {{ $volumeName }}
   mountPath: {{ printf "/opt/harness/svc/ssl/%s/%s" $dbType $database | quote }}
   readOnly: true
     {{- end }}

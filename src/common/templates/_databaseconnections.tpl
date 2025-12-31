@@ -31,13 +31,21 @@
 {{- if $installed }}
   {{- $namespace := .context.Release.Namespace }}
   {{- if .context.Values.global.ha -}}
+  {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+{{- printf "'mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database -}}
+  {{- else }}
 {{- printf "'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database -}}
+  {{- end }}
+  {{- else }}
+  {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+{{- printf "'mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
   {{- else }}
 {{- printf "'mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
   {{- end }}
+  {{- end }}
 {{- else }}
 {{- $args := (printf "/%s?%s" .database $extraArgs )}}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+{{- include "harnesscommon.dbconnection.connection" (dict "ctx" .context "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $args "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
@@ -75,6 +83,9 @@
 {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
 {{- if $installed }}
 {{- $connectionString := (printf "%s://$(%s_USER):$(%s_PASSWORD)@%s/%s?%s" "postgres" $dbType $dbType "postgres:5432" .database .args) }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+{{- $connectionString = (printf "%s://${%s_USER}:${%s_PASSWORD}@%s/%s?%s" "postgres" $dbType $dbType "postgres:5432" .database .args) }}
+{{- end }}
 {{- printf "%s" $connectionString }}
 {{- else }}
 {{- $paramArgs := default "" .args }}
@@ -84,7 +95,7 @@
 {{- else if or $paramArgs $extraArgs }}
 {{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
 {{- end }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
+{{- include "harnesscommon.dbconnection.connection" (dict "ctx" .context "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $finalArgs "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName)}}
 {{- end }}
 {{- end }}
 
@@ -178,7 +189,11 @@
 {{- end }}
 {{- $userAndPassField := "" }}
 {{- if and (.userVariableName) (.passwordVariableName) }}
+{{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .context)) "true" }}
+{{- $userAndPassField = (printf "${%s}:${%s}@" .userVariableName .passwordVariableName) }}
+{{- else }}
 {{- $userAndPassField = (printf "$(%s):$(%s)@" .userVariableName .passwordVariableName) }}
+{{- end }}
 {{- end }}
 {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port .database) }}
 {{- if .args }}
@@ -227,5 +242,5 @@
 {{- if .context.installed -}}
   {{- $hosts = list "redis-sentinel-harness-announce-0:26379" "redis-sentinel-harness-announce-1:26379" "redis-sentinel-harness-announce-2:26379" }}
 {{- end -}}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" .context.extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
+{{- include "harnesscommon.dbconnection.connection" (dict "ctx" .context "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" .context.extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
 {{- end -}}

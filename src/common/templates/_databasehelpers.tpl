@@ -35,21 +35,21 @@ Secret and userValue are mutually exclusive
 
 {{/* Generates db connection string. If userVariableName or passwordVariableName is not provided, no credentials are added to connection string.
 If connectionType is set other than "string" then protocol and credentials are added to every host
-{{ include "harnesscommon.dbconnection.connection" (dict "type" "redis" "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" "hosts" (list "redis-1:6379" "redis-2:6379") "protocol" "redis" "connectionType" "string" )}}
+{{ include "harnesscommon.dbconnection.connection" (dict "ctx" $ "type" "redis" "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" "hosts" (list "redis-1:6379" "redis-2:6379") "protocol" "redis" "connectionType" "string" )}}
 */}}
 {{- define "harnesscommon.dbconnection.connection" -}}
 {{- $dbType := upper .type -}}
 {{- $firsthost := (index .hosts 0) -}}
 {{- $protocol := .protocol -}}
 {{- $extraArgs := .extraArgs -}}
-{{- $connectionString := (include "harnesscommon.dbconnection.singleConnectString" (dict "protocol" $protocol "host" $firsthost "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName) ) }}
+{{- $connectionString := (include "harnesscommon.dbconnection.singleConnectString" (dict "ctx" .ctx "protocol" $protocol "host" $firsthost "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName) ) }}
 {{- $localContext := . }}
 {{- $connectionType := default "string" .connectionType }}
 {{- range $host := (rest .hosts) -}}
   {{- if eq $connectionType "string" }}
   {{- $connectionString = printf "%s,%s" $connectionString $host -}}
   {{- else }}
-  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" (dict "protocol" $protocol "host" $host "userVariableName" $localContext.userVariableName "passwordVariableName" $localContext.passwordVariableName) ) -}}
+  {{- $connectionString = printf "%s,%s" $connectionString (include "harnesscommon.dbconnection.singleConnectString" (dict "ctx" $localContext.ctx "protocol" $protocol "host" $host "userVariableName" $localContext.userVariableName "passwordVariableName" $localContext.passwordVariableName) ) -}}
   {{- end }}
 {{- end -}}
 {{- if $extraArgs -}}
@@ -66,7 +66,11 @@ If connectionType is set other than "string" then protocol and credentials are a
   {{- if or (empty .userVariableName) (empty .passwordVariableName) }}
     {{- $connectionString = (printf "%s://%s" .protocol .host) -}}
   {{- else }}
+    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
+    {{- $connectionString = (printf "%s://${%s}:${%s}@%s" .protocol .userVariableName .passwordVariableName .host) -}}
+    {{- else }}
     {{- $connectionString = (printf "%s://$(%s):$(%s)@%s" .protocol .userVariableName .passwordVariableName .host) -}}
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- printf "%s" $connectionString }}
