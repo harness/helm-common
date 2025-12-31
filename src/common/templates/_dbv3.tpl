@@ -563,19 +563,20 @@ USAGE:
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
     {{- if $sslEnabled }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
     {{- if .variableNames.sslEnabled }}
 - name: {{ .variableNames.sslEnabled }}
   value: {{ printf "%v" $mergedCtx.ssl.enabled | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePath $mergedCtx.ssl.trustStoreKey }}
+    {{- if and .variableNames.sslCATrustStorePath (or $mergedCtx.ssl.trustStoreKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca-truststore" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCACertPath $mergedCtx.ssl.caFileKey }}
+    {{- if and .variableNames.sslCACertPath (or $mergedCtx.ssl.caFileKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCACertPath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "false") }}
+    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (not $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePassword }}
   valueFrom:
     secretKeyRef:
@@ -605,7 +606,8 @@ USAGE:
   {{- $installed := $mergedCtx.installed }}
   {{- if not $installed }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret (eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "false") }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret (not $secretsLoaderEnabled) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
 - name: {{ printf "%s-ssl" $filepathprefix }}
   secret:
@@ -643,10 +645,11 @@ USAGE:
   {{- $installed := $mergedCtx.installed }}
   {{- if not $installed }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $secretsLoaderEnabled (and (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret)) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
     {{- $volumeName := printf "%s-ssl" $filepathprefix }}
-    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if $secretsLoaderEnabled }}
     {{- $volumeName = "shared-secrets-files" }}
     {{- end }}
 - name: {{ $volumeName }}
@@ -838,19 +841,20 @@ USAGE:
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
     {{- if $sslEnabled }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
     {{- if .variableNames.sslEnabled }}
 - name: {{ .variableNames.sslEnabled }}
   value: {{ printf "%v" $mergedCtx.ssl.enabled | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePath $mergedCtx.ssl.trustStoreKey }}
+    {{- if and .variableNames.sslCATrustStorePath (or $mergedCtx.ssl.trustStoreKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca-truststore" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCACertPath $mergedCtx.ssl.caFileKey }}
+    {{- if and .variableNames.sslCACertPath (or $mergedCtx.ssl.caFileKey $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCACertPath }}
   value: {{ printf "/opt/harness/svc/ssl/%s/%s/%s-ca" $dbType $database $filepathprefix | quote }}
     {{- end }}
-    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "false") }}
+    {{- if and .variableNames.sslCATrustStorePassword $mergedCtx.ssl.trustStorePasswordKey (not $secretsLoaderEnabled) }}
 - name: {{ .variableNames.sslCATrustStorePassword }}
   valueFrom:
     secretKeyRef:
@@ -883,7 +887,8 @@ USAGE:
   {{- $enableCondition := and (or (not $mergedCtx.installed) $mergedCtx.enabled) (eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "false")}}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret}}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret (not $secretsLoaderEnabled)}}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
 - name: {{ printf "%s-ssl" $filepathprefix }}
   secret:
@@ -924,10 +929,11 @@ USAGE:
   {{- $enableCondition := (or (not $mergedCtx.installed) $mergedCtx.enabled) }}
   {{- if $enableCondition }}
     {{- $sslEnabled := $mergedCtx.ssl.enabled }}
-    {{- if and $sslEnabled (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret }}
+    {{- $secretsLoaderEnabled := eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if and $sslEnabled (or $secretsLoaderEnabled (and (or $mergedCtx.ssl.trustStoreKey $mergedCtx.ssl.caFileKey) $mergedCtx.ssl.secret)) }}
     {{- $filepathprefix := (include "harnesscommon.dbv3.filepathprefix" (dict "dbType" $dbType "dbName" $database)) }}
     {{- $volumeName := printf "%s-ssl" $filepathprefix }}
-    {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" $)) "true" }}
+    {{- if $secretsLoaderEnabled }}
     {{- $volumeName = "shared-secrets-files" }}
     {{- end }}
 - name: {{ $volumeName }}
