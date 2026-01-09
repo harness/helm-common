@@ -73,7 +73,7 @@ Usage: {{ include "harnesscommon.secretsLoader.volumeMounts" (dict "ctx" .) }}
 {{- $mergedSecrets = mergeOverwrite $mergedSecrets $localSecrets -}}
 {{- end -}}
 - name: shared-secrets-env
-  mountPath: {{ dig "secrets" "envSecrets" "outputFile" "/shared/env/.env" $mergedSecrets | quote }}
+  mountPath: {{ dig "secrets" "envSecrets" "outputPath" "/shared/env" $mergedSecrets | quote }}
 - name: shared-secrets-files
   mountPath: {{ dig "secrets" "fileSecrets" "outputPath" "/shared/files" $mergedSecrets | quote }}
   readOnly: true
@@ -103,7 +103,7 @@ Usage: {{ include "harnesscommon.secretsLoader.volumes" (dict "ctx" .) }}
 {{- $mergedSecrets = mergeOverwrite $mergedSecrets $localSecrets -}}
 {{- end -}}
 {{- $serviceName := default $ctx.Chart.Name $mergedSecrets.serviceName -}}
-{{- $configMapName := printf "%s-config" $serviceName -}}
+{{- $configMapName := default $serviceName $mergedSecrets.configName -}}
 - name: secrets-loader-config
   configMap:
     name: {{ $configMapName }}
@@ -125,7 +125,7 @@ Usage: {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .) }}
 
 {{- define "harnesscommon.secretsLoader.mergeScript" -}}
 {{- $entry := default "/opt/harness/run.sh" .entry_point -}}
-set -a && . /shared/env/.env && set +a && for var in $(env | grep '\\${' | cut -d= -f1); do eval "export $var='$(eval echo \\\"\\$$var\\\")'"; done && env && exec {{ $entry }}
+set -a && . /shared/env/.env && set +a && for var in $(env | grep '\${' | cut -d= -f1); do eval "export $var=\"$(eval echo \"\$$var\")\""; done && exec {{ $entry }}
 {{- end -}}
 
 {{/* 
@@ -141,12 +141,17 @@ Usage: {{ include "harnesscommon.secretsLoader.command" (dict "ctx" .) }}
 
 {{/* 
 Create args for secretsLoader
-Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" .) }}
+Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" . "entry_point" "/opt/harness/run.sh") }}
 */}}
 
 {{- define "harnesscommon.secretsLoader.args" -}}
 {{- if eq (include "harnesscommon.secretsLoader.enabled" (dict "ctx" .ctx)) "true" }}
-["-c", {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .ctx "entry_point" .entry_point) | quote }}]
+{{- $secretLoaderCmd := default "false" .secrets_loader_cmd -}}
+{{- if eq $secretLoaderCmd "true" }}
+["-c", {{ include "harnesscommon.secretsLoader.mergeScript" (dict "entry_point" .entry_point) | quote }}]
+{{- else }}
+["/bin/sh", "-c", {{ include "harnesscommon.secretsLoader.mergeScript" (dict "entry_point" .entry_point) | quote }}]
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -190,7 +195,7 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
     secrets:
       envSecrets:
         enabled: {{ dig "secrets" "envSecrets" "enabled" true $mergedSecrets | quote }}
-        outputFile: {{ dig "secrets" "envSecrets" "outputFile" "/shared/env/.env" $mergedSecrets | quote }}
+        outputFile: {{ printf "%s/.env" (dig "secrets" "envSecrets" "outputPath" "/shared/env" $mergedSecrets) | quote }}
         categories: {{ dig "secrets" "envSecrets" "categories" (list "database" "api") $mergedSecrets | toYaml | nindent 10 }}
       fileSecrets:
         enabled: {{ dig "secrets" "fileSecrets" "enabled" true $mergedSecrets | quote }}
@@ -201,10 +206,13 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
     {{- if $list }}
       {{- range $i, $db := $list }}
       {{- $dbtype := index $db "dbtype" }}
+      {{- $databaseEngineEnabled := dig "databases" $dbtype "useDatabaseSecretsEngine" "false" $mergedSecrets }}
       - type: {{ $dbtype | quote }}
-        useDatabaseSecretsEngine: {{ dig "databases" $dbtype "useDatabaseSecretsEngine" "false" $mergedSecrets | quote }}
+        useDatabaseSecretsEngine: {{ $databaseEngineEnabled | quote }}
         engine: {{ dig "databases" $dbtype "engine" "" $mergedSecrets | quote }}
         databaseRole: {{ dig "databases" $dbtype "databaseRole" "" $mergedSecrets | quote }}
+        overridePath: {{ dig "databases" $dbtype "overridePath" "" $mergedSecrets | quote }}
+        basePath: {{ dig "databases" $dbtype "basePath" "" $mergedSecrets | quote }}
         {{- with (index $db "usernamesecrets") }}
         userEnvSecrets:
           {{- range $j, $u := . }}
