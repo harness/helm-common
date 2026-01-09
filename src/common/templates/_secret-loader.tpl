@@ -37,7 +37,7 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 {{- $mergedSecrets = mergeOverwrite $mergedSecrets $localSecrets -}}
 {{- end -}}
 - name: secrets-loader
-  image: {{ printf "%s/%s:%s" $mergedSecrets.image.registry $mergedSecrets.image.repository $mergedSecrets.image.tag }}
+  image: {{ printf "%s:%s" $mergedSecrets.image.repository $mergedSecrets.image.tag }}
   imagePullPolicy: {{ $mergedSecrets.image.pullPolicy }}
   volumeMounts:
     - name: secrets-loader-config
