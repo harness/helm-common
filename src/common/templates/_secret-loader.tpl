@@ -49,7 +49,11 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
       mountPath: /shared/files
   securityContext:
     runAsNonRoot: true
+    {{- if and $ctx.Values.securityContext $ctx.Values.securityContext.runAsUser }}
+    runAsUser: {{ $ctx.Values.securityContext.runAsUser }}
+    {{- else }}
     runAsUser: 65534
+    {{- end }}
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     capabilities:
