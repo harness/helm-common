@@ -117,6 +117,9 @@ USAGE:
 {{- $ := .ctx }}
 {{- $requiredFlags := default "-XX:+ExitOnOutOfMemoryError" $.Values.javaRequiredFlags }}
 {{- $additionalFlags := default "" $.Values.javaAdditionalFlags }}
+{{- if .additionalFlagsContext }}
+{{- $additionalFlags = .additionalFlagsContext }}
+{{- end }}
 {{- $javaAdvancedFlags := printf "%s %s" $requiredFlags $additionalFlags | trim }}
 {{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
 {{- $jfrFlags := printf "-XX:StartFlightRecording=disk=true,name=jfrRecording,maxage=12h,dumponexit=true,filename=%s/POD_NAME/jfr_dumponexit.jfr,settings=/opt/harness/profile.jfc -XX:FlightRecorderOptions=maxchunksize=20M,memorysize=20M,repository=%s/POD_NAME --add-reads jdk.jfr=ALL-UNNAMED -Dotel.instrumentation.redisson.enabled=false"  $jfrDumpRootLocation $jfrDumpRootLocation}}
