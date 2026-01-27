@@ -115,8 +115,8 @@ USAGE:
 */}}
 {{- define "harnesscommon.jfr.v1.printJavaAdvancedFlags" }}
 {{- $ := .ctx }}
-{{- $requiredFlags := default "-XX:+ExitOnOutOfMemoryError" $.Values.javaRequiredFlags }}
-{{- $additionalFlags := default "" $.Values.javaAdditionalFlags }}
+{{- $requiredFlags := default "-XX:+ExitOnOutOfMemoryError" $.Values.JAVA_REQUIRED_FLAGS }}
+{{- $additionalFlags := default "" $.Values.JAVA_ADDITIONAL_FLAGS }}
 {{- if .additionalFlagsContext }}
 {{- $additionalFlags = .additionalFlagsContext }}
 {{- end }}
