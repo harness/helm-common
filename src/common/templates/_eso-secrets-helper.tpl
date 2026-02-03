@@ -253,7 +253,7 @@ USAGE:
     {{- $hasAtleastOneSecret = true }}
     {{- $pathTosSecret := printf "secrets.default.%s" $key }}
 {{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
-{{ $key }}: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" $defaultSecretName "key" $key "providedValues" (list $pathTosSecret ) "length" 10 "context" $) }}
+{{ $key }}: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" $defaultSecretName "key" $key "providedValues" (list $pathTosSecret ) "length" 16 "context" $) }}
 {{- end }}
 {{- end }}
 
