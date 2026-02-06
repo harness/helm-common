@@ -39,6 +39,11 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 - name: secrets-loader
   image: {{ printf "%s:%s" $mergedSecrets.image.repository $mergedSecrets.image.tag }}
   imagePullPolicy: {{ $mergedSecrets.image.pullPolicy }}
+  command: ["/opt/harness/secrets-manager"]
+  args: ["load"]
+  env:
+    - name: SECRETS_LOADER_CONFIG
+      value: /etc/secrets-loader/config.yaml
   volumeMounts:
     - name: secrets-loader-config
       mountPath: /etc/secrets-loader
