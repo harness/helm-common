@@ -39,6 +39,9 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 - name: secrets-loader
   image: {{ printf "%s:%s" $mergedSecrets.image.repository $mergedSecrets.image.tag }}
   imagePullPolicy: {{ $mergedSecrets.image.pullPolicy }}
+  {{- if eq (dig "vault" "auth" "method" "" $mergedSecrets) "kubernetes" }}
+  serviceAccount: {{ $mergedSecrets.vault.auth.serviceAccount }}
+  {{- end }}
   command: ["/opt/harness/secrets-manager"]
   args: ["load"]
   env:
