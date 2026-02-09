@@ -26,6 +26,7 @@ global:
         secretId: ""
         # For Kubernetes auth:
         role: ""
+        serviceAccount: ""
     databases:
       mongo:
         useDatabaseSecretsEngine: false
