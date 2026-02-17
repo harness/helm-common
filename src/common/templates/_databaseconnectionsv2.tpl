@@ -184,7 +184,7 @@ USAGE:
         {{- $protocol = (printf "%s://" .protocol) }}
     {{- else }}
         {{- $protocolVar := "" }}
-        {{- if onprem }}
+        {{- if $onprem }}
             {{- $protocolVar = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.postgres.protocol" ".Values.timescaledb.protocol"))) }}
         {{- else }}
             {{- $protocolVar = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
