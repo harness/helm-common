@@ -27,6 +27,7 @@ OPTIONAL:
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleEnv" }}
     {{- $ := .ctx }}
+    {{- $onprem := $.Values.global.onprem }}
     {{- $localTimescaleDBCtx := $.Values.timescaledb }}
     {{- if .localTimescaleDBCtx }}
         {{- $localTimescaleDBCtx = .localTimescaleDBCtx }}
@@ -35,21 +36,29 @@ OPTIONAL:
     {{- if .globalTimescaleDBCtx }}
         {{- $globalTimescaleDBCtx = .globalTimescaleDBCtx }}
     {{- end }}
+    {{- $globalPostgresCtx := $.Values.global.database.postgres }}
+    {{- $additionalCtxIdentifier := default "timescaledb" .additionalCtxIdentifier }}
+    {{- $localTimescaleDBESOSecretIdentifier := include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" $additionalCtxIdentifier) }}
+    {{- $globalTimescaleESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "timescaledb") }}
+    {{- $globalPostgresESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "postgres") }}
+
     {{- $userVariableName := default "TIMESCALEDB_USERNAME" .userVariableName }}
     {{- $passwordVariableName := default "TIMESCALEDB_PASSWORD" .passwordVariableName }}
     {{- $sslModeVariableName := default "TIMESCALEDB_SSL_MODE" .sslModeVariableName }}
     {{- $sslModeValue := "" }}
+    {{- $postgresSslMode := "disable" }}
     {{- $handleSSLModeDisable := default false .handleSSLModeDisable }}
     {{- $certVariableName := default "TIMESCALEDB_SSL_ROOT_CERT" .certVariableName }}
     {{- $enableSslVariableName := default "" .enableSslVariableName }}
-    {{- if and $ $localTimescaleDBCtx $globalTimescaleDBCtx }}
+    {{- if and $ $localTimescaleDBCtx (or $globalTimescaleDBCtx (and $onprem $globalPostgresCtx)) }}
+        {{- if $onprem }}
+            {{- include "harnesscommon.dbconnectionv2.postgresEnv" (dict "ctx" $ "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName "localDBCtx" $localTimescaleDBCtx) }}
+            {{- $postgresSslMode = default "disable" $globalPostgresCtx.sslMode }}
+        {{- else }}
         {{- $installed := false }}
         {{- if eq $globalTimescaleDBCtx.installed true }}
             {{- $installed = $globalTimescaleDBCtx.installed }}
         {{- end }}
-        {{- $additionalCtxIdentifier := default "timescaledb" .additionalCtxIdentifier }}
-        {{- $localTimescaleDBESOSecretIdentifier := include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" $additionalCtxIdentifier) }}
-        {{- $globalTimescaleESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "timescaledb") }}
         {{- if $installed }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "overrideEnvName" $userVariableName "defaultValue" "postgres" "defaultKubernetesSecretName" "" "defaultKubernetesSecretKey" "" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "overrideEnvName" $passwordVariableName "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "timescaledbPostgresPassword" "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
@@ -57,16 +66,27 @@ OPTIONAL:
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_USERNAME" "overrideEnvName" $userVariableName "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.userKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_PASSWORD" "overrideEnvName" $passwordVariableName "defaultKubernetesSecretName" $globalTimescaleDBCtx.secretName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.passwordKey "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
         {{- end }}
+        {{- end }}
         {{- $sslEnabled := false }}
         {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
-        {{- if eq $sslEnabledVar "true" }}
+        {{- if $onprem }}
+            {{- $sslEnabled = ne $postgresSslMode "disable" }}
+        {{- else if eq $sslEnabledVar "true" }}
             {{- $sslEnabled = true }}
         {{- end }}
         {{- if $sslEnabled }}
-            {{- $sslModeValue = default "require" .sslModeValue }}
+            {{- if $onprem }}
+                {{- $sslModeValue = $postgresSslMode }}
+            {{- else }}
+                {{- $sslModeValue = default "require" .sslModeValue }}
+            {{- end }}
 - name: {{ print $sslModeVariableName }}
   value: {{ print $sslModeValue }}
+            {{- if $onprem }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_SSL_ROOT_CERT" "overrideEnvName" $certVariableName "defaultKubernetesSecretName" $globalPostgresCtx.certName "defaultKubernetesSecretKey" $globalPostgresCtx.certKey  "extKubernetesSecretCtxs" (list $globalPostgresCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalPostgresESOSecretIdentifier "secretCtx" $globalPostgresCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- else }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_SSL_ROOT_CERT" "overrideEnvName" $certVariableName "defaultKubernetesSecretName" $globalTimescaleDBCtx.certName "defaultKubernetesSecretKey" $globalTimescaleDBCtx.certKey  "extKubernetesSecretCtxs" (list $globalTimescaleDBCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalTimescaleESOSecretIdentifier "secretCtx" $globalTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
+            {{- end }}
             {{- $certPathVariableName := default "TIMESCALEDB_SSL_CERT_PATH" .certPathVariableName }}
             {{- $certPathValue := default "" .certPathValue }}
             {{- if $certPathValue }}
@@ -89,6 +109,10 @@ OPTIONAL:
 
 {{- define "harnesscommon.dbconnectionv2.timescaleHost" }}
     {{- $ := .context }}
+    {{- $onprem := $.Values.global.onprem }}
+    {{- if $onprem }}
+        {{- include "harnesscommon.dbconnectionv2.postgresHost" (dict "context" $) }}
+    {{- else }}
     {{- $connectionString := "" }}
     {{- $type := "timescaledb" }}
     {{- $installed := (pluck $type $.Values.global.database | first).installed }}
@@ -103,10 +127,15 @@ OPTIONAL:
         {{- end }}
     {{- printf "%s"  (split ":" (index $hosts 0))._0 }}
     {{- end }}
+    {{- end }}
 {{- end }}
 
 {{- define "harnesscommon.dbconnectionv2.timescalePort" }}
     {{- $ := .context }}
+    {{- $onprem := $.Values.global.onprem }}
+    {{- if $onprem }}
+        {{- include "harnesscommon.dbconnectionv2.postgresPort" (dict "context" $) }}
+    {{- else }}
     {{- $connectionString := "" }}
     {{- $type := "timescaledb" }}
     {{- $installed := (pluck $type $.Values.global.database | first).installed }}
@@ -121,6 +150,7 @@ OPTIONAL:
         {{- end }}
         {{- printf "%s" (split ":" (index $.Values.global.database.timescaledb.hosts 0))._1 }}
     {{- end }}
+    {{- end }}
 {{- end }}
 
 {{/*
@@ -132,9 +162,18 @@ USAGE:
 {{- define "harnesscommon.dbconnectionv2.timescaleConnection" }}
     {{- $database := default .database .context.Values.timescaledb.database }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
+    {{- $onprem := .context.Values.global.onprem }}
+    {{- $globalPostgresCtx := .context.Values.global.database.postgres }}
+    {{- $postgresSslMode := "disable" }}
+    {{- if $onprem }}
+        {{- $postgresSslMode = default "disable" $globalPostgresCtx.sslMode }}
+        {{- $addSSLModeArg = true }}
+    {{- end }}
     {{- $sslEnabled := false }}
     {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
-    {{- if eq $sslEnabledVar "true" }}
+    {{- if $onprem }}
+        {{- $sslEnabled = ne $postgresSslMode "disable" }}
+    {{- else if eq $sslEnabledVar "true" }}
         {{- $sslEnabled = true }}
     {{- end }}
     {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context ) }}
@@ -144,7 +183,12 @@ USAGE:
     {{- if not (empty .protocol) }}
         {{- $protocol = (printf "%s://" .protocol) }}
     {{- else }}
-        {{- $protocolVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+        {{- $protocolVar := "" }}
+        {{- if onprem }}
+            {{- $protocolVar = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.postgres.protocol" ".Values.timescaledb.protocol"))) }}
+        {{- else }}
+            {{- $protocolVar = (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "string" "keys" (list ".Values.global.database.timescaledb.protocol" ".Values.timescaledb.protocol"))) }}
+        {{- end }}
         {{- if not (empty $protocolVar) }}
             {{- $protocol = (printf "%s://" $protocolVar) }}
         {{- end }}
@@ -607,7 +651,7 @@ USAGE:
       {{- print "postgres" }}
   {{- else }}
       {{- $hosts := list }}
-      {{- if gt (len $.Values.postgres.hosts) 0 }}
+      {{- if and $.Values.postgres (gt (len $.Values.postgres.hosts) 0) }}
           {{- $hosts = $.Values.postgres.hosts }}
       {{- else }}
           {{- $hosts = $.Values.global.database.postgres.hosts }}
@@ -625,7 +669,7 @@ USAGE:
         {{- printf "%s" "5432" }}
     {{- else }}
     {{- $hosts := list }}
-    {{- if gt (len $.Values.postgres.hosts) 0 }}
+    {{- if and $.Values.postgres (gt (len $.Values.postgres.hosts) 0) }}
         {{- $hosts = $.Values.postgres.hosts }}
     {{- else }}
         {{- $hosts = $.Values.global.database.postgres.hosts }}

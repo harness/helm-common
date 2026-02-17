@@ -663,6 +663,10 @@ USAGE:
 
 {{- define "harnesscommon.dbconnectionv3.timescaleHost" }}
     {{- $ := .context }}
+    {{- $onprem := $.Values.global.onprem }}
+    {{- if $onprem }}
+        {{- include "harnesscommon.dbconnectionv2.postgresHost" (dict "context" $) }}
+    {{- else }}
     {{- $connectionString := "" }}
     {{- $type := "timescaledb" }}
     {{- $installed := (pluck $type $.Values.global.database | first).installed }}
@@ -683,10 +687,15 @@ USAGE:
         {{- end }}
     {{- end }}
     {{- printf "%s" (split ":" (index $hosts 0))._0 }}
+    {{- end }}
 {{- end }}
 
 {{- define "harnesscommon.dbconnectionv3.timescalePort" }}
     {{- $ := .context }}
+    {{- $onprem := $.Values.global.onprem }}
+    {{- if $onprem }}
+        {{- include "harnesscommon.dbconnectionv2.postgresPort" (dict "context" $) }}
+    {{- else }}
     {{- $connectionString := "" }}
     {{- $type := "timescaledb" }}
     {{- $installed := (pluck $type $.Values.global.database | first).installed }}
@@ -707,12 +716,23 @@ USAGE:
         {{- end }}
     {{- end }}
     {{- printf "%s" (split ":" (index $hosts 0))._1 }}
+    {{- end }}
 {{- end }}
+
 {{- define "harnesscommon.dbconnectionv3.timescaleConnection" }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
+    {{- $onprem := .context.Values.global.onprem }}
+    {{- $globalPostgresCtx := .context.Values.global.database.postgres }}
+    {{- $postgresSslMode := "disable" }}
+    {{- if $onprem }}
+        {{- $postgresSslMode = default "disable" $globalPostgresCtx.sslMode }}
+        {{- $addSSLModeArg = true }}
+    {{- end }}
     {{- $sslEnabled := false }}
     {{- $sslEnabledVar := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" .context "valueType" "bool" "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled"))) }}
-    {{- if eq $sslEnabledVar "true" }}
+    {{- if $onprem }}
+        {{- $sslEnabled = ne $postgresSslMode "disable" }}
+    {{- else if eq $sslEnabledVar "true" }}
         {{- $sslEnabled = true }}
     {{- end }}
     {{- $localTimescaleDBCtx := .context.Values.timescaledb }}
@@ -743,8 +763,8 @@ USAGE:
     {{- $connectionString = (printf "%s%s%s:%s/%s" $protocol $userAndPassField  $host $port $database) }}
     {{- if .args }}
         {{- if $addSSLModeArg }}
-            {{- if $sslEnabled }}
-                {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=require") }}
+        {{- if $sslEnabled }}
+            {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=require") }}
             {{- else }}
                 {{- $connectionString = (printf "%s?%s&%s" $connectionString .args "sslmode=disable") }}
             {{- end }}
@@ -753,8 +773,8 @@ USAGE:
         {{- end }}
     {{- else }}
         {{- if $addSSLModeArg }}
-            {{- if $sslEnabled }}
-                {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=require") }}
+        {{- if $sslEnabled }}
+            {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=require") }}
             {{- else }}
                 {{- $connectionString = (printf "%s?%s" $connectionString "sslmode=disable") }}
             {{- end }}
@@ -766,8 +786,13 @@ USAGE:
 
 {{- define "harnesscommon.dbconnectionv4.timescaleConnection" }}
     {{- $ := .context }}
+    {{- $onprem := .context.Values.global.onprem }}
+    {{- $globalPostgresCtx := $.Values.global.database.postgres }}
     {{- $addSSLModeArg := default false .addSSLModeArg }}
     {{- $globalTimescaleDBCtx := $.Values.global.database.timescaledb }}
+    {{- if $onprem }}
+        {{- $globalTimescaleDBCtx = $globalPostgresCtx }}
+    {{- end }}
     {{- if $globalTimescaleDBCtx.installed }}
         {{- $globalTimescaleDBCtx = dict }}
     {{- end }}
