@@ -54,6 +54,7 @@ OPTIONAL:
         {{- if $onprem }}
             {{- include "harnesscommon.dbconnectionv2.postgresEnv" (dict "ctx" $ "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName "localDBCtx" $localTimescaleDBCtx) }}
             {{- $postgresSslMode = default "disable" $globalPostgresCtx.sslMode }}
+            {{- $sslModeVariableName = .sslModeVariableName }}
         {{- else }}
         {{- $installed := false }}
         {{- if eq $globalTimescaleDBCtx.installed true }}
@@ -80,8 +81,10 @@ OPTIONAL:
             {{- else }}
                 {{- $sslModeValue = default "require" .sslModeValue }}
             {{- end }}
+            {{- if $sslModeVariableName }}
 - name: {{ print $sslModeVariableName }}
   value: {{ print $sslModeValue }}
+            {{- end }}
             {{- if $onprem }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "TIMESCALEDB_SSL_ROOT_CERT" "overrideEnvName" $certVariableName "defaultKubernetesSecretName" $globalPostgresCtx.certName "defaultKubernetesSecretKey" $globalPostgresCtx.certKey  "extKubernetesSecretCtxs" (list $globalPostgresCtx.secrets.kubernetesSecrets $localTimescaleDBCtx.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalPostgresESOSecretIdentifier "secretCtx" $globalPostgresCtx.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" $localTimescaleDBESOSecretIdentifier "secretCtx" $localTimescaleDBCtx.secrets.secretManagement.externalSecretsOperator))) }}
             {{- else }}
@@ -99,8 +102,10 @@ OPTIONAL:
             {{- end }}
         {{- else if $handleSSLModeDisable }}
             {{- $sslModeValue = "disable" }}
+            {{- if $sslModeVariableName }}
 - name: {{ print $sslModeVariableName }}
   value: {{ print $sslModeValue }}
+            {{- end }}
         {{- end }}
     {{- else }}
         {{- fail (printf "invalid input") }}
