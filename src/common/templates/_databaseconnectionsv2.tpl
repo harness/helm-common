@@ -553,6 +553,7 @@ USAGE:
     {{- $ := .ctx }}
     {{- $type := "postgres" }}
     {{- $dbType := upper $type }}
+    {{- $onprem := $.Values.global.onprem }}
     {{- $installed := true }}
     {{- $globalDBCtx := $.Values.global.database.postgres }}
     {{- if .globalDBCtx }}
@@ -591,6 +592,7 @@ USAGE:
         {{- $passwordVariableName = "" }}
     {{- end }}
     {{- $sslMode := default "disable" $mergedDBCtx.sslMode }}
+    {{- $sslEnabled := default false (ne $sslMode "disable") }}
     {{- $database := default .database $localDBCtx.database }}
     {{- if $installed }}
         {{- if $keywordValueConnectionString }}
@@ -613,6 +615,13 @@ USAGE:
             {{- $finalArgs = (printf "%s?%s&%s" $finalArgs $paramArgs $extraArgs) }}
         {{- else if or $paramArgs $extraArgs }}
             {{- $finalArgs = (printf "%s?%s" $finalArgs (default $paramArgs $extraArgs)) }}
+        {{- end }}
+        {{- if and $onprem $sslEnabled (not (contains "sslmode=" $finalArgs))}}
+            {{- if or $paramArgs $extraArgs }}
+                {{- $finalArgs = (printf "%s&sslmode=%s " $finalArgs $sslMode) }}
+            {{- else }}
+                {{- $finalArgs = (printf "%s?sslmode=%s" $finalArgs $sslMode) }}
+            {{- end }}
         {{- end }}
         {{- $firsthostport := (index $hosts 0) -}}
         {{- $hostport := split ":" $firsthostport -}}
