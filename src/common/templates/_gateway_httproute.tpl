@@ -10,7 +10,7 @@ or
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and $.Values.global.gateway.enabled $.Values.global.ingress.enabled -}}
+{{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 {{- range $index, $object := $ingress.objects }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -45,18 +45,18 @@ metadata:
         {{- end }}
     {{- end }}
 spec:
-  {{- if $.Values.global.gateway.parentRef }}
+  {{- if $.Values.global.gatewayAPI.parentRef }}
   # Default parentRef from global config
   parentRefs:
-    - name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gateway.parentRef.name "context" $) }}
-      {{- if $.Values.global.gateway.parentRef.namespace }}
-      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gateway.parentRef.namespace "context" $) }}
+    - name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gatewayAPI.parentRef.name "context" $) }}
+      {{- if $.Values.global.gatewayAPI.parentRef.namespace }}
+      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gatewayAPI.parentRef.namespace "context" $) }}
       {{- end }}
-      {{- if $.Values.global.gateway.parentRef.sectionName }}
-      sectionName: {{ $.Values.global.gateway.parentRef.sectionName }}
+      {{- if $.Values.global.gatewayAPI.parentRef.sectionName }}
+      sectionName: {{ $.Values.global.gatewayAPI.parentRef.sectionName }}
       {{- end }}
-      {{- if $.Values.global.gateway.parentRef.port }}
-      port: {{ $.Values.global.gateway.parentRef.port }}
+      {{- if $.Values.global.gatewayAPI.parentRef.port }}
+      port: {{ $.Values.global.gatewayAPI.parentRef.port }}
       {{- end }}
   {{- end }}
   hostnames:
