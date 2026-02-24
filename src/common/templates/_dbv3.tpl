@@ -240,7 +240,7 @@ REQUIRED:
         {{- $localEnabled := dig "enabled" false $localDBCtx }}
         {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
             {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
-            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
+            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" $ "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
             {{- print "\n---" }}
         {{- end }}
     {{- end }}
@@ -520,7 +520,7 @@ REQUIRED:
         {{- $localEnabled := dig "enabled" false $localDBCtx }}
         {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
             {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
-            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
+            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" $ "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
             {{- print "\n---" }}
         {{- end }}
     {{- end }}
