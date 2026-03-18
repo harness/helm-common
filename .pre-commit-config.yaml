@@ -10,3 +10,11 @@ repos:
   rev: v0.1.17
   hooks:
   - id: helmlint
+# Run library test suite (template smoke + helm-unittest) so failures are caught before push
+- repo: local
+  hooks:
+  - id: helm-common-tests
+    name: helm-common library tests
+    entry: bash -c './ci/run-tests.sh'
+    language: system
+    pass_filenames: false

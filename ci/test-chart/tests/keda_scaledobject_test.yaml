@@ -1,0 +1,24 @@
+suite: KEDA ScaledObject
+values:
+  - ../values.yaml
+  - ../ci-values/keda.yaml
+templates:
+  - keda-scaledobject.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one ScaledObject when keda enabled with triggers
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ScaledObject
+      - equal:
+          path: spec.minReplicaCount
+          value: 0
+      - equal:
+          path: spec.maxReplicaCount
+          value: 10
+      - exists:
+          path: spec.triggers

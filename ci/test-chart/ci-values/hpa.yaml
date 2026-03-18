@@ -1,0 +1,11 @@
+# Scenario: HPA enabled (smoke test for harnesscommon.hpa.renderHPA)
+global:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 20
+  targetCPU: 80

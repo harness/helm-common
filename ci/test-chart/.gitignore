@@ -1,0 +1,2 @@
+# Packed dependency from helm dependency update (library is file://../../src/common)
+charts/*.tgz

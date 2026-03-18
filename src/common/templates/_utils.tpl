@@ -9,7 +9,7 @@
   {{- $value = ( index $latestObj . ) -}}
   {{- $latestObj = $value -}}
 {{- end -}}
-{{- printf "%v" (default "" $value) -}} 
+{{- printf "%v" (default "" $value) -}}
 {{- end -}}
 {{- define "harnesscommon.utils.getKeyFromList" -}}
 {{- $key := first .keys -}}
@@ -20,5 +20,5 @@
     {{- $key = . }}
   {{- end -}}
 {{- end -}}
-{{- printf "%s" $key -}} 
+{{- printf "%s" $key -}}
 {{- end -}}

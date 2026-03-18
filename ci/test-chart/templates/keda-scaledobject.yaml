@@ -1,0 +1,1 @@
+{{- include "harnesscommon.keda.renderScaledObject" (dict "ctx" . "kind" "Deployment") }}

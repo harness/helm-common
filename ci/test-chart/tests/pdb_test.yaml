@@ -1,0 +1,22 @@
+suite: PDB (harnesscommon.pdb.renderPodDistributionBudget)
+values:
+  - ../values.yaml
+  - ../ci-values/pdb.yaml
+templates:
+  - pdb.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one PodDisruptionBudget when pdb create enabled
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.minAvailable
+          value: "50%"
+      - containsDocument:
+          kind: PodDisruptionBudget
+          apiVersion: policy/v1
