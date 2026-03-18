@@ -29,5 +29,5 @@ echo "Running helm-unittest..."
 if helm unittest --help &>/dev/null; then
   helm unittest "$CHART_DIR"
 else
-  echo "  (helm-unittest plugin not installed; skipping. Install with: helm plugin install https://github.com/helm-unittest/helm-unittest --verify=false)"
+  echo "  (helm-unittest plugin not installed; skipping. Install with: helm plugin install https://github.com/helm-unittest/helm-unittest)"
 fi
