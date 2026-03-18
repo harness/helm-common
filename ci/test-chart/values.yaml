@@ -7,6 +7,25 @@ global:
     enabled: false
   keda:
     enabled: false
+  ingress:
+    enabled: false
+    className: ""
+    hosts: []
+    pathType: ImplementationSpecific
+    disableHostInIngress: false
+    objects: {}
+    tls:
+      enabled: false
+      secretName: ""
+  istio:
+    enabled: false
+    virtualService:
+      hosts: []
+      gateways: []
+    gateway:
+      create: false
+      namespace: istio-system
+      name: public
 # Top-level keys used by library (avoid nil when template runs)
 pdb:
   create: false
@@ -18,3 +37,9 @@ keda:
     triggers: []  # required when enabled; empty so template never sees nil
   triggerAuthentication:
     create: false
+ingress:
+  objects: []
+virtualService:
+  objects: []
+service:
+  port: 80
