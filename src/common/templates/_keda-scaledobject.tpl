@@ -79,8 +79,10 @@ spec:
     apiVersion: {{ default "apps/v1" (dig "scaleTargetRef" "apiVersion" "apps/v1" $so) }}
     kind: {{ or (dig "scaleTargetRef" "kind" "" $so) (.kind | default "Deployment") }}
     name: {{ $targetRefName }}
-    {{- if and $so.scaleTargetRef $so.scaleTargetRef.envSourceContainerName }}
+    {{- if $so.scaleTargetRef }}
+    {{- if $so.scaleTargetRef.envSourceContainerName }}
     envSourceContainerName: {{ $so.scaleTargetRef.envSourceContainerName }}
+    {{- end }}
     {{- end }}
 
   {{/* Replica and timing: precedence global < root/configPath */}}
