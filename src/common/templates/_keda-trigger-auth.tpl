@@ -28,7 +28,7 @@ Values (under keda or configPath.keda):
   {{- $config = .configPath }}
 {{- end }}
 
-{{- if and $config.keda $config.keda.triggerAuthentication $config.keda.triggerAuthentication.create $config.keda.triggerAuthentication.spec }}
+{{- if and $config.keda $config.keda.triggerAuthentication (index $config.keda.triggerAuthentication "create") $config.keda.triggerAuthentication.spec }}
 {{- $ta := $config.keda.triggerAuthentication }}
 {{- $authName := default (printf "%s-keda-auth" (include "harnesscommon.names.fullname" $)) $ta.name }}
 {{- if .nameOverride }}
@@ -48,4 +48,4 @@ metadata:
 spec:
   {{- include "harnesscommon.tplvalues.render" (dict "value" $ta.spec "context" $) | nindent 2 }}
 {{- end }}
-{{- end }}
+{{- end -}}

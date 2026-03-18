@@ -14,3 +14,5 @@ autoscaling:
   enabled: false
 keda:
   enabled: false
+  triggerAuthentication:
+    create: false
