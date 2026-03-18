@@ -1,0 +1,16 @@
+# Minimal base values so library templates never see nil (e.g. global.pdb.create).
+# CI overlays with ci-values/*.yaml to enable one feature per scenario.
+global:
+  pdb:
+    create: false
+  autoscaling:
+    enabled: false
+  keda:
+    enabled: false
+# Top-level keys used by library (avoid nil when template runs)
+pdb:
+  create: false
+autoscaling:
+  enabled: false
+keda:
+  enabled: false

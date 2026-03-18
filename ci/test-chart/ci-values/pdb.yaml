@@ -1,0 +1,7 @@
+# Scenario: PDB enabled (smoke test for harnesscommon.pdb.renderPodDistributionBudget)
+global:
+  pdb:
+    create: true
+pdb:
+  create: true
+  minAvailable: "50%"

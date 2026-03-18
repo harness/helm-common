@@ -1,5 +1,7 @@
 {{/*
 Create Horizontal Pod Autoscaler Configuration
+
+If KEDA (ScaledObject) is also used for the same deployment, KEDA will take over this HPA via transfer-hpa-ownership (set on the ScaledObject). Prefer enabling one or the other per deployment. See docs/KEDA.md (HPA coexistence).
 Usage examples:
   Legacy (backward compatible):
     {{- include "harnesscommon.hpa.renderHPA" (dict "ctx" .  "kind" "Deployment" "targetRefNameOverride" "custom-target-name") }}

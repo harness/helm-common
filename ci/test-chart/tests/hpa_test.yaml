@@ -1,0 +1,25 @@
+suite: HPA (harnesscommon.hpa.renderHPA)
+values:
+  - ../values.yaml
+  - ../ci-values/hpa.yaml
+templates:
+  - hpa.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one HorizontalPodAutoscaler when autoscaling enabled
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 20
+      - matchRegex:
+          path: apiVersion
+          pattern: ^autoscaling/v2

@@ -1,0 +1,21 @@
+# Scenario: KEDA ScaledObject + TriggerAuthentication (smoke test for KEDA templates)
+global: {}
+keda:
+  enabled: true
+  triggerAuthentication:
+    create: true
+    name: test-prometheus-auth
+    spec:
+      podIdentity:
+        provider: gcp
+  scaledObject:
+    minReplicaCount: 0
+    maxReplicaCount: 10
+    triggers:
+      - type: prometheus
+        authenticationRef:
+          name: test-prometheus-auth
+        metadata:
+          serverAddress: http://prometheus:9090
+          metricName: test_metric
+          threshold: "10"

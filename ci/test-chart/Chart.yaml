@@ -1,0 +1,10 @@
+apiVersion: v2
+name: harness-common-test
+description: Consumer chart used only to test harness-common library templates (CI and local).
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+dependencies:
+  - name: harness-common
+    version: "1.4.22"
+    repository: "file://../../src/common"
