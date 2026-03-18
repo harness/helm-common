@@ -30,7 +30,7 @@ USAGE:
 {{- else if and $.Values.global.jfr $.Values.global.jfr.enabled }}
 postStart:
   exec:
-    command: 
+    command:
     - /bin/sh
     - -c
     - |
@@ -143,4 +143,3 @@ USAGE:
   {{- include "harnesscommon.jfr.v1.volumeMounts" (dict "ctx" $) | indent 2 }}
 {{- end }}
 {{- end }}
-

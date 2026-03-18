@@ -28,6 +28,8 @@ Or run the script used in CI (template scenarios + helm-unittest if the plugin i
 ./ci/run-tests.sh
 ```
 
+**Pre-commit:** If you use [pre-commit](https://pre-commit.com/), the config in `.pre-commit-config.yaml` includes a `helm-common-tests` hook that runs this script on every commit, so template and unit test failures are caught before you push.
+
 To run only helm-unittest:
 
 ```bash

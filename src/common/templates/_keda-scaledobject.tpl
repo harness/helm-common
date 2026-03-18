@@ -50,7 +50,9 @@ Values (under keda or configPath.keda):
   {{- $kedaEnabled = true }}
 {{- end }}
 
-{{- if and $kedaEnabled $config.keda.scaledObject $config.keda.scaledObject.triggers }}
+{{- if $kedaEnabled }}
+{{- if $config.keda.scaledObject }}
+{{- if $config.keda.scaledObject.triggers }}
 {{- $so := $config.keda.scaledObject }}
 {{- $labelsFunction := printf "%s.labels" (default $.Chart.Name $.Values.nameOverride) }}
 apiVersion: keda.sh/v1alpha1
@@ -135,3 +137,5 @@ spec:
     {{- include "harnesscommon.tplvalues.render" (dict "value" $so.triggers "context" $) | nindent 4 }}
 {{- end }}
 {{- end }}
+{{- end }}
+{{- end -}}

@@ -27,7 +27,7 @@
 - name: {{ print $envVariableName }}
   secret:
     secretName: {{ printf "%s" $secretName }}
-    items: 
+    items:
     - key: {{ printf "%s" $secretKey }}
       path: {{ printf "%s" $path }}
   {{- end }}
@@ -59,7 +59,7 @@
 - name: {{ print $envVariableName }}
   secret:
     secretName: {{ printf "%s" $secretName }}
-    items: 
+    items:
     - key: {{ printf "%s" $secretKey }}
       path: {{ printf "%s" $path }}
   {{- end }}
@@ -81,7 +81,7 @@
 - name: {{ print $envVariableName }}
   secret:
     secretName: {{ printf "%s" $secretName }}
-    items: 
+    items:
     - key: {{ printf "%s" $secretKey }}
       path: {{ printf "%s" $path }}
   {{- end }}

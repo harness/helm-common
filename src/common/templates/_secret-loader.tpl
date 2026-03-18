@@ -1,4 +1,4 @@
-{{/* 
+{{/*
 Checks if secretsLoader is enabled
 Usage: {{ include "harnesscommon.secretsLoader.enabled" (dict "ctx" .) }}
 */}}
@@ -22,7 +22,7 @@ Usage: {{ include "harnesscommon.secretsLoader.enabled" (dict "ctx" .) }}
 {{- $enabled -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create initContainer for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 */}}
@@ -67,7 +67,7 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create volumeMounts for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.volumeMounts" (dict "ctx" .) }}
 */}}
@@ -97,7 +97,7 @@ Usage: {{ include "harnesscommon.secretsLoader.volumeMounts" (dict "ctx" .) }}
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create volumes for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.volumes" (dict "ctx" .) }}
 */}}
@@ -127,7 +127,7 @@ Usage: {{ include "harnesscommon.secretsLoader.volumes" (dict "ctx" .) }}
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create mergeScript for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .) }}
 */}}
@@ -137,7 +137,7 @@ Usage: {{ include "harnesscommon.secretsLoader.mergeScript" (dict "ctx" .) }}
 set -a && . /shared/env/.env && set +a && for var in $(env | grep '\${' | cut -d= -f1); do eval "export $var=\"$(eval echo \"\$$var\")\""; done && exec {{ $entry }}
 {{- end -}}
 
-{{/* 
+{{/*
 Create command for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.command" (dict "ctx" .) }}
 */}}
@@ -148,7 +148,7 @@ Usage: {{ include "harnesscommon.secretsLoader.command" (dict "ctx" .) }}
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create args for secretsLoader
 Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" . "entry_point" "/opt/harness/run.sh") }}
 */}}
@@ -164,9 +164,9 @@ Usage: {{ include "harnesscommon.secretsLoader.args" (dict "ctx" . "entry_point"
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 Create configContent for secretsLoader
-Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "databaseSecrets" (list 
+Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "databaseSecrets" (list
     (dict "dbtype" "mongo" "usernamesecrets" list("MONGODB_USER" "RESOURCE_GROUP_MONGO_USER") "passwordsecrets" list("MONGODB_PASSWORD" "RESOURCE_GROUP_MONGO_PASSWORD"))
     (dict "dbtype" "redis" "usernamesecrets" list("REDIS_USERNAME" "RESOURCE_GROUP_REDIS_USERNAME") "passwordsecrets" list("REDIS_PASSWORD" "RESOURCE_GROUP_REDIS_PASSWORD"))
   ))}}

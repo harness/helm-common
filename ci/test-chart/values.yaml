@@ -14,5 +14,7 @@ autoscaling:
   enabled: false
 keda:
   enabled: false
+  scaledObject:
+    triggers: []  # required when enabled; empty so template never sees nil
   triggerAuthentication:
     create: false
