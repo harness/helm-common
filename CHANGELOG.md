@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.1] - 2026-03-27
+
+### Added
+- **Wait for Directory Init Container**: New template `harnesscommon.initContainer.waitForDirectory` that creates an init container to wait for a directory to exist on the Kubernetes node before starting the main container
+  - Configurable timeout (default: 300s) and check interval (default: 2s)
+  - Uses busybox:1.36 by default with full image override support via `common.images.image` helper
+  - Read-only mount for safety
+  - Progress logging with elapsed time tracking
+  - See [Init Containers documentation](docs/INIT_CONTAINERS.md) for usage examples
+
+### Changed
+- Added comprehensive CI test coverage for wait-for-directory template
+  - Template smoke tests
+  - 15 unit tests using helm-unittest
+  - Tests verify: Pod structure, volume mounts, timeouts, image overrides, and global registry support
+
+---
+
 ## [1.4.2] - 2025-01-23
 
 ### Fixed

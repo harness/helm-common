@@ -1,0 +1,122 @@
+suite: Wait For Directory Init Container
+values:
+  - ../values.yaml
+  - ../ci-values/wait-for-directory.yaml
+templates:
+  - wait-for-directory.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render Pod with wait-for-directory init container
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Pod
+      - equal:
+          path: metadata.name
+          value: test-wait-for-directory
+
+  - it: should have init container with correct name
+    asserts:
+      - equal:
+          path: spec.initContainers[0].name
+          value: wait-for-data-dir
+
+  - it: should have busybox image in init container
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].image
+          pattern: busybox:1\.36$
+
+  - it: should have correct directory path in command
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: /var/lib/data
+
+  - it: should have timeout value in script
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: "300"
+
+  - it: should have check interval in script
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: "sleep 2"
+
+  - it: should have volume mount for directory check
+    asserts:
+      - equal:
+          path: spec.initContainers[0].volumeMounts[0].name
+          value: host-directory-check
+      - equal:
+          path: spec.initContainers[0].volumeMounts[0].mountPath
+          value: /var/lib/data
+      - equal:
+          path: spec.initContainers[0].volumeMounts[0].readOnly
+          value: true
+
+  - it: should have hostPath volume
+    asserts:
+      - equal:
+          path: spec.volumes[0].name
+          value: host-directory-check
+      - equal:
+          path: spec.volumes[0].hostPath.path
+          value: /var/lib/data
+      - equal:
+          path: spec.volumes[0].hostPath.type
+          value: Directory
+
+  - it: should use custom container name when specified
+    asserts:
+      - equal:
+          path: spec.initContainers[0].name
+          value: wait-for-data-dir
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: "300"  # default timeout
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: "sleep 2"  # default checkInterval
+
+  - it: should support custom image configuration
+    values:
+      - ../values.yaml  # Only base values, no ci-values overlay
+    set:
+      waitForDirectory:
+        enabled: true
+        directoryPath: /custom/path
+        image:
+          registry: custom.registry.io
+          repository: custom-busybox
+          tag: "latest"
+          pullPolicy: Always
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].image
+          pattern: custom\.registry\.io/custom-busybox:latest$
+      - equal:
+          path: spec.initContainers[0].imagePullPolicy
+          value: Always
+
+  - it: should respect global.imageRegistry override
+    values:
+      - ../values.yaml
+    set:
+      global:
+        imageRegistry: global-registry.io
+      waitForDirectory:
+        enabled: true
+        directoryPath: /test/path
+        image:
+          repository: busybox
+          tag: "1.36"
+    asserts:
+      - matchRegex:
+          path: spec.initContainers[0].image
+          pattern: ^global-registry\.io/busybox:1\.36$

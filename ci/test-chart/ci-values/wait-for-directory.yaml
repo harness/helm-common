@@ -1,0 +1,7 @@
+# Enable wait-for-directory init container test
+waitForDirectory:
+  enabled: true
+  directoryPath: /var/lib/data
+  containerName: wait-for-data-dir
+  timeout: 300
+  checkInterval: 2

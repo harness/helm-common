@@ -1,0 +1,25 @@
+{{- if .Values.waitForDirectory.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-wait-for-directory
+spec:
+  initContainers:
+{{ include "harnesscommon.initContainer.waitForDirectory" (dict
+  "root" .
+  "directoryPath" .Values.waitForDirectory.directoryPath
+  "containerName" .Values.waitForDirectory.containerName
+  "image" .Values.waitForDirectory.image
+  "timeout" .Values.waitForDirectory.timeout
+  "checkInterval" .Values.waitForDirectory.checkInterval
+) | nindent 4 }}
+  containers:
+    - name: main
+      image: busybox:1.36
+      command: ["sleep", "infinity"]
+  volumes:
+    - name: host-directory-check
+      hostPath:
+        path: {{ .Values.waitForDirectory.directoryPath }}
+        type: Directory
+{{- end }}
