@@ -19,11 +19,12 @@ run_scenario() {
 }
 
 echo "Rendering scenarios..."
-run_scenario "HPA"           "${VALUES_DIR}/hpa.yaml"
-run_scenario "PDB"           "${VALUES_DIR}/pdb.yaml"
-run_scenario "KEDA"          "${VALUES_DIR}/keda.yaml"
-run_scenario "Ingress"       "${VALUES_DIR}/ingress.yaml"
-run_scenario "VirtualService" "${VALUES_DIR}/virtualservice.yaml"
+run_scenario "HPA"              "${VALUES_DIR}/hpa.yaml"
+run_scenario "PDB"              "${VALUES_DIR}/pdb.yaml"
+run_scenario "KEDA"             "${VALUES_DIR}/keda.yaml"
+run_scenario "Ingress"          "${VALUES_DIR}/ingress.yaml"
+run_scenario "VirtualService"   "${VALUES_DIR}/virtualservice.yaml"
+run_scenario "WaitForDirectory" "${VALUES_DIR}/wait-for-directory.yaml"
 echo "All template scenarios passed."
 
 echo ""

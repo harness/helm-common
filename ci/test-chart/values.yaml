@@ -43,3 +43,6 @@ virtualService:
   objects: []
 service:
   port: 80
+waitForDirectory:
+  enabled: false
+  directoryPath: ""
