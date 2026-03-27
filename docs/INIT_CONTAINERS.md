@@ -13,8 +13,8 @@ Creates an init container that waits for a directory to exist on the Kubernetes 
 ```yaml
 {{- include "harnesscommon.initContainer.waitForDirectory" (dict
   "root" .
-  "directoryPath" "/var/lib/data"
-  "containerName" "wait-for-data-dir"
+  "directoryPath" "/var/dumps"
+  "containerName" "wait-for-dumps"
   "timeout" 300
 ) | nindent 8 }}
 ```
@@ -59,8 +59,8 @@ spec:
   initContainers:
 {{ include "harnesscommon.initContainer.waitForDirectory" (dict
   "root" .
-  "directoryPath" "/var/lib/app-data"
-  "containerName" "wait-for-app-data"
+  "directoryPath" "/var/dumps"
+  "containerName" "wait-for-dumps"
   "timeout" 600
   "checkInterval" 5
 ) | nindent 4 }}
@@ -68,16 +68,16 @@ spec:
     - name: main
       image: my-app:latest
       volumeMounts:
-        - name: app-data
+        - name: dumps-data
           mountPath: /data
   volumes:
     - name: host-directory-check
       hostPath:
-        path: /var/lib/app-data
+        path: /var/dumps
         type: Directory
-    - name: app-data
+    - name: dumps-data
       hostPath:
-        path: /var/lib/app-data
+        path: /var/dumps
         type: Directory
 ```
 

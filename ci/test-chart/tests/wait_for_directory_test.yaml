@@ -22,7 +22,7 @@ tests:
     asserts:
       - equal:
           path: spec.initContainers[0].name
-          value: wait-for-data-dir
+          value: wait-for-dumps
 
   - it: should have busybox image in init container
     asserts:
@@ -34,7 +34,7 @@ tests:
     asserts:
       - matchRegex:
           path: spec.initContainers[0].args[0]
-          pattern: /var/lib/data
+          pattern: /var/dumps
 
   - it: should have timeout value in script
     asserts:
@@ -55,7 +55,7 @@ tests:
           value: host-directory-check
       - equal:
           path: spec.initContainers[0].volumeMounts[0].mountPath
-          value: /var/lib/data
+          value: /var/dumps
       - equal:
           path: spec.initContainers[0].volumeMounts[0].readOnly
           value: true
@@ -67,7 +67,7 @@ tests:
           value: host-directory-check
       - equal:
           path: spec.volumes[0].hostPath.path
-          value: /var/lib/data
+          value: /var/dumps
       - equal:
           path: spec.volumes[0].hostPath.type
           value: Directory
@@ -76,7 +76,7 @@ tests:
     asserts:
       - equal:
           path: spec.initContainers[0].name
-          value: wait-for-data-dir
+          value: wait-for-dumps
       - matchRegex:
           path: spec.initContainers[0].args[0]
           pattern: "300"  # default timeout

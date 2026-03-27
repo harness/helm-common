@@ -7,8 +7,8 @@ USAGE EXAMPLE:
 
 {{ include "harnesscommon.initContainer.waitForDirectory" (dict
   "root" .
-  "directoryPath" "/var/lib/data"
-  "containerName" "wait-for-data-dir"
+  "directoryPath" "/var/dumps"
+  "containerName" "wait-for-dumps"
   "image" .Values.busyboxImage
   "timeout" 300
 ) | nindent 8 }}
