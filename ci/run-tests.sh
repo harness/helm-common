@@ -23,6 +23,7 @@ run_scenario "HPA"           "${VALUES_DIR}/hpa.yaml"
 run_scenario "PDB"           "${VALUES_DIR}/pdb.yaml"
 run_scenario "KEDA"          "${VALUES_DIR}/keda.yaml"
 run_scenario "Ingress"       "${VALUES_DIR}/ingress.yaml"
+run_scenario "Ingress (compatibilityHosts)" "${VALUES_DIR}/ingress-compatibility.yaml"
 run_scenario "VirtualService" "${VALUES_DIR}/virtualservice.yaml"
 echo "All template scenarios passed."
 

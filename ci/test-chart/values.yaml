@@ -11,6 +11,7 @@ global:
     enabled: false
     className: ""
     hosts: []
+    compatibilityHosts: []
     pathType: ImplementationSpecific
     disableHostInIngress: false
     objects: {}
@@ -39,6 +40,7 @@ keda:
     create: false
 ingress:
   objects: []
+  extraHosts: []
 virtualService:
   objects: []
 service:

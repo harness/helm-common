@@ -1,0 +1,25 @@
+# Scenario: Ingress with compatibilityHosts and extraHosts
+# Verifies additive host merging, de-duplication, and TLS alignment.
+global:
+  ingress:
+    enabled: true
+    className: "harness"
+    hosts:
+      - "prod0.harness.io"
+      - "harness-ingress-controller"
+    compatibilityHosts:
+      - "*.harness.io"
+      - "prod0.harness.io"  # duplicate — must be de-duplicated
+    objects: {}
+    tls:
+      enabled: true
+      secretName: prod0-harness
+ingress:
+  objects:
+    - paths:
+        - path: /gateway
+          pathType: Prefix
+  extraHosts:
+    - harness-ingress-controller.harness.svc.cluster.local
+service:
+  port: 80
