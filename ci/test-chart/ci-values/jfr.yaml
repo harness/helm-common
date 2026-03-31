@@ -1,0 +1,12 @@
+global:
+  jfr:
+    enabled: true
+
+jfr:
+  image:
+    registry: registry.access.redhat.com
+    repository: ubi8/ubi-minimal
+    tag: "8.9"
+
+envType: qa
+jfrDumpRootLocation: /opt/harness

@@ -1,0 +1,56 @@
+{{- if and $.Values.global.jfr $.Values.global.jfr.enabled }}
+---
+# Test: JFR Environment Variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-env-test
+data:
+  env: |
+    {{- include "harnesscommon.jfr.v1.renderEnvironmentVars" (dict "ctx" $) | nindent 4 }}
+---
+# Test: JFR Volumes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-volumes-test
+data:
+  volumes: |
+    {{- include "harnesscommon.jfr.v1.volumes" (dict "ctx" $) | nindent 4 }}
+---
+# Test: JFR Volume Mounts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-volumemounts-test
+data:
+  volumeMounts: |
+    {{- include "harnesscommon.jfr.v1.volumeMounts" (dict "ctx" $) | nindent 4 }}
+---
+# Test: JFR Init Container
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-initcontainer-test
+data:
+  initContainers: |
+    {{- include "harnesscommon.jfr.v1.initContainer" (dict "ctx" $) | nindent 4 }}
+---
+# Test: JFR Lifecycle Hooks
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-lifecycle-test
+data:
+  lifecycle: |
+    {{- include "harnesscommon.v1.renderLifecycleHooks" (dict "ctx" $) | nindent 4 }}
+---
+# Test: JFR Java Flags
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jfr-javaflags-test
+data:
+  javaFlags: |
+    {{- include "harnesscommon.jfr.v1.printJavaAdvancedFlags" (dict "ctx" $) | nindent 4 }}
+{{- end }}
