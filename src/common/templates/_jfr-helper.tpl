@@ -35,7 +35,8 @@ postStart:
     - -c
     - |
       mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-      ln -s ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME ;
+      rm -f ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
+      ln -sf ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
 preStop:
   exec:
     command:
@@ -135,10 +136,33 @@ USAGE:
 */}}
 {{- define "harnesscommon.jfr.v1.initContainer" }}
 {{- $ := .ctx }}
+{{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
 {{- if $.Values.global.jfr.enabled }}
-- name: init-chmod
+- name: init-jfr
   image: {{ include "common.images.image" (dict "imageRoot" $.Values.jfr.image "global" $.Values.global) }}
-  command: [ 'chmod', '-R', '777', '{{ default "/opt/harness" $.Values.jfrDumpRootLocation }}/dumps' ]
+  securityContext:
+    runAsUser: 0
+    runAsNonRoot: false
+  env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: metadata.name
+  - name: SERVICE_NAME
+    value: {{ $.Chart.Name }}
+  - name: ENV_TYPE
+    value: {{ default "default" $.Values.envType }}
+  - name: JFR_DUMP_ROOT_LOCATION
+    value: {{ $jfrDumpRootLocation }}
+  command:
+  - /bin/sh
+  - -c
+  - |
+    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps;
+    mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
+    rm -f ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
+    ln -s ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
   volumeMounts:
   {{- include "harnesscommon.jfr.v1.volumeMounts" (dict "ctx" $) | indent 2 }}
 {{- end }}
