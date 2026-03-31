@@ -138,7 +138,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
 {{- if $.Values.global.jfr.enabled }}
-- name: init-jfr
+- name: init-jfr-c03846b08a9d4837
   image: {{ include "common.images.image" (dict "imageRoot" $.Values.jfr.image "global" $.Values.global) }}
   securityContext:
     runAsUser: 0
