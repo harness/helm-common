@@ -1,4 +1,4 @@
-{{- if and $.Values.global.jfr $.Values.global.jfr.enabled }}
+{{- if and (hasKey $.Values "global") (hasKey $.Values.global "jfr") $.Values.global.jfr.enabled }}
 ---
 # Test: JFR Environment Variables
 apiVersion: v1
