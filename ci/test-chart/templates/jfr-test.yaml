@@ -1,4 +1,4 @@
-{{- if and $.Values.global $.Values.global.jfr $.Values.global.jfr.enabled }}
+{{- if $.Values.global }}{{- if $.Values.global.jfr }}{{- if $.Values.global.jfr.enabled }}
 ---
 # Test: JFR Environment Variables
 apiVersion: v1
@@ -53,4 +53,4 @@ metadata:
 data:
   javaFlags: |
     {{- include "harnesscommon.jfr.v1.printJavaAdvancedFlags" (dict "ctx" $) | nindent 4 }}
-{{- end }}
+{{- end }}{{- end }}{{- end }}
