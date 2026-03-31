@@ -159,10 +159,37 @@ USAGE:
   - /bin/sh
   - -c
   - |
-    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps;
-    mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-    rm -f ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
-    ln -s ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
+    echo "[JFR-Init] Starting JFR directory setup"
+    echo "[JFR-Init] Pod: ${POD_NAME}"
+    echo "[JFR-Init] Namespace: ${POD_NAMESPACE:-unknown}"
+    echo "[JFR-Init] Service: ${SERVICE_NAME}"
+    echo "[JFR-Init] Environment: ${ENV_TYPE}"
+
+    JFR_DIR="${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}"
+    SYMLINK_PATH="${JFR_DUMP_ROOT_LOCATION}/POD_NAME"
+
+    echo "[JFR-Init] Setting permissions on ${JFR_DUMP_ROOT_LOCATION}/dumps"
+    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps 2>/dev/null || true
+
+    echo "[JFR-Init] Creating JFR directory: ${JFR_DIR}"
+    mkdir -p ${JFR_DIR}
+
+    echo "[JFR-Init] Creating symlink: ${SYMLINK_PATH} -> ${JFR_DIR}"
+    if [ -L "${SYMLINK_PATH}" ] || [ -e "${SYMLINK_PATH}" ]; then
+      echo "[JFR-Init] Removing existing symlink/file"
+      rm -f ${SYMLINK_PATH}
+    fi
+    ln -s ${JFR_DIR} ${SYMLINK_PATH}
+
+    if [ -L "${SYMLINK_PATH}" ]; then
+      TARGET=$(readlink "${SYMLINK_PATH}")
+      echo "[JFR-Init] ✓ Symlink verified: ${SYMLINK_PATH} -> ${TARGET}"
+    else
+      echo "[JFR-Init] ✗ ERROR: Symlink not created!"
+      exit 1
+    fi
+
+    echo "[JFR-Init] ✓ JFR setup complete - JVM can now start with JFR"
   volumeMounts:
   {{- include "harnesscommon.jfr.v1.volumeMounts" (dict "ctx" $) | indent 2 }}
 {{- end }}
