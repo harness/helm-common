@@ -35,7 +35,8 @@ postStart:
     - -c
     - |
       mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-      ln -s ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME ;
+      rm -f ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
+      ln -sf ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
 preStop:
   exec:
     command:
@@ -135,10 +136,60 @@ USAGE:
 */}}
 {{- define "harnesscommon.jfr.v1.initContainer" }}
 {{- $ := .ctx }}
+{{- $jfrDumpRootLocation := default "/opt/harness" $.Values.jfrDumpRootLocation }}
 {{- if $.Values.global.jfr.enabled }}
-- name: init-chmod
+- name: init-jfr-c03846b08a9d4837
   image: {{ include "common.images.image" (dict "imageRoot" $.Values.jfr.image "global" $.Values.global) }}
-  command: [ 'chmod', '-R', '777', '{{ default "/opt/harness" $.Values.jfrDumpRootLocation }}/dumps' ]
+  securityContext:
+    runAsUser: 0
+    runAsNonRoot: false
+  env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        apiVersion: v1
+        fieldPath: metadata.name
+  - name: SERVICE_NAME
+    value: {{ $.Chart.Name }}
+  - name: ENV_TYPE
+    value: {{ default "default" $.Values.envType }}
+  - name: JFR_DUMP_ROOT_LOCATION
+    value: {{ $jfrDumpRootLocation }}
+  command:
+  - /bin/sh
+  - -c
+  - |
+    echo "[JFR-Init] Starting JFR directory setup"
+    echo "[JFR-Init] Pod: ${POD_NAME}"
+    echo "[JFR-Init] Namespace: ${POD_NAMESPACE:-unknown}"
+    echo "[JFR-Init] Service: ${SERVICE_NAME}"
+    echo "[JFR-Init] Environment: ${ENV_TYPE}"
+
+    JFR_DIR="${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}"
+    SYMLINK_PATH="${JFR_DUMP_ROOT_LOCATION}/POD_NAME"
+
+    echo "[JFR-Init] Setting permissions on ${JFR_DUMP_ROOT_LOCATION}/dumps"
+    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps 2>/dev/null || true
+
+    echo "[JFR-Init] Creating JFR directory: ${JFR_DIR}"
+    mkdir -p ${JFR_DIR}
+
+    echo "[JFR-Init] Creating symlink: ${SYMLINK_PATH} -> ${JFR_DIR}"
+    if [ -L "${SYMLINK_PATH}" ] || [ -e "${SYMLINK_PATH}" ]; then
+      echo "[JFR-Init] Removing existing symlink/file"
+      rm -f ${SYMLINK_PATH}
+    fi
+    ln -s ${JFR_DIR} ${SYMLINK_PATH}
+
+    if [ -L "${SYMLINK_PATH}" ]; then
+      TARGET=$(readlink "${SYMLINK_PATH}")
+      echo "[JFR-Init] ✓ Symlink verified: ${SYMLINK_PATH} -> ${TARGET}"
+    else
+      echo "[JFR-Init] ✗ ERROR: Symlink not created!"
+      exit 1
+    fi
+
+    echo "[JFR-Init] ✓ JFR setup complete - JVM can now start with JFR"
   volumeMounts:
   {{- include "harnesscommon.jfr.v1.volumeMounts" (dict "ctx" $) | indent 2 }}
 {{- end }}

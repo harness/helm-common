@@ -18,6 +18,8 @@ global:
     tls:
       enabled: false
       secretName: ""
+  jfr:
+    enabled: false
   istio:
     enabled: false
     virtualService:
