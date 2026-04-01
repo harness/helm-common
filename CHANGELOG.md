@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2] - 2026-04-01
+
+### Added
+- **JFR**: Added init container to create required symlinks for pods to avoid race condition with preStart conditions when referencing the JFR dumps/recording directory.
+
+---
+
+
 ## [1.5.1] - 2026-03-27
 
 ### Added
