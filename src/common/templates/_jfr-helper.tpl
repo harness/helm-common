@@ -35,7 +35,6 @@ postStart:
     - -c
     - |
       mkdir -p ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME};
-      rm -f ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
       ln -sf ${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME} ${JFR_DUMP_ROOT_LOCATION}/POD_NAME;
 preStop:
   exec:
@@ -168,9 +167,6 @@ USAGE:
     JFR_DIR="${JFR_DUMP_ROOT_LOCATION}/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}"
     SYMLINK_PATH="${JFR_DUMP_ROOT_LOCATION}/POD_NAME"
 
-    echo "[JFR-Init] Setting permissions on ${JFR_DUMP_ROOT_LOCATION}/dumps"
-    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps 2>/dev/null || true
-
     echo "[JFR-Init] Creating JFR directory: ${JFR_DIR}"
     mkdir -p ${JFR_DIR}
 
@@ -180,6 +176,8 @@ USAGE:
       rm -f ${SYMLINK_PATH}
     fi
     ln -s ${JFR_DIR} ${SYMLINK_PATH}
+    echo "[JFR-Init] Setting permissions on ${JFR_DUMP_ROOT_LOCATION}/dumps"
+    chmod -R 777 ${JFR_DUMP_ROOT_LOCATION}/dumps 2>/dev/null || true
 
     if [ -L "${SYMLINK_PATH}" ]; then
       TARGET=$(readlink "${SYMLINK_PATH}")
