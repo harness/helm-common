@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2] - 2026-04-02
+
+### Added
+- **JFR**: Fixed bad CHMOD location
+
+---
+
+
 ## [1.5.2] - 2026-04-01
 
 ### Added
