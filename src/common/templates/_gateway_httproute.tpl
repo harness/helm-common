@@ -22,10 +22,9 @@ metadata:
   labels:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
   {{- end }}
-  annotations: {{/* The usual Ingress annotation to influence the beavior of nginx location rules won't apply here, so we will
-          not render these annotations in the HTTPRoute objects
-    {{- include "harnesscommon.tplvalues.render" (dict "value" $object.annotations "context" $) | nindent 4 }}
-    */}}
+  annotations:
+    {{- /* The usual Ingress annotation to influence nginx location rules won't apply here, so we will
+    not render $object.annotations in HTTPRoute objects */}}
     {{- if $ingress.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $ingress.annotations "context" $) | nindent 4 }}
     {{- end }}
@@ -89,8 +88,9 @@ spec:
           port: {{ $servicePort }}
       {{- if hasKey $object.annotations "nginx.ingress.kubernetes.io/proxy-read-timeout" }}
       # Timeouts for this rule
-      timeouts: {{/* Add timeouts if the nginx annotation for timeouts was set. Not ideal, as these settings are not equivalent.
-                     TODO: Improve? */}}
+      timeouts:
+        {{- /* Add timeouts if the nginx annotation was set. Not ideal, as these settings are not equivalent.
+        TODO: Improve? */}}
         backendRequest: {{ printf "%s%s" (get $object.annotations "nginx.ingress.kubernetes.io/proxy-read-timeout") "s" }}
       {{- end }}
     {{- end }}
@@ -106,10 +106,9 @@ metadata:
   labels:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonLabels "context" $ ) | nindent 4 }}
   {{- end }}
-  annotations: {{/* The usual Ingress annotation to influence the beavior of nginx location rules won't apply here, so we
-                    will not render these annotations in the HTTPRoute objects
-    {{- include "harnesscommon.tplvalues.render" (dict "value" $object.annotations "context" $) | nindent 4 }}
-  */}}
+  annotations:
+    {{- /* The usual Ingress annotation to influence nginx location rules won't apply here, so we will
+    not render $object.annotations in HTTPRoute objects */}}
     {{- if $ingress.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" $ingress.annotations "context" $) | nindent 4 }}
     {{- end }}
