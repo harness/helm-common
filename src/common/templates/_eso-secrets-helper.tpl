@@ -3,7 +3,7 @@ Check if valid ESO Secrets are provided in the secrets context
 
 Returns:
   "true" if ESO Secrets are provided
-  "false" if ESO Secrets are not provided 
+  "false" if ESO Secrets are not provided
 
 Example:
 {{ include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" .Values.secrets) }}
@@ -83,7 +83,7 @@ Check validity of ESO Secret in the externalSecretsOperator secret context
 
 Returns:
   "true" if ESO Secret is Valid
-  "false" if ESO Secret is not Valid 
+  "false" if ESO Secret is not Valid
 
 Example:
 {{ include "harnesscommon.secrets.hasValidESOSecret" (dict "esoSecretCtx" .externalSecretsOperator[idx]) }}

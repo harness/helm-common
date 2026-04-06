@@ -1,0 +1,12 @@
+# Scenario: VirtualService enabled (smoke test for harnesscommon.v1.renderVirtualService)
+global:
+  istio:
+    enabled: true
+    virtualService:
+      hosts:
+        - "test.example.com"
+virtualService:
+  objects:
+    - pathMatchType: prefix
+      paths:
+        - path: /

@@ -12,6 +12,20 @@ or
 {{- end }}
 {{- if $.Values.global.ingress.enabled -}}
 {{- range $index, $object := $ingress.objects }}
+{{- $resolvedHosts := list }}
+{{- range $.Values.global.ingress.hosts }}
+  {{- $resolvedHosts = append $resolvedHosts . }}
+{{- end }}
+{{- range (default list $.Values.global.ingress.compatibilityHosts) }}
+  {{- if not (has . $resolvedHosts) }}
+    {{- $resolvedHosts = append $resolvedHosts . }}
+  {{- end }}
+{{- end }}
+{{- range (default list $ingress.extraHosts) }}
+  {{- if not (has . $resolvedHosts) }}
+    {{- $resolvedHosts = append $resolvedHosts . }}
+  {{- end }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -60,7 +74,7 @@ spec:
           pathType: {{ $pathType }}
         {{- end }}
     {{- else }}
-    {{- range $.Values.global.ingress.hosts }}
+    {{- range $resolvedHosts }}
     - host: {{ . | quote }}
       http:
         paths:
@@ -81,7 +95,7 @@ spec:
   {{- if $.Values.global.ingress.tls.enabled }}
   tls:
     - hosts:
-        {{- range $.Values.global.ingress.hosts }}
+        {{- range $resolvedHosts }}
         - {{ . | quote }}
         {{- end }}
       secretName: {{ $.Values.global.ingress.tls.secretName }}

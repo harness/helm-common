@@ -1,4 +1,4 @@
-{{/* 
+{{/*
 Manages precedence of values
 
 USAGE:
@@ -8,7 +8,7 @@ USAGE:
 {{- $value := "" -}}
 {{- end }}
 
-{{/* 
+{{/*
 Checks if the provided value keys have valid value
 
 USAGE:

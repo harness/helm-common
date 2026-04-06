@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.5.2] - 2026-04-02
+
+### Added
+- **JFR**: Fixed bad CHMOD location
+
+---
+
+
+## [1.5.2] - 2026-04-01
+
+### Added
+- **JFR**: Added init container to create required symlinks for pods to avoid race condition with preStart conditions when referencing the JFR dumps/recording directory.
+
+---
+
+
+## [1.5.1] - 2026-03-27
+
+### Added
+- **Ingress: additive host merging** via `global.ingress.compatibilityHosts` and `ingress.extraHosts`
+  - `compatibilityHosts`: environment/cluster-wide additive hosts appended to `global.ingress.hosts`
+  - `extraHosts`: service-level additive hosts (e.g. internal FQDNs for a single service)
+  - Both lists are de-duplicated against the primary `hosts` list and each other
+  - Resolved host list is used for both `spec.rules[].host` and `spec.tls[].hosts`
+  - **Breaking Change**: None — when unset, both default to empty lists and behavior is identical to previous versions
+  - **Tracking**: CLI-55986
+
+---
+
+
 ## [1.4.2] - 2025-01-23
 
 ### Fixed

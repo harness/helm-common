@@ -123,3 +123,20 @@ global:
               SMTP_USE_SSL:
                 name: ""
                 property: ""
+
+# KEDA (Kubernetes Event-driven Autoscaling). See docs/KEDA.md.
+# Consuming charts set keda.enabled and keda.scaledObject (and optionally triggerAuthentication).
+keda:
+  enabled: false
+  scaledObject:
+    # minReplicaCount: 0
+    # maxReplicaCount: 100
+    # pollingInterval: 30
+    # cooldownPeriod: 300
+    # triggers: []   # required when enabled — list of KEDA trigger specs
+    # fallback: {}   # optional
+    # advanced: {}  # optional (e.g. horizontalPodAutoscalerConfig.behavior)
+  triggerAuthentication:
+    create: false
+    # name: ""
+    # spec: {}   # passthrough: podIdentity, secretTargetRef, env, etc.

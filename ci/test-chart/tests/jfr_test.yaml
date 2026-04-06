@@ -1,0 +1,110 @@
+suite: JFR Init Container (harnesscommon.jfr.v1.initContainer)
+values:
+  - ../values.yaml
+  - ../ci-values/jfr.yaml
+templates:
+  - jfr-test.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render JFR ConfigMaps when jfr enabled
+    asserts:
+      - hasDocuments:
+          count: 6
+      - isKind:
+          of: ConfigMap
+        documentIndex: 0
+
+  - it: should render init container with correct name
+    documentSelector:
+      path: metadata.name
+      value: jfr-initcontainer-test
+    asserts:
+      - matchRegex:
+          path: data.initContainers
+          pattern: "name: init-jfr-c03846b08a9d4837"
+
+  - it: should render init container with echo statements for logging
+    documentSelector:
+      path: metadata.name
+      value: jfr-initcontainer-test
+    asserts:
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'echo "\[JFR-Init\] Starting JFR directory setup"'
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'echo "\[JFR-Init\] Pod:'
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'echo "\[JFR-Init\] Service:'
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'echo "\[JFR-Init\] Environment:'
+
+  - it: should render init container with symlink verification
+    documentSelector:
+      path: metadata.name
+      value: jfr-initcontainer-test
+    asserts:
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'Symlink verified'
+      - matchRegex:
+          path: data.initContainers
+          pattern: 'JFR setup complete'
+
+  - it: should render init container with correct security context
+    documentSelector:
+      path: metadata.name
+      value: jfr-initcontainer-test
+    asserts:
+      - matchRegex:
+          path: data.initContainers
+          pattern: "runAsUser: 0"
+      - matchRegex:
+          path: data.initContainers
+          pattern: "runAsNonRoot: false"
+
+  - it: should render init container with correct environment variables
+    documentSelector:
+      path: metadata.name
+      value: jfr-initcontainer-test
+    asserts:
+      - matchRegex:
+          path: data.initContainers
+          pattern: "name: POD_NAME"
+      - matchRegex:
+          path: data.initContainers
+          pattern: "name: SERVICE_NAME"
+      - matchRegex:
+          path: data.initContainers
+          pattern: "name: ENV_TYPE"
+      - matchRegex:
+          path: data.initContainers
+          pattern: "name: JFR_DUMP_ROOT_LOCATION"
+
+  - it: should render JFR volumes with hostPath
+    documentSelector:
+      path: metadata.name
+      value: jfr-volumes-test
+    asserts:
+      - matchRegex:
+          path: data.volumes
+          pattern: "name: dumps"
+      - matchRegex:
+          path: data.volumes
+          pattern: "path: /var/dumps"
+
+  - it: should render JFR volume mounts
+    documentSelector:
+      path: metadata.name
+      value: jfr-volumemounts-test
+    asserts:
+      - matchRegex:
+          path: data.volumeMounts
+          pattern: "name: dumps"
+      - matchRegex:
+          path: data.volumeMounts
+          pattern: "mountPath: /opt/harness/dumps"
