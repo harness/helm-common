@@ -9,14 +9,17 @@ global:
       namespace: ""
       sectionName: ""
       port:
+  # Used by nginx ingress and gateway-api -- both templates can be
+  # used in tandem allowing for swapping between what is being used
+  # by changing target destination in global gateway.
   ingress:
     enabled: false
-    # List of hostnames for HTTPRoute
+    # List of hostnames for HTTPRoute/nginx
     hosts: []
     # Set to true to use wildcard "*" hostname instead of specific hosts
     disableHostInIngress: false
     objects:
-      # Annotations to apply to all ingress/HTTPRoute objects
+      # Annotations to apply to all nginx ingress/HTTPRoute objects
       annotations: {}
   # Common labels applied to all resources
   commonLabels: {}
