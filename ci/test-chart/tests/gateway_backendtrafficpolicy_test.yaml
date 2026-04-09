@@ -33,10 +33,10 @@ tests:
           value: HTTPRoute
       - equal:
           path: spec.targetRefs[0].name
-          value: harness-common-test-0
+          value: api-routes
       - equal:
           path: spec.targetRefs[1].name
-          value: harness-common-test-1
+          value: worker-routes
 
   - it: BackendTrafficPolicy should have correct timeout configuration
     template: gateway-policies.yaml

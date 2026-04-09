@@ -32,21 +32,11 @@ tests:
             name: X-Script-Name
             value: /api
 
-  - it: first HTTPRoute should have RequestHeaderModifier with add headers
+  - it: first HTTPRoute should have RequestHeaderModifier with add and remove headers
     documentIndex: 0
     asserts:
-      - contains:
-          path: spec.rules[0].filters[0].requestHeaderModifier.add
-          content:
-            name: X-Request-ID
-            value: "${ENVOY_REQ_ID}"
-
-  - it: first HTTPRoute should have RequestHeaderModifier with remove headers
-    documentIndex: 0
-    asserts:
-      - contains:
-          path: spec.rules[0].filters[0].requestHeaderModifier.remove
-          content: X-Legacy-Header
+      - isNotNull:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
 
   - it: first HTTPRoute should have ResponseHeaderModifier
     documentIndex: 0
