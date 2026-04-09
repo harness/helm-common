@@ -208,7 +208,7 @@ spec:
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
-            name: {{ cat (get $object "name" | trunc 50 | trimSuffix "-") "-" $index "-" (sha1sum $idx.path | trunc 10) | nospace }}
+            name: {{ cat ($routeName | trunc 50 | trimSuffix "-") "-" (sha1sum $idx.path | trunc 10) | nospace }}
         {{- end }}
       {{- end }}
       # Backend services
@@ -229,7 +229,7 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:
-  name: {{ cat (get $object "name" | trunc 50 | trimSuffix "-") "-" $index "-" (sha1sum $idx.path | trunc 10) | nospace }}
+  name: {{ cat ($routeName | trunc 50 | trimSuffix "-") "-" (sha1sum $idx.path | trunc 10) | nospace }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
