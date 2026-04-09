@@ -60,7 +60,6 @@ spec:
       kind: HTTPRoute
       name: {{ $routeName }}
     {{- end }}
-  {{- if or $globalSecurityPolicy.authorization $globalSecurityPolicy.cors $globalSecurityPolicy.jwt }}
   {{- if $globalSecurityPolicy.authorization }}
   authorization:
     {{- if $globalSecurityPolicy.authorization.defaultAction }}
@@ -117,7 +116,6 @@ spec:
       {{- include "harnesscommon.tplvalues.render" (dict "value" $globalSecurityPolicy.jwt.providers "context" $) | nindent 6 }}
     {{- end }}
   {{- end }}
-  {{- end }}
 {{- end }}
 
 {{- /* Generate per-route override SecurityPolicy resources */}}
@@ -142,7 +140,6 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: {{ $routeName }}
-  {{- if or $policy.authorization $policy.cors $policy.jwt }}
   {{- if $policy.authorization }}
   authorization:
     {{- if $policy.authorization.defaultAction }}
@@ -198,7 +195,6 @@ spec:
     providers:
       {{- include "harnesscommon.tplvalues.render" (dict "value" $policy.jwt.providers "context" $) | nindent 6 }}
     {{- end }}
-  {{- end }}
   {{- end }}
 {{- end }}
 

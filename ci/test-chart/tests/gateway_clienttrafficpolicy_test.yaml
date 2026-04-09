@@ -9,12 +9,14 @@ release:
   namespace: default
 tests:
   - it: should render one ClientTrafficPolicy
+    template: gateway-policies.yaml
     asserts:
       - containsDocument:
           kind: ClientTrafficPolicy
           apiVersion: gateway.envoyproxy.io/v1alpha1
 
   - it: ClientTrafficPolicy should target the Gateway
+    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -36,6 +38,7 @@ tests:
           value: gateway-system
 
   - it: ClientTrafficPolicy should have correct connection settings
+    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -48,6 +51,7 @@ tests:
           value: 300s
 
   - it: ClientTrafficPolicy should have correct timeout settings
+    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -57,6 +61,7 @@ tests:
           value: 60s
 
   - it: ClientTrafficPolicy should have correct HTTP/2 settings
+    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
