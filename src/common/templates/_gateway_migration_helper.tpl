@@ -91,6 +91,17 @@ USAGE:
   {{- $suggestions = append $suggestions $suggestion }}
 {{- end }}
 
+{{- /* Check for proxy-read-timeout */}}
+{{- if hasKey $annotations "nginx.ingress.kubernetes.io/proxy-read-timeout" }}
+  {{- $hasNginxAnnotations = true }}
+  {{- $value := get $annotations "nginx.ingress.kubernetes.io/proxy-read-timeout" }}
+  {{- $suggestion := dict }}
+  {{- $_ := set $suggestion "annotation" "nginx.ingress.kubernetes.io/proxy-read-timeout" }}
+  {{- $_ := set $suggestion "value" $value }}
+  {{- $_ := set $suggestion "config" (printf "# NOTE: Currently translated to HTTPRoute.spec.rules[].timeouts.backendRequest\n# For proper Gateway API implementation, use BackendTrafficPolicy:\n\nglobal:\n  gatewayAPI:\n    policies:\n      backendTraffic:\n        enabled: true\n        timeout:\n          http:\n            requestTimeout: \"%ss\"\n\nOR per-route:\n\ningress:\n  objects:\n    - name: \"%s\"\n      gatewayAPI:\n        backendTraffic:\n          timeout:\n            http:\n              requestTimeout: \"%ss\"" $value $routeName $value) }}
+  {{- $suggestions = append $suggestions $suggestion }}
+{{- end }}
+
 {{- /* Check for upstream-vhost */}}
 {{- if hasKey $annotations "nginx.ingress.kubernetes.io/upstream-vhost" }}
   {{- $hasNginxAnnotations = true }}
