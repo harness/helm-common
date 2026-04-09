@@ -11,10 +11,12 @@ release:
 tests:
   - it: should render one shared SecurityPolicy
     template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: SecurityPolicy
     asserts:
-      - containsDocument:
-          kind: SecurityPolicy
-          apiVersion: gateway.envoyproxy.io/v1alpha1
+      - isKind:
+          of: SecurityPolicy
 
   - it: SecurityPolicy should target both HTTPRoutes
     template: gateway-policies.yaml

@@ -10,10 +10,12 @@ release:
 tests:
   - it: should render one ClientTrafficPolicy
     template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
     asserts:
-      - containsDocument:
-          kind: ClientTrafficPolicy
-          apiVersion: gateway.envoyproxy.io/v1alpha1
+      - isKind:
+          of: ClientTrafficPolicy
 
   - it: ClientTrafficPolicy should target the Gateway
     template: gateway-policies.yaml

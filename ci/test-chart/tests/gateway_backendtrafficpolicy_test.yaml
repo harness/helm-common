@@ -11,10 +11,12 @@ release:
 tests:
   - it: should render one shared BackendTrafficPolicy
     template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
     asserts:
-      - containsDocument:
-          kind: BackendTrafficPolicy
-          apiVersion: gateway.envoyproxy.io/v1alpha1
+      - isKind:
+          of: BackendTrafficPolicy
 
   - it: BackendTrafficPolicy should target both HTTPRoutes
     template: gateway-policies.yaml

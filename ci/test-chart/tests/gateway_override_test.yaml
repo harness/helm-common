@@ -12,16 +12,13 @@ tests:
   - it: should render one shared policy and three per-route override policies
     template: gateway-policies.yaml
     asserts:
-      # 1 shared BackendTrafficPolicy
+      # 1 shared BackendTrafficPolicy (api-routes, admin-routes)
       # 2 per-route BackendTrafficPolicy overrides (report-routes, grpc-routes)
-      # 1 shared SecurityPolicy
+      # 1 shared SecurityPolicy (api-routes, report-routes, grpc-routes)
       # 1 per-route SecurityPolicy override (admin-routes)
-      - containsDocument:
-          kind: BackendTrafficPolicy
-          apiVersion: gateway.envoyproxy.io/v1alpha1
-      - containsDocument:
-          kind: SecurityPolicy
-          apiVersion: gateway.envoyproxy.io/v1alpha1
+      # Total: 5 documents (3 BackendTrafficPolicy, 2 SecurityPolicy)
+      - hasDocuments:
+          count: 5
 
   - it: shared BackendTrafficPolicy should target only api-routes
     template: gateway-policies.yaml
