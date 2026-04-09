@@ -9,6 +9,108 @@ global:
       namespace: ""
       sectionName: ""
       port:
+
+    # Shared/default Envoy Gateway policies (Option C: Hybrid - shared defaults + per-route overrides)
+    policies:
+      # BackendTrafficPolicy - backend timeouts, connection settings, protocol
+      # These settings apply to traffic from Gateway to backend Services
+      backendTraffic:
+        enabled: false
+        # Timeouts for backend connections
+        timeout:
+          http:
+            # e.g., "300s" - equivalent to nginx proxy-send-timeout
+            requestTimeout: ""
+            # e.g., "3600s" - connection idle timeout
+            connectionIdleTimeout: ""
+          tcp:
+            # e.g., "900s" - equivalent to nginx proxy-connect-timeout
+            connectTimeout: ""
+        # Backend connection settings
+        connection:
+          # e.g., "10240Mi" - equivalent to nginx client-max-body-size
+          bufferLimit: ""
+        # Backend protocol (gRPC, H2C, etc.)
+        # e.g., "GRPC" - equivalent to nginx backend-protocol: GRPC
+        protocol: ""
+        # Load balancing policy
+        # e.g., "RoundRobin", "LeastRequest", "Random"
+        loadBalancer:
+          type: ""
+        # Retry policy
+        retry:
+          numRetries: 0
+          perRetryTimeout: ""
+
+      # ClientTrafficPolicy - client-side settings (attaches to Gateway, not individual routes)
+      # These settings apply to traffic from clients to the Gateway
+      clientTraffic:
+        enabled: false
+        # Client-side connection limits
+        connection:
+          # e.g., "1024Mi" - equivalent to nginx proxy-body-size
+          bufferLimit: ""
+          # e.g., "3600s"
+          connectionIdleTimeout: ""
+        # Client-side timeouts
+        timeout:
+          http:
+            # e.g., "3600s" - equivalent to nginx client_body_timeout
+            requestReceivedTimeout: ""
+        # HTTP/2 settings
+        http2:
+          maxConcurrentStreams: 0
+
+      # SecurityPolicy - IP whitelisting, CORS, JWT, etc.
+      security:
+        enabled: false
+        # IP-based authorization
+        authorization:
+          # "Allow" or "Deny"
+          defaultAction: ""
+          rules: []
+            # Example:
+            # - action: "Allow"
+            #   principal:
+            #     clientCIDRs:
+            #       - "10.0.0.0/8"
+            #       - "192.168.1.0/24"
+        # CORS policy
+        cors:
+          allowOrigins: []
+          allowMethods: []
+          allowHeaders: []
+          exposeHeaders: []
+          maxAge: ""
+        # JWT authentication
+        jwt:
+          providers: []
+
+    # HTTPRoute-level shared defaults
+    httpRoute:
+      # Request header manipulation - applies to all routes unless overridden
+      requestHeaders:
+        set: []
+          # - name: "X-Custom-Header"
+          #   value: "value"
+        add: []
+        remove: []
+
+      # Response header manipulation - applies to all routes unless overridden
+      responseHeaders:
+        set: []
+        add: []
+        remove: []
+
+      # Upstream host override - equivalent to nginx upstream-vhost
+      # e.g., "app.example.io"
+      upstreamHostOverride: ""
+
+      # Additional hostnames (server aliases) - equivalent to nginx server-alias
+      # Note: Gateway API supports wildcards but not regex patterns
+      additionalHostnames: []
+        # - "*.alias.example.io"
+        # - "alias-staging.example.io"
   # Used by nginx ingress and gateway-api -- both templates can be
   # used in tandem allowing for swapping between what is being used
   # by changing target destination in global gateway.
@@ -21,6 +123,7 @@ global:
     objects:
       # Annotations to apply to all nginx ingress/HTTPRoute objects
       annotations: {}
+      gatewayPolicies: {}
   # Common labels applied to all resources
   commonLabels: {}
   # Common annotations applied to all resources

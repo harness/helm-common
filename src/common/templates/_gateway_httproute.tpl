@@ -12,11 +12,16 @@ or
 {{- end }}
 {{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 {{- range $index, $object := $ingress.objects }}
+{{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
+{{- /* Print migration suggestions if nginx annotations are detected */}}
+{{- if $object.annotations }}
+{{- include "harnesscommon.v2.printGatewayAPIMigrationSuggestions" (dict "ctx" $ "routeName" $routeName "annotations" $object.annotations) }}
+{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
+  name: {{ $routeName }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
@@ -65,22 +70,145 @@ spec:
     {{- range $.Values.global.ingress.hosts }}
     - {{ . | quote }}
     {{- end }}
+    {{- /* Add additional hostnames from global config */}}
+    {{- $globalHttpRoute := $.Values.global.gatewayAPI.httpRoute }}
+    {{- if $globalHttpRoute.additionalHostnames }}
+    {{- range $hostname := $globalHttpRoute.additionalHostnames }}
+    - {{ $hostname | quote }}
+    {{- end }}
+    {{- end }}
+    {{- /* Add additional hostnames from per-route config */}}
+    {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
+    {{- if $perRouteHttpRoute.additionalHostnames }}
+    {{- range $hostname := $perRouteHttpRoute.additionalHostnames }}
+    - {{ $hostname | quote }}
+    {{- end }}
+    {{- end }}
   {{- end }}
   rules:
     {{- range $idx := $object.paths }}
     {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
     {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
+    {{- $globalHttpRoute := $.Values.global.gatewayAPI.httpRoute }}
+    {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
+    {{- $hasRewriteTarget := hasKey $object.annotations "nginx.ingress.kubernetes.io/rewrite-target" }}
+    {{- $hasUpstreamVhost := or $globalHttpRoute.upstreamHostOverride $perRouteHttpRoute.upstreamHostOverride }}
+    {{- $hasRequestHeaders := or $globalHttpRoute.requestHeaders $perRouteHttpRoute.requestHeaders }}
+    {{- $hasResponseHeaders := or $globalHttpRoute.responseHeaders $perRouteHttpRoute.responseHeaders }}
+    {{- $needsFilters := or $hasRewriteTarget $hasUpstreamVhost $hasRequestHeaders $hasResponseHeaders }}
     - matches:
         - path:
             type: RegularExpression
             value: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-      {{- if hasKey $object.annotations "nginx.ingress.kubernetes.io/rewrite-target" }}
+      {{- if $needsFilters }}
       filters:
+        {{- /* Request Header Modifier - handles upstreamHostOverride and custom headers */}}
+        {{- $requestHeaderModifier := dict }}
+        {{- $hasRequestModifier := false }}
+        {{- /* Upstream host override (nginx upstream-vhost equivalent) */}}
+        {{- $upstreamHost := "" }}
+        {{- if $perRouteHttpRoute.upstreamHostOverride }}
+          {{- $upstreamHost = $perRouteHttpRoute.upstreamHostOverride }}
+        {{- else if $globalHttpRoute.upstreamHostOverride }}
+          {{- $upstreamHost = $globalHttpRoute.upstreamHostOverride }}
+        {{- end }}
+        {{- if $upstreamHost }}
+          {{- $hasRequestModifier = true }}
+          {{- $_ := set $requestHeaderModifier "set" (list (dict "name" "Host" "value" $upstreamHost)) }}
+        {{- end }}
+        {{- /* Custom request headers (set/add/remove) */}}
+        {{- $reqHeaders := dict }}
+        {{- if $globalHttpRoute.requestHeaders }}
+          {{- $reqHeaders = $globalHttpRoute.requestHeaders }}
+        {{- end }}
+        {{- if $perRouteHttpRoute.requestHeaders }}
+          {{- $reqHeaders = $perRouteHttpRoute.requestHeaders }}
+        {{- end }}
+        {{- if or $reqHeaders.set $reqHeaders.add $reqHeaders.remove }}
+          {{- $hasRequestModifier = true }}
+          {{- if $reqHeaders.set }}
+            {{- if $upstreamHost }}
+              {{- /* Merge with existing Host header */}}
+              {{- $existingSet := get $requestHeaderModifier "set" }}
+              {{- range $header := $reqHeaders.set }}
+                {{- $existingSet = append $existingSet $header }}
+              {{- end }}
+              {{- $_ := set $requestHeaderModifier "set" $existingSet }}
+            {{- else }}
+              {{- $_ := set $requestHeaderModifier "set" $reqHeaders.set }}
+            {{- end }}
+          {{- end }}
+          {{- if $reqHeaders.add }}
+            {{- $_ := set $requestHeaderModifier "add" $reqHeaders.add }}
+          {{- end }}
+          {{- if $reqHeaders.remove }}
+            {{- $_ := set $requestHeaderModifier "remove" $reqHeaders.remove }}
+          {{- end }}
+        {{- end }}
+        {{- if $hasRequestModifier }}
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            {{- if $requestHeaderModifier.set }}
+            set:
+              {{- range $header := $requestHeaderModifier.set }}
+              - name: {{ $header.name | quote }}
+                value: {{ $header.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $requestHeaderModifier.add }}
+            add:
+              {{- range $header := $requestHeaderModifier.add }}
+              - name: {{ $header.name | quote }}
+                value: {{ $header.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $requestHeaderModifier.remove }}
+            remove:
+              {{- range $headerName := $requestHeaderModifier.remove }}
+              - {{ $headerName | quote }}
+              {{- end }}
+            {{- end }}
+        {{- end }}
+        {{- /* Response Header Modifier */}}
+        {{- $respHeaders := dict }}
+        {{- if $globalHttpRoute.responseHeaders }}
+          {{- $respHeaders = $globalHttpRoute.responseHeaders }}
+        {{- end }}
+        {{- if $perRouteHttpRoute.responseHeaders }}
+          {{- $respHeaders = $perRouteHttpRoute.responseHeaders }}
+        {{- end }}
+        {{- if or $respHeaders.set $respHeaders.add $respHeaders.remove }}
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            {{- if $respHeaders.set }}
+            set:
+              {{- range $header := $respHeaders.set }}
+              - name: {{ $header.name | quote }}
+                value: {{ $header.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $respHeaders.add }}
+            add:
+              {{- range $header := $respHeaders.add }}
+              - name: {{ $header.name | quote }}
+                value: {{ $header.value | quote }}
+              {{- end }}
+            {{- end }}
+            {{- if $respHeaders.remove }}
+            remove:
+              {{- range $headerName := $respHeaders.remove }}
+              - {{ $headerName | quote }}
+              {{- end }}
+            {{- end }}
+        {{- end }}
+        {{- /* URL Rewrite filter (existing logic) */}}
+        {{- if $hasRewriteTarget }}
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
             name: {{ cat (get $object "name" | trunc 50 | trimSuffix "-") "-" $index "-" (sha1sum $idx.path | trunc 10) | nospace }}
+        {{- end }}
       {{- end }}
       # Backend services
       backendRefs:
