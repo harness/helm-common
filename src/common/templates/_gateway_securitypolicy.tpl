@@ -17,8 +17,8 @@ Supports hybrid approach (Option C):
 {{- end }}
 {{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 
-{{- $globalSecurityPolicy := $.Values.global.gatewayAPI.policies.security }}
-{{- $hasGlobalPolicy := and $globalSecurityPolicy $globalSecurityPolicy.enabled }}
+{{- $globalSecurityPolicy := dig "policies" "security" dict $.Values.global.gatewayAPI }}
+{{- $hasGlobalPolicy := and $globalSecurityPolicy (dig "enabled" false $globalSecurityPolicy) }}
 
 {{- /* Collect routes that need shared policy vs per-route policy */}}
 {{- $sharedPolicyRoutes := list }}

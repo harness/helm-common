@@ -10,8 +10,8 @@ USAGE:
 {{- $ := .ctx }}
 {{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 
-{{- $clientPolicy := $.Values.global.gatewayAPI.policies.clientTraffic }}
-{{- if and $clientPolicy $clientPolicy.enabled }}
+{{- $clientPolicy := dig "policies" "clientTraffic" dict $.Values.global.gatewayAPI }}
+{{- if and $clientPolicy (dig "enabled" false $clientPolicy) }}
 {{- $parentRef := $.Values.global.gatewayAPI.parentRef }}
 {{- if and $parentRef $parentRef.name }}
 ---
@@ -55,9 +55,9 @@ spec:
       {{- end }}
     {{- end }}
   {{- end }}
-  {{- if and $clientPolicy.http2 (gt $clientPolicy.http2.maxConcurrentStreams 0) }}
+  {{- if and $clientPolicy.http2 $clientPolicy.http2.maxConcurrentStreams (gt ($clientPolicy.http2.maxConcurrentStreams | int) 0) }}
   http2:
-    maxConcurrentStreams: {{ $clientPolicy.http2.maxConcurrentStreams }}
+    maxConcurrentStreams: {{ $clientPolicy.http2.maxConcurrentStreams | int }}
   {{- end }}
   {{- end }}
 {{- end }} {{/* if parentRef.name */}}

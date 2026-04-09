@@ -1,0 +1,3 @@
+{{- include "harnesscommon.v2.renderBackendTrafficPolicy" (dict "ctx" .) }}
+{{- include "harnesscommon.v2.renderClientTrafficPolicy" (dict "ctx" .) }}
+{{- include "harnesscommon.v2.renderSecurityPolicy" (dict "ctx" .) }}

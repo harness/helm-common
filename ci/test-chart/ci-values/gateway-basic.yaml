@@ -1,0 +1,36 @@
+# Basic Gateway API HTTPRoute test
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+      - api-staging.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+      sectionName: https
+      port: 443
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api(/|$)(.*)
+          backend:
+            service:
+              name: test-service
+              port: 8080
+
+    - name: worker-routes
+      paths:
+        - path: /worker/.*
+          backend:
+            service:
+              name: worker-service
+              port: 9090
+
+service:
+  port: 8080

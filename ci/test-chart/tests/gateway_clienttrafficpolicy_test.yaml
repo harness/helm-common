@@ -1,0 +1,66 @@
+suite: Gateway API ClientTrafficPolicy (harnesscommon.v2.renderClientTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-policies.yaml
+templates:
+  - gateway-policies.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one ClientTrafficPolicy
+    asserts:
+      - containsDocument:
+          kind: ClientTrafficPolicy
+          apiVersion: gateway.envoyproxy.io/v1alpha1
+
+  - it: ClientTrafficPolicy should target the Gateway
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: metadata.name
+          value: harness-common-test-client-policy
+      - equal:
+          path: spec.targetRefs[0].group
+          value: gateway.networking.k8s.io
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: Gateway
+      - equal:
+          path: spec.targetRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.targetRefs[0].namespace
+          value: gateway-system
+
+  - it: ClientTrafficPolicy should have correct connection settings
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.connection.bufferLimit
+          value: 100Mi
+      - equal:
+          path: spec.connection.connectionIdleTimeout
+          value: 300s
+
+  - it: ClientTrafficPolicy should have correct timeout settings
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.timeout.http.requestReceivedTimeout
+          value: 60s
+
+  - it: ClientTrafficPolicy should have correct HTTP/2 settings
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.http2.maxConcurrentStreams
+          value: 1000

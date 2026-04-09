@@ -17,8 +17,8 @@ Supports hybrid approach (Option C):
 {{- end }}
 {{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 
-{{- $globalBackendPolicy := $.Values.global.gatewayAPI.policies.backendTraffic }}
-{{- $hasGlobalPolicy := and $globalBackendPolicy $globalBackendPolicy.enabled }}
+{{- $globalBackendPolicy := dig "policies" "backendTraffic" dict $.Values.global.gatewayAPI }}
+{{- $hasGlobalPolicy := and $globalBackendPolicy (dig "enabled" false $globalBackendPolicy) }}
 
 {{- /* Collect routes that need shared policy vs per-route policy */}}
 {{- $sharedPolicyRoutes := list }}
@@ -92,9 +92,9 @@ spec:
   loadBalancer:
     type: {{ $globalBackendPolicy.loadBalancer.type }}
   {{- end }}
-  {{- if and $globalBackendPolicy.retry (gt $globalBackendPolicy.retry.numRetries 0) }}
+  {{- if and $globalBackendPolicy.retry $globalBackendPolicy.retry.numRetries (gt ($globalBackendPolicy.retry.numRetries | int) 0) }}
   retry:
-    numRetries: {{ $globalBackendPolicy.retry.numRetries }}
+    numRetries: {{ $globalBackendPolicy.retry.numRetries | int }}
     {{- if $globalBackendPolicy.retry.perRetryTimeout }}
     perRetryTimeout: {{ $globalBackendPolicy.retry.perRetryTimeout }}
     {{- end }}
@@ -156,9 +156,9 @@ spec:
   loadBalancer:
     type: {{ $policy.loadBalancer.type }}
   {{- end }}
-  {{- if and $policy.retry (gt $policy.retry.numRetries 0) }}
+  {{- if and $policy.retry $policy.retry.numRetries (gt ($policy.retry.numRetries | int) 0) }}
   retry:
-    numRetries: {{ $policy.retry.numRetries }}
+    numRetries: {{ $policy.retry.numRetries | int }}
     {{- if $policy.retry.perRetryTimeout }}
     perRetryTimeout: {{ $policy.retry.perRetryTimeout }}
     {{- end }}

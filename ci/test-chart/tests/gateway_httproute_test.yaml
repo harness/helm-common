@@ -1,0 +1,86 @@
+suite: Gateway API HTTPRoute (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-basic.yaml
+templates:
+  - gateway-httproute.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render two HTTPRoutes when gatewayAPI and ingress enabled
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: first HTTPRoute should have correct metadata and spec
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: harness-common-test-0
+      - equal:
+          path: metadata.namespace
+          value: default
+
+  - it: first HTTPRoute should reference correct parent Gateway
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: gateway-system
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: https
+      - equal:
+          path: spec.parentRefs[0].port
+          value: 443
+
+  - it: first HTTPRoute should have correct hostnames
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: api.example.com
+      - contains:
+          path: spec.hostnames
+          content: api-staging.example.com
+
+  - it: first HTTPRoute should have correct backend reference
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: RegularExpression
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /api(/|$)(.*)
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: test-service
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 8080
+
+  - it: second HTTPRoute should have correct name and backend
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: harness-common-test-1
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: worker-service
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 9090

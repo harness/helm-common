@@ -13,9 +13,10 @@ or
 {{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
 {{- range $index, $object := $ingress.objects }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
+{{- $objectAnnotations := dig "annotations" dict $object }}
 {{- /* Print migration suggestions if nginx annotations are detected */}}
-{{- if $object.annotations }}
-{{- include "harnesscommon.v2.printGatewayAPIMigrationSuggestions" (dict "ctx" $ "routeName" $routeName "annotations" $object.annotations) }}
+{{- if $objectAnnotations }}
+{{- include "harnesscommon.v2.printGatewayAPIMigrationSuggestions" (dict "ctx" $ "routeName" $routeName "annotations" $objectAnnotations) }}
 {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -71,7 +72,7 @@ spec:
     - {{ . | quote }}
     {{- end }}
     {{- /* Add additional hostnames from global config */}}
-    {{- $globalHttpRoute := $.Values.global.gatewayAPI.httpRoute }}
+    {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
     {{- if $globalHttpRoute.additionalHostnames }}
     {{- range $hostname := $globalHttpRoute.additionalHostnames }}
     - {{ $hostname | quote }}
@@ -89,9 +90,9 @@ spec:
     {{- range $idx := $object.paths }}
     {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
     {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
-    {{- $globalHttpRoute := $.Values.global.gatewayAPI.httpRoute }}
+    {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
     {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
-    {{- $hasRewriteTarget := hasKey $object.annotations "nginx.ingress.kubernetes.io/rewrite-target" }}
+    {{- $hasRewriteTarget := and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
     {{- $hasUpstreamVhost := or $globalHttpRoute.upstreamHostOverride $perRouteHttpRoute.upstreamHostOverride }}
     {{- $hasRequestHeaders := or $globalHttpRoute.requestHeaders $perRouteHttpRoute.requestHeaders }}
     {{- $hasResponseHeaders := or $globalHttpRoute.responseHeaders $perRouteHttpRoute.responseHeaders }}
@@ -214,15 +215,15 @@ spec:
       backendRefs:
         - name: {{ $serviceName }}
           port: {{ $servicePort }}
-      {{- if hasKey $object.annotations "nginx.ingress.kubernetes.io/proxy-read-timeout" }}
+      {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/proxy-read-timeout") }}
       # Timeouts for this rule
       timeouts:
         {{- /* Add timeouts if the nginx annotation was set. Not ideal, as these settings are not equivalent.
         TODO: Improve? */}}
-        backendRequest: {{ printf "%s%s" (get $object.annotations "nginx.ingress.kubernetes.io/proxy-read-timeout") "s" }}
+        backendRequest: {{ printf "%s%s" (get $objectAnnotations "nginx.ingress.kubernetes.io/proxy-read-timeout") "s" }}
       {{- end }}
     {{- end }}
-{{- if hasKey $object.annotations "nginx.ingress.kubernetes.io/rewrite-target" }}
+{{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
 {{- range $idx := $object.paths }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -261,7 +262,7 @@ spec:
       type: ReplaceRegexMatch
       replaceRegexMatch:
         pattern: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-        substitution: {{ include "harnesscommon.tplvalues.render" ( dict "value" ( regexReplaceAll "\\$" (get $object.annotations "nginx.ingress.kubernetes.io/rewrite-target") "\\" ) "context" $) }}
+        substitution: {{ include "harnesscommon.tplvalues.render" ( dict "value" ( regexReplaceAll "\\$" (get $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") "\\" ) "context" $) }}
 {{- end }} {{/* Range over paths */}}
 {{- end }} {{/* If to create HTTPRouteFilter */}}
 {{- end }} {{/* Range over all the ingress keys */}}
