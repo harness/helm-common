@@ -205,15 +205,26 @@ spec:
         {{- /* URL Rewrite filter (existing logic) */}}
         {{- if $hasRewriteTarget }}
         {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-        {{- $pathSlugRaw := $renderedPath | trimPrefix "/" | regexReplaceAll "[^a-zA-Z0-9/]" "" | regexReplaceAll "/" "-" | lower }}
+        {{- $step1 := $renderedPath | trimPrefix "/" }}
+        {{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" }}
+        {{- $step3 := regexReplaceAll "/" $step2 "-" }}
+        {{- $step4 := regexReplaceAll "-+" $step3 "-" }}
+        {{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
         {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
         {{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
-        {{- $pathSlug := ternary (trunc $maxPathLen $pathSlugRaw | trimSuffix "-") $pathSlugRaw (gt (len $pathSlugRaw) $maxPathLen) }}
+        {{- $pathSlug := "" }}
+        {{- if $pathSlugFull }}
+          {{- if gt (len $pathSlugFull) $maxPathLen }}
+            {{- $pathSlug = trunc $maxPathLen $pathSlugFull | trimSuffix "-" }}
+          {{- else }}
+            {{- $pathSlug = $pathSlugFull }}
+          {{- end }}
+        {{- end }}
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
-            name: {{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}
+            name: {{ if $pathSlug }}{{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $routeName "-" $shortHash | nospace }}{{ end }}
         {{- end }}
       {{- end }}
       # Backend services
@@ -231,15 +242,26 @@ spec:
 {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
 {{- range $idx := $object.paths }}
 {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-{{- $pathSlugRaw := $renderedPath | trimPrefix "/" | regexReplaceAll "[^a-zA-Z0-9/]" "" | regexReplaceAll "/" "-" | lower }}
+{{- $step1 := $renderedPath | trimPrefix "/" }}
+{{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" }}
+{{- $step3 := regexReplaceAll "/" $step2 "-" }}
+{{- $step4 := regexReplaceAll "-+" $step3 "-" }}
+{{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
 {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
 {{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
-{{- $pathSlug := ternary (trunc $maxPathLen $pathSlugRaw | trimSuffix "-") $pathSlugRaw (gt (len $pathSlugRaw) $maxPathLen) }}
+{{- $pathSlug := "" }}
+{{- if $pathSlugFull }}
+  {{- if gt (len $pathSlugFull) $maxPathLen }}
+    {{- $pathSlug = trunc $maxPathLen $pathSlugFull | trimSuffix "-" }}
+  {{- else }}
+    {{- $pathSlug = $pathSlugFull }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:
-  name: {{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}
+  name: {{ if $pathSlug }}{{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $routeName "-" $shortHash | nospace }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
