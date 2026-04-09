@@ -88,15 +88,18 @@ spec:
   {{- if $globalBackendPolicy.protocol }}
   protocol: {{ $globalBackendPolicy.protocol }}
   {{- end }}
-  {{- if and $globalBackendPolicy.loadBalancer $globalBackendPolicy.loadBalancer.type }}
+  {{- $globalLoadBalancerType := dig "loadBalancer" "type" "" $globalBackendPolicy }}
+  {{- if $globalLoadBalancerType }}
   loadBalancer:
-    type: {{ $globalBackendPolicy.loadBalancer.type }}
+    type: {{ $globalLoadBalancerType }}
   {{- end }}
-  {{- if and $globalBackendPolicy.retry $globalBackendPolicy.retry.numRetries (gt ($globalBackendPolicy.retry.numRetries | int) 0) }}
+  {{- $globalRetryNumRetries := dig "retry" "numRetries" 0 $globalBackendPolicy }}
+  {{- if gt ($globalRetryNumRetries | int) 0 }}
   retry:
-    numRetries: {{ $globalBackendPolicy.retry.numRetries | int }}
-    {{- if $globalBackendPolicy.retry.perRetryTimeout }}
-    perRetryTimeout: {{ $globalBackendPolicy.retry.perRetryTimeout }}
+    numRetries: {{ $globalRetryNumRetries | int }}
+    {{- $globalRetryTimeout := dig "retry" "perRetryTimeout" "" $globalBackendPolicy }}
+    {{- if $globalRetryTimeout }}
+    perRetryTimeout: {{ $globalRetryTimeout }}
     {{- end }}
   {{- end }}
   {{- end }}
@@ -152,15 +155,18 @@ spec:
   {{- if $policy.protocol }}
   protocol: {{ $policy.protocol }}
   {{- end }}
-  {{- if and $policy.loadBalancer $policy.loadBalancer.type }}
+  {{- $loadBalancerType := dig "loadBalancer" "type" "" $policy }}
+  {{- if $loadBalancerType }}
   loadBalancer:
-    type: {{ $policy.loadBalancer.type }}
+    type: {{ $loadBalancerType }}
   {{- end }}
-  {{- if and $policy.retry $policy.retry.numRetries (gt ($policy.retry.numRetries | int) 0) }}
+  {{- $retryNumRetries := dig "retry" "numRetries" 0 $policy }}
+  {{- if gt ($retryNumRetries | int) 0 }}
   retry:
-    numRetries: {{ $policy.retry.numRetries | int }}
-    {{- if $policy.retry.perRetryTimeout }}
-    perRetryTimeout: {{ $policy.retry.perRetryTimeout }}
+    numRetries: {{ $retryNumRetries | int }}
+    {{- $retryTimeout := dig "retry" "perRetryTimeout" "" $policy }}
+    {{- if $retryTimeout }}
+    perRetryTimeout: {{ $retryTimeout }}
     {{- end }}
   {{- end }}
   {{- end }}
