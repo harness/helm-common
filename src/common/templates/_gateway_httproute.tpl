@@ -204,11 +204,16 @@ spec:
         {{- end }}
         {{- /* URL Rewrite filter (existing logic) */}}
         {{- if $hasRewriteTarget }}
+        {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
+        {{- $pathSlugRaw := $renderedPath | trimPrefix "/" | regexReplaceAll "[^a-zA-Z0-9/]" "" | regexReplaceAll "/" "-" | lower }}
+        {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
+        {{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
+        {{- $pathSlug := ternary (trunc $maxPathLen $pathSlugRaw | trimSuffix "-") $pathSlugRaw (gt (len $pathSlugRaw) $maxPathLen) }}
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
-            name: {{ cat ($routeName | trunc 50 | trimSuffix "-") "-" (sha1sum $idx.path | trunc 10) | nospace }}
+            name: {{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}
         {{- end }}
       {{- end }}
       # Backend services
@@ -225,11 +230,16 @@ spec:
     {{- end }}
 {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
 {{- range $idx := $object.paths }}
+{{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
+{{- $pathSlugRaw := $renderedPath | trimPrefix "/" | regexReplaceAll "[^a-zA-Z0-9/]" "" | regexReplaceAll "/" "-" | lower }}
+{{- $shortHash := sha1sum $renderedPath | trunc 6 }}
+{{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
+{{- $pathSlug := ternary (trunc $maxPathLen $pathSlugRaw | trimSuffix "-") $pathSlugRaw (gt (len $pathSlugRaw) $maxPathLen) }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:
-  name: {{ cat ($routeName | trunc 50 | trimSuffix "-") "-" (sha1sum $idx.path | trunc 10) | nospace }}
+  name: {{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
