@@ -73,6 +73,7 @@ lifecycle:
 - Heap histogram (10 retries)
 - Native memory dump
 - JFR recording dump
+- Safepoint logs
 - Graceful JVM shutdown with 20s delay
 
 If `lifecycleHooks` is set in values, uses that instead. If JFR is disabled but `shutdownHooksEnabled: true`, provides a simple 60s sleep preStop hook.
@@ -256,6 +257,7 @@ Contents:
 - `native-memory-dump.txt` – Native memory tracking output
 - `jfr_done.txt` – JFR dump command output
 - `mygclogfilename.gc` – GC log (if present)
+- `safepoint.log*` – Safepoint logs (if present)
 
 Continuous JFR recordings are stored at:
 
