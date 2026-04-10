@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.4] - 2026-04-09
+
+### Added
+- **JVM logging**: Add safepoint log collection (`safepoint.log*`) to preStop hook for JVM diagnostics
+
+---
+
+
 ## [1.5.2] - 2026-04-02
 
 ### Added

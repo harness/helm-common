@@ -52,6 +52,9 @@ preStop:
       #Copy GC log file
       cp mygclogfilename.gc $loc/;
 
+      #Copy safepoint log files
+      cp safepoint.log* $loc/;
+
       #Retry 10 times to take thread dump. Unsuccessful attempt has just 1 line with java process id in the output.
       for ((n=0;n<10;n++)); do
       jcmd $PID Thread.print -e > $loc/thread-dump-attempt-$n.txt;
