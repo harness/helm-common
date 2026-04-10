@@ -3,6 +3,26 @@ entries:
   harness-common:
   - apiVersion: v2
     appVersion: 0.0.0
+    created: "2026-04-10T20:34:05.521835436Z"
+    description: Helm Common library for Harness Helm Charts
+    digest: 20a74758d3df056486587d0234d80f1ced3675228d1ef6430b31662c1e1069f3
+    name: harness-common
+    type: library
+    urls:
+    - https://harness.github.io/helm-common/harness-common-1.5.4-develop.24.tgz
+    version: 1.5.4-develop.24
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2026-04-10T20:34:05.526006438Z"
+    description: Helm Common library for Harness Helm Charts
+    digest: 22f5a053147119cc91162495de9515aa096eadfa82bf710874af0370d85435fa
+    name: harness-common
+    type: library
+    urls:
+    - https://harness.github.io/helm-common/charts/harness-common-1.5.4-develop.23.tgz
+    version: 1.5.4-develop.23
+  - apiVersion: v2
+    appVersion: 0.0.0
     created: "2026-04-02T23:16:39.153575604Z"
     description: Helm Common library for Harness Helm Charts
     digest: 57b521f332ca67848ae35ba17d9d8988902736e4428030bc0902e0e349b9abd6
@@ -1663,4 +1683,32 @@ entries:
     urls:
     - https://github.com/harness/helm-common/releases/download/harness-common-1.0.0/harness-common-1.0.0.tgz
     version: 1.0.0
-generated: "2026-04-02T23:16:39.154297306Z"
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2026-04-10T20:34:05.523488437Z"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      version: 1.16.1
+    description: Helm Common library for Harness Helm Charts
+    digest: a2c6cffeaec9c04b0fc6e00fe6f1df94314469f1a9530dd8c6479533a80fa116
+    name: harness-common
+    type: library
+    urls:
+    - https://harness.github.io/helm-common/charts/harness-common-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2026-04-10T20:34:05.522715807Z"
+    dependencies:
+    - name: common
+      repository: https://charts.bitnami.com/bitnami
+      version: 1.16.1
+    description: Helm Common library for Harness Helm Charts
+    digest: 8f27fb45413e78bc8173c35e64e1c01ebed42efbd1efe4ec7dc2f3f82dcc7e16
+    name: harness-common
+    type: library
+    urls:
+    - https://harness.github.io/helm-common/charts/harness-common-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-04-10T20:34:05.519867367Z"
