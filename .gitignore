@@ -1,0 +1,12 @@
+# Claude Code memory and settings
+.claude/
+
+# OS files
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

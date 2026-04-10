@@ -17,6 +17,8 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -58,3 +60,39 @@ jobs:
       # - name: Run chart-testing (install)
       #   working-directory: ./src
       #   run: ct install --target-branch=develop --charts=. --chart-repos=harness-common=https://harness.github.io/helm-common/charts,common=https://charts.bitnami.com/bitnami
+
+      - name: Generate develop version and update Chart.yaml
+        working-directory: ./src/common
+        run: |
+          BASE_VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+          DEV_VERSION="${BASE_VERSION}-develop.${{ github.run_number }}"
+          echo "Generated version: ${DEV_VERSION}"
+          sed -i "s/^version: .*/version: ${DEV_VERSION}/" Chart.yaml
+
+      - name: Add Helm repos
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      - name: Package chart
+        working-directory: ./src
+        run: |
+          helm dependency update common
+          helm package common
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Publish to chart repository
+        run: |
+          mkdir -p gh-pages/charts
+          cp src/*.tgz gh-pages/charts/
+          helm repo index gh-pages/charts --url https://harness.github.io/helm-common/charts
+          cd gh-pages
+          git config user.name "$GITHUB_ACTION"
+          git config user.email "$GITHUB_ACTION@users.noreply.github.com"
+          git add charts/
+          git commit -m "Add develop chart build ${{ github.run_number }}"
+          git push

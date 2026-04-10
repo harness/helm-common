@@ -1,0 +1,60 @@
+# Gateway API with header manipulation and additional hostnames
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+    # Global shared headers
+    httpRoute:
+      requestHeaders:
+        set:
+          - name: "X-Forwarded-Proto"
+            value: "https"
+        add:
+          - name: "X-Request-ID"
+            value: "${ENVOY_REQ_ID}"
+        remove:
+          - "X-Legacy-Header"
+
+      responseHeaders:
+        set:
+          - name: "X-Frame-Options"
+            value: "DENY"
+          - name: "X-Content-Type-Options"
+            value: "nosniff"
+
+      # Global additional hostnames
+      additionalHostnames:
+        - "*.legacy.example.com"
+
+      # Global upstream host override
+      upstreamHostOverride: "backend.internal.svc.cluster.local"
+
+ingress:
+  objects:
+    - name: api-routes
+      # Per-route overrides
+      gatewayAPI:
+        requestHeaders:
+          set:
+            - name: "X-Script-Name"
+              value: "/api"
+        additionalHostnames:
+          - "api-dev.example.com"
+          - "*.api-staging.example.com"
+      paths:
+        - path: /api/.*
+
+    - name: worker-routes
+      # This route uses global defaults
+      paths:
+        - path: /worker/.*
+
+service:
+  port: 8080

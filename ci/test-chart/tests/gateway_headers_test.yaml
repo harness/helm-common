@@ -1,0 +1,92 @@
+suite: Gateway API Header Manipulation (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-headers.yaml
+templates:
+  - gateway-httproute.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render two HTTPRoutes
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: first HTTPRoute should have RequestHeaderModifier with set headers
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+      - contains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: Host
+            value: backend.internal.svc.cluster.local
+      - contains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: X-Script-Name
+            value: /api
+
+  - it: first HTTPRoute should have RequestHeaderModifier with add and remove headers
+    documentIndex: 0
+    asserts:
+      - isNotNull:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+
+  - it: first HTTPRoute should have ResponseHeaderModifier
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[1].type
+          value: ResponseHeaderModifier
+      - contains:
+          path: spec.rules[0].filters[1].responseHeaderModifier.set
+          content:
+            name: X-Frame-Options
+            value: DENY
+      - contains:
+          path: spec.rules[0].filters[1].responseHeaderModifier.set
+          content:
+            name: X-Content-Type-Options
+            value: nosniff
+
+  - it: first HTTPRoute should have additional hostnames
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: api.example.com
+      - contains:
+          path: spec.hostnames
+          content: "*.legacy.example.com"
+      - contains:
+          path: spec.hostnames
+          content: api-dev.example.com
+      - contains:
+          path: spec.hostnames
+          content: "*.api-staging.example.com"
+
+  - it: second HTTPRoute should have global headers only
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+      - contains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: Host
+            value: backend.internal.svc.cluster.local
+      # Should NOT have per-route X-Script-Name header
+      - notContains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: X-Script-Name
+            value: /api
