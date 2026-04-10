@@ -87,12 +87,11 @@ jobs:
 
       - name: Publish to chart repository
         run: |
-          mkdir -p gh-pages/charts
-          cp src/*.tgz gh-pages/charts/
-          helm repo index gh-pages/charts --url https://harness.github.io/helm-common/charts
+          cp src/*.tgz gh-pages/
+          helm repo index gh-pages --url https://harness.github.io/helm-common --merge gh-pages/index.yaml
           cd gh-pages
           git config user.name "$GITHUB_ACTION"
           git config user.email "$GITHUB_ACTION@users.noreply.github.com"
-          git add charts/
+          git add *.tgz index.yaml
           git commit -m "Add develop chart build ${{ github.run_number }}"
           git push
