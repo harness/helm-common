@@ -36,8 +36,16 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
 {{- if $localSecrets }}
 {{- $mergedSecrets = mergeOverwrite $mergedSecrets $localSecrets -}}
 {{- end -}}
+{{- $imageRegistry := dig "image" "registry" "" $mergedSecrets -}}
+{{- if and (not $imageRegistry) $ctx.Values.global.imageRegistry -}}
+  {{- $imageRegistry = $ctx.Values.global.imageRegistry -}}
+{{- end -}}
 - name: secrets-loader
+{{- if $imageRegistry }}
+  image: {{ printf "%s/%s:%s" $imageRegistry $mergedSecrets.image.repository $mergedSecrets.image.tag }}
+{{- else }}
   image: {{ printf "%s:%s" $mergedSecrets.image.repository $mergedSecrets.image.tag }}
+{{- end }}
   imagePullPolicy: {{ $mergedSecrets.image.pullPolicy }}
   command: ["/opt/harness/secrets-manager"]
   args: ["load"]
@@ -199,6 +207,7 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
         {{- end }}
         {{- if eq (dig "vault" "auth" "method" "" $mergedSecrets) "kubernetes" }}
         role: {{ dig "vault" "auth" "role" "" $mergedSecrets | quote }}
+        path: {{ dig "vault" "auth" "path" "" $mergedSecrets | quote }}
         {{- end }}
     serviceName: {{ $serviceName | quote }}
     secrets:
