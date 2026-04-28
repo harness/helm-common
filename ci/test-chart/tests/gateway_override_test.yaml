@@ -1,0 +1,118 @@
+suite: Gateway API Per-Route Overrides (harnesscommon.v2.renderBackendTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-per-route-override.yaml
+templates:
+  - gateway-policies.yaml
+  - gateway-httproute.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one shared policy and three per-route override policies
+    template: gateway-policies.yaml
+    asserts:
+      # 1 shared BackendTrafficPolicy (api-routes, admin-routes)
+      # 2 per-route BackendTrafficPolicy overrides (report-routes, grpc-routes)
+      # 1 shared SecurityPolicy (api-routes, report-routes, grpc-routes)
+      # 1 per-route SecurityPolicy override (admin-routes)
+      # Total: 5 documents (3 BackendTrafficPolicy, 2 SecurityPolicy)
+      - hasDocuments:
+          count: 5
+
+  - it: shared BackendTrafficPolicy should target only api-routes
+    template: gateway-policies.yaml
+    documentSelector:
+      path: metadata.name
+      value: harness-common-test-backend-policy
+    asserts:
+      - equal:
+          path: kind
+          value: BackendTrafficPolicy
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-routes
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 30s
+
+  - it: report-routes should have per-route BackendTrafficPolicy override
+    template: gateway-policies.yaml
+    documentSelector:
+      path: metadata.name
+      value: report-routes-backend-policy
+    asserts:
+      - equal:
+          path: kind
+          value: BackendTrafficPolicy
+      - equal:
+          path: metadata.annotations["helm.sh/policy-type"]
+          value: per-route-override
+      - equal:
+          path: spec.targetRefs[0].name
+          value: report-routes
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 1800s
+
+  - it: admin-routes should have per-route SecurityPolicy override
+    template: gateway-policies.yaml
+    documentSelector:
+      path: metadata.name
+      value: admin-routes-security-policy
+    asserts:
+      - equal:
+          path: kind
+          value: SecurityPolicy
+      - equal:
+          path: metadata.annotations["helm.sh/policy-type"]
+          value: per-route-override
+      - equal:
+          path: spec.targetRefs[0].name
+          value: admin-routes
+      - equal:
+          path: spec.authorization.defaultAction
+          value: Deny
+      - contains:
+          path: spec.authorization.rules[0].principal.clientCIDRs
+          content: "10.0.0.0/8"
+
+  - it: grpc-routes should have per-route BackendTrafficPolicy with gRPC settings
+    template: gateway-policies.yaml
+    documentSelector:
+      path: metadata.name
+      value: grpc-routes-backend-policy
+    asserts:
+      - equal:
+          path: kind
+          value: BackendTrafficPolicy
+      - equal:
+          path: spec.targetRefs[0].name
+          value: grpc-routes
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 3600s
+      - equal:
+          path: spec.timeout.http.connectionIdleTimeout
+          value: 3600s
+      - equal:
+          path: spec.protocol
+          value: GRPC
+
+  - it: grpc-routes HTTPRoute should have custom header
+    template: gateway-httproute.yaml
+    documentSelector:
+      path: metadata.name
+      value: grpc-routes
+    asserts:
+      - equal:
+          path: metadata.name
+          value: grpc-routes
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+      - contains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: X-GRPC-Service
+            value: grpc-backend

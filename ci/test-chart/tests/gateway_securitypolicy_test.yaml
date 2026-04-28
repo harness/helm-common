@@ -1,0 +1,91 @@
+suite: Gateway API SecurityPolicy (harnesscommon.v2.renderSecurityPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-policies.yaml
+templates:
+  - gateway-policies.yaml
+  - gateway-httproute.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one shared SecurityPolicy
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: SecurityPolicy
+    asserts:
+      - isKind:
+          of: SecurityPolicy
+
+  - it: SecurityPolicy should target both HTTPRoutes
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: SecurityPolicy
+    asserts:
+      - equal:
+          path: metadata.name
+          value: harness-common-test-security-policy
+      - equal:
+          path: spec.targetRefs[0].group
+          value: gateway.networking.k8s.io
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: HTTPRoute
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-routes
+      - equal:
+          path: spec.targetRefs[1].name
+          value: worker-routes
+
+  - it: SecurityPolicy should have correct authorization configuration
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: SecurityPolicy
+    asserts:
+      - equal:
+          path: spec.authorization.defaultAction
+          value: Deny
+      - equal:
+          path: spec.authorization.rules[0].action
+          value: Allow
+      - contains:
+          path: spec.authorization.rules[0].principal.clientCIDRs
+          content: "10.0.0.0/8"
+      - contains:
+          path: spec.authorization.rules[0].principal.clientCIDRs
+          content: "192.168.1.0/24"
+
+  - it: SecurityPolicy should have correct CORS configuration
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: SecurityPolicy
+    asserts:
+      - contains:
+          path: spec.cors.allowOrigins
+          content: "https://app.example.com"
+      - contains:
+          path: spec.cors.allowOrigins
+          content: "https://*.staging.example.com"
+      - contains:
+          path: spec.cors.allowMethods
+          content: "GET"
+      - contains:
+          path: spec.cors.allowMethods
+          content: "POST"
+      - contains:
+          path: spec.cors.allowHeaders
+          content: "Content-Type"
+      - contains:
+          path: spec.cors.allowHeaders
+          content: "Authorization"
+      - contains:
+          path: spec.cors.exposeHeaders
+          content: "X-Request-ID"
+      - equal:
+          path: spec.cors.maxAge
+          value: 86400

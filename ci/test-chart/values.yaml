@@ -18,6 +18,21 @@ global:
     tls:
       enabled: false
       secretName: ""
+  gatewayAPI:
+    enabled: false
+    parentRef:
+      name: ""
+      namespace: ""
+      sectionName: ""
+      port:
+    policies:
+      backendTraffic:
+        enabled: false
+      clientTraffic:
+        enabled: false
+      security:
+        enabled: false
+    httpRoute: {}
   jfr:
     enabled: false
   istio:
