@@ -3,6 +3,16 @@ entries:
   harness-common:
   - apiVersion: v2
     appVersion: 0.0.0
+    created: "2026-04-29T22:11:07.251611626Z"
+    description: Helm Common library for Harness Helm Charts
+    digest: b2888d3a9d24bbae510051ba4062bf5581a8ca0144d68d87adf6abb3be324698
+    name: harness-common
+    type: library
+    urls:
+    - https://harness.github.io/helm-common/harness-common-1.6.0-develop.25.tgz
+    version: 1.6.0-develop.25
+  - apiVersion: v2
+    appVersion: 0.0.0
     created: "2026-04-28T07:09:02.333033667Z"
     description: Helm Common library for Harness Helm Charts
     digest: 41261fb45407db49d10fc859c6b51a1241c9e2b2dbfe0a53624d655fc1039c6f
@@ -13,7 +23,7 @@ entries:
     version: 1.5.4
   - apiVersion: v2
     appVersion: 0.0.0
-    created: "2026-04-10T20:34:05.521835436Z"
+    created: "2026-04-29T22:11:07.249804759Z"
     description: Helm Common library for Harness Helm Charts
     digest: 20a74758d3df056486587d0234d80f1ced3675228d1ef6430b31662c1e1069f3
     name: harness-common
@@ -23,7 +33,7 @@ entries:
     version: 1.5.4-develop.24
   - apiVersion: v2
     appVersion: 0.0.0
-    created: "2026-04-10T20:34:05.526006438Z"
+    created: "2026-04-29T22:11:07.256077491Z"
     description: Helm Common library for Harness Helm Charts
     digest: 22f5a053147119cc91162495de9515aa096eadfa82bf710874af0370d85435fa
     name: harness-common
@@ -1695,7 +1705,7 @@ entries:
     version: 1.0.0
   - apiVersion: v2
     appVersion: 0.0.0
-    created: "2026-04-10T20:34:05.523488437Z"
+    created: "2026-04-29T22:11:07.254263751Z"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -1709,7 +1719,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: 0.0.0
-    created: "2026-04-10T20:34:05.522715807Z"
+    created: "2026-04-29T22:11:07.253058411Z"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -1721,4 +1731,4 @@ entries:
     urls:
     - https://harness.github.io/helm-common/charts/harness-common-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-28T07:09:02.333482925Z"
+generated: "2026-04-29T22:11:07.247850395Z"
