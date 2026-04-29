@@ -18,11 +18,24 @@ or
 {{- if $objectAnnotations }}
 {{- include "harnesscommon.v2.printGatewayAPIMigrationSuggestions" (dict "ctx" $ "routeName" $routeName "annotations" $objectAnnotations) }}
 {{- end }}
+{{- /* Gateway API limits HTTPRoute to 16 rules. Split into chunks. */}}
+{{- $maxRules := 16 }}
+{{- $paths := $object.paths }}
+{{- $numPaths := len $paths }}
+{{- $numChunks := add1 (div (sub $numPaths 1) $maxRules) }}
+{{- range $chunkIdx := until (int $numChunks) }}
+{{- $start := mul $chunkIdx $maxRules }}
+{{- $end := min (add $start $maxRules) $numPaths }}
+{{- $chunkPaths := slice $paths (int $start) (int $end) }}
+{{- $chunkRouteName := $routeName }}
+{{- if gt $numChunks 1 }}
+{{- $chunkRouteName = printf "%s-part-%d" $routeName $chunkIdx }}
+{{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ $routeName }}
+  name: {{ $chunkRouteName }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
@@ -87,7 +100,7 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range $idx := $object.paths }}
+    {{- range $idx := $chunkPaths }}
     {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
     {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
     {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
@@ -211,7 +224,7 @@ spec:
         {{- $step4 := regexReplaceAll "-+" $step3 "-" }}
         {{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
         {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
-        {{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
+        {{- $maxPathLen := sub 253 (add (len $chunkRouteName) 8) | int }}
         {{- $pathSlug := "" }}
         {{- if $pathSlugFull }}
           {{- if gt (len $pathSlugFull) $maxPathLen }}
@@ -224,7 +237,7 @@ spec:
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
-            name: {{ if $pathSlug }}{{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $routeName "-" $shortHash | nospace }}{{ end }}
+            name: {{ if $pathSlug }}{{ cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $chunkRouteName "-" $shortHash | nospace }}{{ end }}
         {{- end }}
       {{- end }}
       # Backend services
@@ -240,7 +253,7 @@ spec:
       {{- end }}
     {{- end }}
 {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
-{{- range $idx := $object.paths }}
+{{- range $idx := $chunkPaths }}
 {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
 {{- $step1 := $renderedPath | trimPrefix "/" }}
 {{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" }}
@@ -248,7 +261,7 @@ spec:
 {{- $step4 := regexReplaceAll "-+" $step3 "-" }}
 {{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
 {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
-{{- $maxPathLen := sub 253 (add (len $routeName) 8) | int }}
+{{- $maxPathLen := sub 253 (add (len $chunkRouteName) 8) | int }}
 {{- $pathSlug := "" }}
 {{- if $pathSlugFull }}
   {{- if gt (len $pathSlugFull) $maxPathLen }}
@@ -261,7 +274,7 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:
-  name: {{ if $pathSlug }}{{ cat $routeName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $routeName "-" $shortHash | nospace }}{{ end }}
+  name: {{ if $pathSlug }}{{ cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $chunkRouteName "-" $shortHash | nospace }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
@@ -295,8 +308,9 @@ spec:
       replaceRegexMatch:
         pattern: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
         substitution: {{ include "harnesscommon.tplvalues.render" ( dict "value" ( regexReplaceAll "\\$" (get $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") "\\" ) "context" $) }}
-{{- end }} {{/* Range over paths */}}
+{{- end }} {{/* Range over chunk paths */}}
 {{- end }} {{/* If to create HTTPRouteFilter */}}
+{{- end }} {{/* Range over chunks */}}
 {{- end }} {{/* Range over all the ingress keys */}}
 {{- end }} {{/* if gateway / ingress enabled */}}
 {{- end }} {{/* define */}}
