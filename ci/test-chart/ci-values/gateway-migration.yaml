@@ -1,0 +1,33 @@
+# Gateway API migration test - nginx annotations should trigger suggestions
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+ingress:
+  objects:
+    - name: api-routes
+      annotations:
+        # These should trigger migration suggestions
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "900"
+        nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+        nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+        nginx.ingress.kubernetes.io/client-max-body-size: "100m"
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,34.82.175.27/32"
+        nginx.ingress.kubernetes.io/upstream-vhost: "api.internal.example.com"
+        nginx.ingress.kubernetes.io/server-alias: "*.api-alias.example.com"
+        nginx.ingress.kubernetes.io/configuration-snippet: |
+          proxy_set_header X-Script-Name /api;
+          proxy_set_header X-Custom-Header custom-value;
+      paths:
+        - path: /api/.*
+
+service:
+  port: 8080

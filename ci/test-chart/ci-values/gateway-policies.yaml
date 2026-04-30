@@ -1,0 +1,84 @@
+# Gateway API with all policies enabled
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+    # Test all three policy types
+    policies:
+      # BackendTrafficPolicy - shared default
+      backendTraffic:
+        enabled: true
+        timeout:
+          http:
+            requestTimeout: "300s"
+            connectionIdleTimeout: "600s"
+          tcp:
+            connectTimeout: "30s"
+        connection:
+          bufferLimit: "10Gi"
+        protocol: "GRPC"
+        loadBalancer:
+          type: "LeastRequest"
+        retry:
+          numRetries: 3
+          perRetryTimeout: "5s"
+
+      # ClientTrafficPolicy - attaches to Gateway
+      clientTraffic:
+        enabled: true
+        connection:
+          bufferLimit: "100Mi"
+          connectionIdleTimeout: "300s"
+        timeout:
+          http:
+            requestReceivedTimeout: "60s"
+        http2:
+          maxConcurrentStreams: 1000
+
+      # SecurityPolicy - shared default
+      security:
+        enabled: true
+        authorization:
+          defaultAction: "Deny"
+          rules:
+            - action: "Allow"
+              principal:
+                clientCIDRs:
+                  - "10.0.0.0/8"
+                  - "192.168.1.0/24"
+        cors:
+          allowOrigins:
+            - "https://app.example.com"
+            - "https://*.staging.example.com"
+          allowMethods:
+            - "GET"
+            - "POST"
+            - "PUT"
+            - "DELETE"
+          allowHeaders:
+            - "Content-Type"
+            - "Authorization"
+          exposeHeaders:
+            - "X-Request-ID"
+          maxAge: "86400"
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api/.*
+
+    - name: worker-routes
+      paths:
+        - path: /worker/.*
+
+service:
+  port: 8080

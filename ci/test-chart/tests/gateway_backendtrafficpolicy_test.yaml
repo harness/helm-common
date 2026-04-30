@@ -1,0 +1,86 @@
+suite: Gateway API BackendTrafficPolicy (harnesscommon.v2.renderBackendTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-policies.yaml
+templates:
+  - gateway-policies.yaml
+  - gateway-httproute.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render one shared BackendTrafficPolicy
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
+    asserts:
+      - isKind:
+          of: BackendTrafficPolicy
+
+  - it: BackendTrafficPolicy should target both HTTPRoutes
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
+    asserts:
+      - equal:
+          path: metadata.name
+          value: harness-common-test-backend-policy
+      - equal:
+          path: spec.targetRefs[0].group
+          value: gateway.networking.k8s.io
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: HTTPRoute
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-routes
+      - equal:
+          path: spec.targetRefs[1].name
+          value: worker-routes
+
+  - it: BackendTrafficPolicy should have correct timeout configuration
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 300s
+      - equal:
+          path: spec.timeout.http.connectionIdleTimeout
+          value: 600s
+      - equal:
+          path: spec.timeout.tcp.connectTimeout
+          value: 30s
+
+  - it: BackendTrafficPolicy should have correct connection settings
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.connection.bufferLimit
+          value: 10Gi
+      - equal:
+          path: spec.protocol
+          value: GRPC
+
+  - it: BackendTrafficPolicy should have correct load balancer and retry settings
+    template: gateway-policies.yaml
+    documentSelector:
+      path: kind
+      value: BackendTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.loadBalancer.type
+          value: LeastRequest
+      - equal:
+          path: spec.retry.numRetries
+          value: 3
+      - equal:
+          path: spec.retry.perRetryTimeout
+          value: 5s

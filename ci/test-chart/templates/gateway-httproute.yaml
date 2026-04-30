@@ -1,0 +1,1 @@
+{{- include "harnesscommon.v2.renderHTTPRoute" (dict "ctx" .) }}

@@ -1,0 +1,74 @@
+# Gateway API with per-route policy overrides
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+    # Shared default policies
+    policies:
+      backendTraffic:
+        enabled: true
+        timeout:
+          http:
+            requestTimeout: "30s"
+
+      security:
+        enabled: true
+        authorization:
+          defaultAction: "Allow"
+
+ingress:
+  objects:
+    # Route 1: Uses shared defaults
+    - name: api-routes
+      paths:
+        - path: /api/.*
+
+    # Route 2: Overrides backend timeout
+    - name: report-routes
+      gatewayAPI:
+        backendTraffic:
+          timeout:
+            http:
+              requestTimeout: "1800s"  # 30 minutes for long-running reports
+      paths:
+        - path: /reports/.*
+
+    # Route 3: Overrides security policy
+    - name: admin-routes
+      gatewayAPI:
+        security:
+          authorization:
+            defaultAction: "Deny"
+            rules:
+              - action: "Allow"
+                principal:
+                  clientCIDRs:
+                    - "10.0.0.0/8"  # Admin network only
+      paths:
+        - path: /admin/.*
+
+    # Route 4: Multiple overrides
+    - name: grpc-routes
+      gatewayAPI:
+        backendTraffic:
+          timeout:
+            http:
+              requestTimeout: "3600s"
+              connectionIdleTimeout: "3600s"
+          protocol: "GRPC"
+        requestHeaders:
+          set:
+            - name: "X-GRPC-Service"
+              value: "grpc-backend"
+      paths:
+        - path: /grpc/.*
+
+service:
+  port: 8080

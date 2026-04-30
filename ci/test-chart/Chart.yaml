@@ -6,5 +6,5 @@ version: 0.0.1
 appVersion: "0.0.1"
 dependencies:
   - name: harness-common
-    version: "1.5.3"
+    version: "1.6.0"
     repository: "file://../../src/common"
