@@ -223,7 +223,7 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
       address: {{ dig "vault" "address" "" $mergedSecrets | quote }}
       engine: {{ dig "vault" "engine" "" $mergedSecrets | quote }}
       basePath: {{ dig "vault" "basePath" "" $mergedSecrets | quote }}
-      insecure: {{ dig "vault" "insecure" false $mergedSecrets | quote }}
+      tlsDisabled: {{ dig "vault" "tlsDisabled" false $mergedSecrets | quote }}
       {{- $caCertMountPath := dig "vault" "caCert" "mountPath" "" $mergedSecrets }}
       {{- if $caCertMountPath }}
       caCert: {{ $caCertMountPath | quote }}
