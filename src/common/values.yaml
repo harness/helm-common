@@ -148,7 +148,6 @@ global:
       tlsDisabled: false
       caCert:
         enabled: false
-        mountPath: "/etc/secrets-loader/vault/tls/ca.crt"
         secretName: ""
         secretKey: "ca.crt"
       auth:
