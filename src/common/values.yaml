@@ -145,6 +145,12 @@ global:
       address: ""
       engine: ""
       basePath: ""
+      tlsDisabled: false
+      caCert:
+        enabled: false
+        mountPath: "/etc/secrets-loader/vault/tls/ca.crt"
+        secretName: ""
+        secretKey: "ca.crt"
       auth:
         method: "token"
         # For Token auth:
