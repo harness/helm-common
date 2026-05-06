@@ -60,8 +60,9 @@ Usage: {{ include "harnesscommon.secretsLoader.initContainer" (dict "ctx" .) }}
       mountPath: /shared/env
     - name: shared-secrets-files
       mountPath: /shared/files
-    {{- $caCertMountPath := dig "vault" "caCert" "mountPath" "" $mergedSecrets }}
-    {{- if $caCertMountPath }}
+    {{- $caCertEnabled := dig "vault" "caCert" "enabled" false $mergedSecrets }}
+    {{- if $caCertEnabled }}
+    {{- $caCertMountPath := dig "vault" "caCert" "mountPath" "/etc/secrets-loader/vault/tls/ca.crt" $mergedSecrets }}
     - name: vault-ca-cert
       mountPath: {{ dir $caCertMountPath | quote }}
       readOnly: true
@@ -138,26 +139,17 @@ Usage: {{ include "harnesscommon.secretsLoader.volumes" (dict "ctx" .) }}
   emptyDir: {}
 - name: shared-secrets-files
   emptyDir: {}
-{{- $caCertMountPath := dig "vault" "caCert" "mountPath" "" $mergedSecrets }}
+{{- $caCertEnabled := dig "vault" "caCert" "enabled" false $mergedSecrets }}
+{{- if $caCertEnabled }}
+{{- $caCertMountPath := dig "vault" "caCert" "mountPath" "/etc/secrets-loader/vault/tls/ca.crt" $mergedSecrets }}
 {{- $caCertSecretName := dig "vault" "caCert" "secretName" "" $mergedSecrets }}
 {{- $caCertSecretKey := dig "vault" "caCert" "secretKey" "ca.crt" $mergedSecrets }}
-{{- $caCertConfigMapName := dig "vault" "caCert" "configMapName" "" $mergedSecrets }}
-{{- $caCertConfigMapKey := dig "vault" "caCert" "configMapKey" "ca.crt" $mergedSecrets }}
-{{- if $caCertMountPath }}
 - name: vault-ca-cert
-  {{- if $caCertSecretName }}
   secret:
     secretName: {{ $caCertSecretName }}
     items:
       - key: {{ $caCertSecretKey }}
         path: {{ base $caCertMountPath }}
-  {{- else if $caCertConfigMapName }}
-  configMap:
-    name: {{ $caCertConfigMapName }}
-    items:
-      - key: {{ $caCertConfigMapKey }}
-        path: {{ base $caCertMountPath }}
-  {{- end }}
 {{- end }}
 {{- end -}}
 {{- end -}}
@@ -223,9 +215,13 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
       address: {{ dig "vault" "address" "" $mergedSecrets | quote }}
       engine: {{ dig "vault" "engine" "" $mergedSecrets | quote }}
       basePath: {{ dig "vault" "basePath" "" $mergedSecrets | quote }}
-      tlsDisabled: {{ dig "vault" "tlsDisabled" false $mergedSecrets | quote }}
-      {{- $caCertMountPath := dig "vault" "caCert" "mountPath" "" $mergedSecrets }}
-      {{- if $caCertMountPath }}
+      {{- $tlsDisabled := dig "vault" "tlsDisabled" false $mergedSecrets }}
+      {{- if $tlsDisabled }}
+      tlsDisabled: {{ $tlsDisabled | quote }}
+      {{- end }}
+      {{- $caCertEnabled := dig "vault" "caCert" "enabled" false $mergedSecrets }}
+      {{- if $caCertEnabled }}
+      {{- $caCertMountPath := dig "vault" "caCert" "mountPath" "/etc/secrets-loader/vault/tls/ca.crt" $mergedSecrets }}
       caCert: {{ $caCertMountPath | quote }}
       {{- end }}
       auth:
