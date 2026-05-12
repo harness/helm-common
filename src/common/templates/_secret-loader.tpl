@@ -215,6 +215,7 @@ Usage:   {{- include "harnesscommon.secretsloader.configContent" (dict "ctx" $ "
       address: {{ dig "vault" "address" "" $mergedSecrets | quote }}
       engine: {{ dig "vault" "engine" "" $mergedSecrets | quote }}
       basePath: {{ dig "vault" "basePath" "" $mergedSecrets | quote }}
+      namespace: {{ dig "vault" "namespace" "" $mergedSecrets | quote }}
       {{- $tlsDisabled := dig "vault" "tlsDisabled" false $mergedSecrets }}
       {{- if $tlsDisabled }}
       tlsDisabled: {{ $tlsDisabled | quote }}
