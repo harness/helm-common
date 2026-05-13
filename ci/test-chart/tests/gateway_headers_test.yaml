@@ -10,8 +10,8 @@ release:
 tests:
   - it: first HTTPRoute should have RequestHeaderModifier with set headers
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
       - isKind:
           of: HTTPRoute
@@ -31,8 +31,8 @@ tests:
 
   - it: first HTTPRoute should have RequestHeaderModifier with add and remove headers
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
       - isKind:
           of: HTTPRoute
@@ -41,8 +41,8 @@ tests:
 
   - it: first HTTPRoute should have ResponseHeaderModifier
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
       - isKind:
           of: HTTPRoute
@@ -62,8 +62,8 @@ tests:
 
   - it: first HTTPRoute should have additional hostnames
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
       - isKind:
           of: HTTPRoute
@@ -82,8 +82,8 @@ tests:
 
   - it: second HTTPRoute should have global headers only
     documentSelector:
-      path: metadata.name
-      value: worker-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /worker/.*
     asserts:
       - isKind:
           of: HTTPRoute

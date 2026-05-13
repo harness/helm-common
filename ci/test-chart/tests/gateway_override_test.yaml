@@ -85,8 +85,8 @@ tests:
 
   - it: grpc-routes HTTPRoute should have custom header
     documentSelector:
-      path: metadata.name
-      value: grpc-routes
+      path: spec.rules[0].matches[0].path.value
+      value: /grpc/.*
     asserts:
       - isKind:
           of: HTTPRoute

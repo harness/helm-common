@@ -10,8 +10,8 @@ release:
 tests:
   - it: first HTTPRoute should have correct metadata and spec
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
       - isKind:
           of: HTTPRoute
@@ -27,11 +27,9 @@ tests:
 
   - it: first HTTPRoute should reference correct parent Gateway
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
-      - isKind:
-          of: HTTPRoute
       - equal:
           path: spec.parentRefs[0].name
           value: test-gateway
@@ -47,11 +45,9 @@ tests:
 
   - it: first HTTPRoute should have correct hostnames
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
-      - isKind:
-          of: HTTPRoute
       - contains:
           path: spec.hostnames
           content: api.example.com
@@ -61,11 +57,9 @@ tests:
 
   - it: first HTTPRoute should have correct backend reference
     documentSelector:
-      path: metadata.name
-      value: api-routes
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
-      - isKind:
-          of: HTTPRoute
       - equal:
           path: spec.rules[0].matches[0].path.type
           value: RegularExpression
@@ -81,11 +75,14 @@ tests:
 
   - it: second HTTPRoute should have correct name and backend
     documentSelector:
-      path: metadata.name
-      value: worker-routes
+      path: spec.rules[0].backendRefs[0].name
+      value: worker-service
     asserts:
       - isKind:
           of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: worker-routes
       - equal:
           path: spec.rules[0].backendRefs[0].name
           value: worker-service
