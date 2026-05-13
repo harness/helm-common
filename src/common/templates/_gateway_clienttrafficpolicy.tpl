@@ -29,12 +29,13 @@ metadata:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
+  {{- $parentRefNamespace := $parentRef.namespace | default $.Values.global.namespace }}
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRef.name "context" $) }}
-      {{- if $parentRef.namespace }}
-      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRef.namespace "context" $) }}
+      {{- if $parentRefNamespace }}
+      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRefNamespace "context" $) }}
       {{- end }}
   {{- if or $clientPolicy.connection $clientPolicy.timeout $clientPolicy.http2 }}
   {{- if $clientPolicy.connection }}
