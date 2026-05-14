@@ -29,7 +29,7 @@ metadata:
     {{- include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  {{- $parentRefNamespace := $parentRef.namespace | default $.Values.global.namespace }}
+  {{- $parentRefNamespace := $parentRef.namespace | default $.Release.Namespace }}
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway

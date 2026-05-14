@@ -387,25 +387,18 @@ With custom ingress configuration:
 
 ### Namespace Defaulting
 
-The `parentRef.namespace` defaults to `global.namespace` when not explicitly set:
+The `parentRef.namespace` defaults to the Helm release namespace (`.Release.Namespace`) when not explicitly set:
 
 ```yaml
 global:
-  namespace: harness-helm-new
   gatewayAPI:
     enabled: true
     parentRef:
       name: envoy-gateway
-      # namespace: defaults to global.namespace ("harness-helm-new")
+      # namespace: defaults to .Release.Namespace
 ```
 
 ## Values Reference
-
-### global
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `namespace` | string | `""` | Default namespace; used as fallback for `gatewayAPI.parentRef.namespace` |
 
 ### global.gatewayAPI
 
@@ -413,7 +406,7 @@ global:
 |-----------|------|---------|-------------|
 | `enabled` | bool | `false` | Enable GatewayAPI HTTPRoute generation (requires `global.ingress.enabled`) |
 | `parentRef.name` | string | `""` | Name of the parent Gateway resource |
-| `parentRef.namespace` | string | `""` | Namespace of the parent Gateway resource (defaults to `global.namespace`) |
+| `parentRef.namespace` | string | `""` | Namespace of the parent Gateway resource (defaults to `.Release.Namespace`) |
 | `parentRef.sectionName` | string | `""` | Specific listener name on the Gateway (optional) |
 | `parentRef.port` | int | - | Specific port on the Gateway (optional) |
 
@@ -666,7 +659,7 @@ To add GatewayAPI support to an existing service using nginx-ingress:
        enabled: true  # Add GatewayAPI
        parentRef:
          name: envoy-gateway
-         # namespace defaults to global.namespace
+         # namespace defaults to .Release.Namespace
    ```
 
 2. **No template changes needed** - `renderIngress` automatically generates
