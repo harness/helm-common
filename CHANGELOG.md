@@ -1,9 +1,13 @@
 # Changelog
 
-## [1.6.2] - 2026-05-14
+## [1.6.3] - 2026-05-14
 
 ### Added
-- Moved GatewayAPI rendering to be initiated from renderIngress helper if enabled
+- `renderIngress` now automatically renders all Gateway API resources (HTTPRoute, BackendTrafficPolicy, ClientTrafficPolicy, SecurityPolicy) when `global.gatewayAPI.enabled` is true
+- `parentRef.namespace` defaults to `.Release.Namespace` when not explicitly set
+
+### Fixed
+- Nil pointer error when consuming charts don't define `global.gatewayAPI` in their values
 
 ## [1.5.2] - 2026-04-02
 

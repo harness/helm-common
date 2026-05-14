@@ -106,7 +106,7 @@ spec:
 ---
 {{- end }}
 {{- end }}
-{{- if .ctx.Values.global.gatewayAPI.enabled }}
+{{- if and (hasKey .ctx.Values.global "gatewayAPI") (dig "gatewayAPI" "enabled" false .ctx.Values.global) }}
 # Gateway API resources (rendered by harnesscommon.v1.renderIngress)
 {{- include "harnesscommon.v2.renderHTTPRoute" . }}
 {{- include "harnesscommon.v2.renderBackendTrafficPolicy" . }}
