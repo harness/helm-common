@@ -65,10 +65,11 @@ metadata:
 spec:
   {{- if $.Values.global.gatewayAPI.parentRef }}
   # Default parentRef from global config
+  {{- $parentRefNamespace := $.Values.global.gatewayAPI.parentRef.namespace | default $.Values.global.namespace }}
   parentRefs:
     - name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gatewayAPI.parentRef.name "context" $) }}
-      {{- if $.Values.global.gatewayAPI.parentRef.namespace }}
-      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $.Values.global.gatewayAPI.parentRef.namespace "context" $) }}
+      {{- if $parentRefNamespace }}
+      namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRefNamespace "context" $) }}
       {{- end }}
       {{- if $.Values.global.gatewayAPI.parentRef.sectionName }}
       sectionName: {{ $.Values.global.gatewayAPI.parentRef.sectionName }}

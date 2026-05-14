@@ -3,18 +3,15 @@ values:
   - ../values.yaml
   - ../ci-values/gateway-basic.yaml
 templates:
-  - gateway-httproute.yaml
+  - ingress.yaml
 release:
   name: harness-common-test
   namespace: default
 tests:
-  - it: should render two HTTPRoutes when gatewayAPI and ingress enabled
-    asserts:
-      - hasDocuments:
-          count: 2
-
   - it: first HTTPRoute should have correct metadata and spec
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
       - isKind:
           of: HTTPRoute
@@ -29,7 +26,9 @@ tests:
           value: default
 
   - it: first HTTPRoute should reference correct parent Gateway
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
       - equal:
           path: spec.parentRefs[0].name
@@ -45,7 +44,9 @@ tests:
           value: 443
 
   - it: first HTTPRoute should have correct hostnames
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
       - contains:
           path: spec.hostnames
@@ -55,7 +56,9 @@ tests:
           content: api-staging.example.com
 
   - it: first HTTPRoute should have correct backend reference
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
     asserts:
       - equal:
           path: spec.rules[0].matches[0].path.type
@@ -71,7 +74,9 @@ tests:
           value: 8080
 
   - it: second HTTPRoute should have correct name and backend
-    documentIndex: 1
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: worker-service
     asserts:
       - isKind:
           of: HTTPRoute

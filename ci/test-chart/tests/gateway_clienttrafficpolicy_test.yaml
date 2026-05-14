@@ -3,13 +3,12 @@ values:
   - ../values.yaml
   - ../ci-values/gateway-policies.yaml
 templates:
-  - gateway-policies.yaml
+  - ingress.yaml
 release:
   name: harness-common-test
   namespace: default
 tests:
   - it: should render one ClientTrafficPolicy
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -18,7 +17,6 @@ tests:
           of: ClientTrafficPolicy
 
   - it: ClientTrafficPolicy should target the Gateway
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -40,7 +38,6 @@ tests:
           value: gateway-system
 
   - it: ClientTrafficPolicy should have correct connection settings
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -53,7 +50,6 @@ tests:
           value: 300s
 
   - it: ClientTrafficPolicy should have correct timeout settings
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
@@ -63,7 +59,6 @@ tests:
           value: 60s
 
   - it: ClientTrafficPolicy should have correct HTTP/2 settings
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: ClientTrafficPolicy

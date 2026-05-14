@@ -3,18 +3,15 @@ values:
   - ../values.yaml
   - ../ci-values/gateway-headers.yaml
 templates:
-  - gateway-httproute.yaml
+  - ingress.yaml
 release:
   name: harness-common-test
   namespace: default
 tests:
-  - it: should render two HTTPRoutes
-    asserts:
-      - hasDocuments:
-          count: 2
-
   - it: first HTTPRoute should have RequestHeaderModifier with set headers
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
       - isKind:
           of: HTTPRoute
@@ -33,14 +30,22 @@ tests:
             value: /api
 
   - it: first HTTPRoute should have RequestHeaderModifier with add and remove headers
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
+      - isKind:
+          of: HTTPRoute
       - isNotNull:
           path: spec.rules[0].filters[0].requestHeaderModifier.set
 
   - it: first HTTPRoute should have ResponseHeaderModifier
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
+      - isKind:
+          of: HTTPRoute
       - equal:
           path: spec.rules[0].filters[1].type
           value: ResponseHeaderModifier
@@ -56,8 +61,12 @@ tests:
             value: nosniff
 
   - it: first HTTPRoute should have additional hostnames
-    documentIndex: 0
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /api/.*
     asserts:
+      - isKind:
+          of: HTTPRoute
       - contains:
           path: spec.hostnames
           content: api.example.com
@@ -72,7 +81,9 @@ tests:
           content: "*.api-staging.example.com"
 
   - it: second HTTPRoute should have global headers only
-    documentIndex: 1
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /worker/.*
     asserts:
       - isKind:
           of: HTTPRoute
