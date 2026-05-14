@@ -3,14 +3,12 @@ values:
   - ../values.yaml
   - ../ci-values/gateway-policies.yaml
 templates:
-  - gateway-policies.yaml
-  - gateway-httproute.yaml
+  - ingress.yaml
 release:
   name: harness-common-test
   namespace: default
 tests:
   - it: should render one shared BackendTrafficPolicy
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: BackendTrafficPolicy
@@ -19,7 +17,6 @@ tests:
           of: BackendTrafficPolicy
 
   - it: BackendTrafficPolicy should target both HTTPRoutes
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: BackendTrafficPolicy
@@ -41,7 +38,6 @@ tests:
           value: worker-routes
 
   - it: BackendTrafficPolicy should have correct timeout configuration
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: BackendTrafficPolicy
@@ -57,7 +53,6 @@ tests:
           value: 30s
 
   - it: BackendTrafficPolicy should have correct connection settings
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: BackendTrafficPolicy
@@ -70,7 +65,6 @@ tests:
           value: GRPC
 
   - it: BackendTrafficPolicy should have correct load balancer and retry settings
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: BackendTrafficPolicy

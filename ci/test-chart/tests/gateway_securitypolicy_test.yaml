@@ -3,14 +3,12 @@ values:
   - ../values.yaml
   - ../ci-values/gateway-policies.yaml
 templates:
-  - gateway-policies.yaml
-  - gateway-httproute.yaml
+  - ingress.yaml
 release:
   name: harness-common-test
   namespace: default
 tests:
   - it: should render one shared SecurityPolicy
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: SecurityPolicy
@@ -19,7 +17,6 @@ tests:
           of: SecurityPolicy
 
   - it: SecurityPolicy should target both HTTPRoutes
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: SecurityPolicy
@@ -41,7 +38,6 @@ tests:
           value: worker-routes
 
   - it: SecurityPolicy should have correct authorization configuration
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: SecurityPolicy
@@ -60,7 +56,6 @@ tests:
           content: "192.168.1.0/24"
 
   - it: SecurityPolicy should have correct CORS configuration
-    template: gateway-policies.yaml
     documentSelector:
       path: kind
       value: SecurityPolicy

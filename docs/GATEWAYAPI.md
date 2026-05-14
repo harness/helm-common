@@ -362,33 +362,40 @@ ingress:
 
 ## Template Usage
 
-Include the templates in your Helm chart:
+The recommended approach is to use a single `renderIngress` call which automatically renders
+both traditional Ingress AND Gateway API resources (HTTPRoute + policies) when
+`global.gatewayAPI.enabled` is true:
 
 ```yaml
-# templates/gateway-policies.yaml
-{{- include "harnesscommon.v2.renderBackendTrafficPolicy" (dict "ctx" .) }}
-{{- include "harnesscommon.v2.renderClientTrafficPolicy" (dict "ctx" .) }}
-{{- include "harnesscommon.v2.renderSecurityPolicy" (dict "ctx" .) }}
-
-# templates/httproute.yaml
-{{- include "harnesscommon.v2.renderHTTPRoute" (dict "ctx" .) }}
+# templates/ingress.yaml (renders Ingress + Gateway API resources when enabled)
+{{- include "harnesscommon.v1.renderIngress" (dict "ctx" $) }}
 ```
 
-Or include the HTTPRoute template directly:
+This single include handles everything:
+- Traditional `Ingress` objects (always, when `global.ingress.enabled`)
+- `HTTPRoute` resources (when `global.gatewayAPI.enabled`)
+- `BackendTrafficPolicy` (when `global.gatewayAPI.policies.backendTraffic.enabled`)
+- `ClientTrafficPolicy` (when `global.gatewayAPI.policies.clientTraffic.enabled`)
+- `SecurityPolicy` (when `global.gatewayAPI.policies.security.enabled`)
+
+With custom ingress configuration:
 
 ```yaml
-# templates/httproute.yaml
-{{- include "harnesscommon.v2.renderHTTPRoute" (dict "ctx" $) }}
+# templates/ingress.yaml
+{{- include "harnesscommon.v1.renderIngress" (dict "ingress" .Values.customIngress "ctx" $) }}
 ```
 
-Or with custom ingress configuration:
+### Namespace Defaulting
+
+The `parentRef.namespace` defaults to the Helm release namespace (`.Release.Namespace`) when not explicitly set:
 
 ```yaml
-# templates/httproute.yaml
-{{- include "harnesscommon.v2.renderHTTPRoute" (dict 
-    "ingress" .Values.customIngress 
-    "ctx" $
-) }}
+global:
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: envoy-gateway
+      # namespace: defaults to .Release.Namespace
 ```
 
 ## Values Reference
@@ -399,7 +406,7 @@ Or with custom ingress configuration:
 |-----------|------|---------|-------------|
 | `enabled` | bool | `false` | Enable GatewayAPI HTTPRoute generation (requires `global.ingress.enabled`) |
 | `parentRef.name` | string | `""` | Name of the parent Gateway resource |
-| `parentRef.namespace` | string | `""` | Namespace of the parent Gateway resource (optional) |
+| `parentRef.namespace` | string | `""` | Namespace of the parent Gateway resource (defaults to `.Release.Namespace`) |
 | `parentRef.sectionName` | string | `""` | Specific listener name on the Gateway (optional) |
 | `parentRef.port` | int | - | Specific port on the Gateway (optional) |
 
@@ -645,19 +652,20 @@ To add GatewayAPI support to an existing service using nginx-ingress:
 1. **Enable GatewayAPI** in your values without disabling Ingress:
    ```yaml
    global:
+     namespace: harness-helm-new
      ingress:
        enabled: true  # Keep existing Ingress
      gatewayAPI:
        enabled: true  # Add GatewayAPI
        parentRef:
-         name: your-gateway
+         name: envoy-gateway
+         # namespace defaults to .Release.Namespace
    ```
 
-2. **Create the HTTPRoute template** (if it doesn't exist):
-   ```yaml
-   # templates/httproute.yaml
-   {{- include "harnesscommon.v2.renderHTTPRoute" (dict "ctx" $) }}
-   ```
+2. **No template changes needed** - `renderIngress` automatically generates
+   Gateway API resources when `global.gatewayAPI.enabled` is true. Your existing
+   `templates/ingress.yaml` with `{{- include "harnesscommon.v1.renderIngress" (dict "ctx" $) }}`
+   handles everything.
 
 3. **Test the generated resources**:
    ```bash
@@ -820,10 +828,10 @@ kubectl get httproute <name> -n your-namespace -o yaml
 
 ## Related Templates
 
+- `_ingress.tpl` - Unified entry point: renders Ingress + all Gateway API resources via `renderIngress`
 - `_gateway_httproute.tpl` - HTTPRoute generation with header manipulation and additional hostnames
 - `_gateway_backendtrafficpolicy.tpl` - Backend timeouts, connection settings, protocol, retries
 - `_gateway_clienttrafficpolicy.tpl` - Client-side connection limits and timeouts
 - `_gateway_securitypolicy.tpl` - IP whitelisting, CORS, JWT authentication
 - `_gateway_migration_helper.tpl` - Prints migration suggestions for nginx annotations
-- `_ingress.tpl` - Traditional Ingress template (can run alongside Gateway API)
 - `_service.tpl` - Service resource template

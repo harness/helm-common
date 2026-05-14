@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.2] - 2026-05-14
+
+### Added
+- Moved GatewayAPI rendering to be initiated from renderIngress helper if enabled
+
 ## [1.5.2] - 2026-04-02
 
 ### Added

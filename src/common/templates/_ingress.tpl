@@ -3,6 +3,9 @@ USAGE:
 {{- include "harnesscommon.v1.renderIngress" (dict "ctx" $) }}
 or
 {{- include "harnesscommon.v1.renderIngress" (dict "ingress" .Values.other.ingress "ctx" $) }}
+
+When global.gatewayAPI.enabled is true, this template also renders Gateway API
+resources (HTTPRoute, BackendTrafficPolicy, ClientTrafficPolicy, SecurityPolicy).
 */}}
 {{- define "harnesscommon.v1.renderIngress" }}
 {{- $ := .ctx }}
@@ -102,5 +105,12 @@ spec:
   {{- end }}
 ---
 {{- end }}
+{{- end }}
+{{- if .ctx.Values.global.gatewayAPI.enabled }}
+# Gateway API resources (rendered by harnesscommon.v1.renderIngress)
+{{- include "harnesscommon.v2.renderHTTPRoute" . }}
+{{- include "harnesscommon.v2.renderBackendTrafficPolicy" . }}
+{{- include "harnesscommon.v2.renderClientTrafficPolicy" . }}
+{{- include "harnesscommon.v2.renderSecurityPolicy" . }}
 {{- end }}
 {{- end }}
