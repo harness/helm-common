@@ -1,0 +1,68 @@
+suite: Gateway API TLSRoute (harnesscommon.v2.renderTLSRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-tlsroute.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render TLSRoute with correct kind and apiVersion
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - isKind:
+          of: TLSRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1alpha2
+
+  - it: should have correct metadata
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - equal:
+          path: metadata.name
+          value: db-passthrough
+      - equal:
+          path: metadata.namespace
+          value: default
+
+  - it: should reference parent gateway with sectionName override
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: tls-passthrough
+
+  - it: should have correct hostnames for SNI matching
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: db.example.com
+      - contains:
+          path: spec.hostnames
+          content: db-replica.example.com
+
+  - it: should have correct backend ref
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: db-svc
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 5432

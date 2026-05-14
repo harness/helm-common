@@ -1,0 +1,25 @@
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  udpRoutes:
+    - name: dns-route
+      parentRef:
+        sectionName: udp-53
+        port: 53
+      rules:
+        - backendRefs:
+            - name: dns-svc
+              port: 53
+
+service:
+  port: 8080

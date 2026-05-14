@@ -10,7 +10,7 @@ or
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
+{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
 {{- range $index, $object := $ingress.objects }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
 {{- $objectAnnotations := dig "annotations" dict $object }}

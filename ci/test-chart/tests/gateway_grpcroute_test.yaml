@@ -1,0 +1,86 @@
+suite: Gateway API GRPCRoute (harnesscommon.v2.renderGRPCRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-grpcroute.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render GRPCRoute with correct kind and apiVersion
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - isKind:
+          of: GRPCRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+
+  - it: should have correct metadata
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - equal:
+          path: metadata.name
+          value: grpc-api
+      - equal:
+          path: metadata.namespace
+          value: default
+
+  - it: should reference parent gateway
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: gateway-system
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: grpc
+
+  - it: should have correct hostnames
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: grpc.example.com
+
+  - it: should have correct gRPC method matching for first rule
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].method.service
+          value: mycompany.UserService
+      - equal:
+          path: spec.rules[0].matches[0].method.method
+          value: GetUser
+      - equal:
+          path: spec.rules[0].matches[0].method.type
+          value: Exact
+
+  - it: should have correct service-level match for second rule
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - equal:
+          path: spec.rules[1].matches[0].method.service
+          value: mycompany.OrderService
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: order-grpc-svc
+      - equal:
+          path: spec.rules[1].backendRefs[0].port
+          value: 9090

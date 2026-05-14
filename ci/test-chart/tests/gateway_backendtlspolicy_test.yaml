@@ -1,0 +1,82 @@
+suite: Gateway API BackendTLSPolicy (harnesscommon.v2.renderBackendTLSPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-backendtlspolicy.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render BackendTLSPolicy with correct kind and apiVersion
+    documentSelector:
+      path: spec.targetRefs[0].name
+      value: api-service
+    asserts:
+      - isKind:
+          of: BackendTLSPolicy
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1alpha3
+
+  - it: should have correct metadata for CA cert policy
+    documentSelector:
+      path: spec.targetRefs[0].name
+      value: api-service
+    asserts:
+      - equal:
+          path: metadata.name
+          value: api-backend-tls
+      - equal:
+          path: metadata.namespace
+          value: default
+
+  - it: should target correct service with sectionName for port
+    documentSelector:
+      path: spec.targetRefs[0].name
+      value: api-service
+    asserts:
+      - equal:
+          path: spec.targetRefs[0].group
+          value: ""
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: Service
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-service
+      - equal:
+          path: spec.targetRefs[0].sectionName
+          value: "8443"
+
+  - it: should have correct validation with CA certificate ref
+    documentSelector:
+      path: spec.targetRefs[0].name
+      value: api-service
+    asserts:
+      - equal:
+          path: spec.validation.hostname
+          value: api-service.default.svc.cluster.local
+      - equal:
+          path: spec.validation.caCertificateRefs[0].name
+          value: backend-ca-cert
+      - equal:
+          path: spec.validation.caCertificateRefs[0].kind
+          value: Secret
+
+  - it: should render policy with system trust store
+    documentSelector:
+      path: spec.targetRefs[0].name
+      value: external-service
+    asserts:
+      - isKind:
+          of: BackendTLSPolicy
+      - equal:
+          path: metadata.name
+          value: system-trust-tls
+      - equal:
+          path: spec.validation.hostname
+          value: external.example.com
+      - equal:
+          path: spec.validation.wellKnownCACertificates
+          value: System

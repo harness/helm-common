@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0] - 2026-05-14
+
+### Added
+- **GRPCRoute**: Native gRPC routing with service/method-level matching (`ingress.grpcRoutes`)
+- **TCPRoute**: Raw TCP traffic routing for databases, Redis, custom protocols (`ingress.tcpRoutes`)
+- **TLSRoute**: TLS passthrough routing based on SNI hostname (`ingress.tlsRoutes`)
+- **UDPRoute**: UDP traffic routing for DNS, game servers, etc. (`ingress.udpRoutes`)
+- **BackendTLSPolicy**: TLS configuration for gateway-to-backend connections (`ingress.backendTLSPolicies`)
+- All new route types support per-route `parentRef` override of global gateway reference
+- All new route types support weighted backend traffic splitting
+
+### Fixed
+- Nil pointer safety: all 10 gateway templates now use `dig` instead of direct nested map access for `global.gatewayAPI.enabled` guard
+
 ## [1.6.3] - 2026-05-14
 
 ### Added
