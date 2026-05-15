@@ -78,10 +78,11 @@ spec:
       port: {{ $.Values.global.gatewayAPI.parentRef.port }}
       {{- end }}
   {{- end }}
+  {{- /* When disableHostInIngress is true, omit hostnames so HTTPRoute inherits from
+  the parent Gateway listener. Gateway API hostname validation rejects bare "*";
+  valid wildcard form is "*.example.com". */}}
+  {{- if not $.Values.global.ingress.disableHostInIngress }}
   hostnames:
-  {{- if $.Values.global.ingress.disableHostInIngress }}
-    - "*"
-  {{- else }}
     {{- range $.Values.global.ingress.hosts }}
     - {{ . | quote }}
     {{- end }}

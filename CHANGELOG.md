@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.1] - 2026-05-15
+
+### Fixed
+- HTTPRoute hostname validation error when `global.ingress.disableHostInIngress: true`. Previously emitted bare `*` which is rejected by Gateway API CRD validation (regex requires `*.<domain>` or specific hostname). Now omits the `hostnames` field entirely so the HTTPRoute inherits from the parent Gateway listener.
+
 ## [1.7.0] - 2026-05-14
 
 ### Added
