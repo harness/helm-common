@@ -1,0 +1,26 @@
+suite: Gateway API HTTPRoute example hostnames (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-example-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: HTTPRoute should render concrete and wildcard subdomain hostnames
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: spec.hostnames[0]
+          value: example.com
+      - equal:
+          path: spec.hostnames[1]
+          value: "*.example.com"
+      - lengthEqual:
+          path: spec.hostnames
+          count: 2

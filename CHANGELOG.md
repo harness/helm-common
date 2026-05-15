@@ -3,7 +3,7 @@
 ## [1.7.1] - 2026-05-15
 
 ### Fixed
-- HTTPRoute hostname validation error when `global.ingress.disableHostInIngress: true`. Previously emitted bare `*` which is rejected by Gateway API CRD validation (regex requires `*.<domain>` or specific hostname). Now omits the `hostnames` field entirely so the HTTPRoute inherits from the parent Gateway listener.
+- HTTPRoute hostname validation error when `global.ingress.disableHostInIngress: true` or when `global.ingress.hosts` contains bare `"*"`. Gateway API CRD validation rejects bare `*` (regex requires `*.<domain>` or specific hostname). The template now filters bare `*` entries from all hostname sources (`hosts`, `additionalHostnames` global and per-route) and omits the `hostnames` field entirely when the resulting list is empty, so the HTTPRoute inherits from the parent Gateway listener.
 
 ## [1.7.0] - 2026-05-14
 

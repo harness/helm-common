@@ -1,0 +1,19 @@
+suite: Gateway API HTTPRoute hosts=["*"] (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-wildcard-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: HTTPRoute should omit hostnames field when hosts is exactly ["*"]
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - notExists:
+          path: spec.hostnames

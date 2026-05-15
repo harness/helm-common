@@ -78,27 +78,38 @@ spec:
       port: {{ $.Values.global.gatewayAPI.parentRef.port }}
       {{- end }}
   {{- end }}
-  {{- /* When disableHostInIngress is true, omit hostnames so HTTPRoute inherits from
-  the parent Gateway listener. Gateway API hostname validation rejects bare "*";
-  valid wildcard form is "*.example.com". */}}
+  {{- /* Gateway API hostname validation rejects bare "*"; valid wildcard form is "*.example.com".
+  Build a filtered hostname list, dropping bare "*". If the resulting list is empty (or
+  disableHostInIngress is true), omit the hostnames field so the HTTPRoute inherits from the
+  parent Gateway listener. */}}
+  {{- $hostnameList := list }}
   {{- if not $.Values.global.ingress.disableHostInIngress }}
-  hostnames:
     {{- range $.Values.global.ingress.hosts }}
-    - {{ . | quote }}
+      {{- if ne . "*" }}
+        {{- $hostnameList = append $hostnameList . }}
+      {{- end }}
     {{- end }}
-    {{- /* Add additional hostnames from global config */}}
     {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
     {{- if $globalHttpRoute.additionalHostnames }}
-    {{- range $hostname := $globalHttpRoute.additionalHostnames }}
-    - {{ $hostname | quote }}
+      {{- range $hostname := $globalHttpRoute.additionalHostnames }}
+        {{- if ne $hostname "*" }}
+          {{- $hostnameList = append $hostnameList $hostname }}
+        {{- end }}
+      {{- end }}
     {{- end }}
-    {{- end }}
-    {{- /* Add additional hostnames from per-route config */}}
     {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
     {{- if $perRouteHttpRoute.additionalHostnames }}
-    {{- range $hostname := $perRouteHttpRoute.additionalHostnames }}
-    - {{ $hostname | quote }}
+      {{- range $hostname := $perRouteHttpRoute.additionalHostnames }}
+        {{- if ne $hostname "*" }}
+          {{- $hostnameList = append $hostnameList $hostname }}
+        {{- end }}
+      {{- end }}
     {{- end }}
+  {{- end }}
+  {{- if $hostnameList }}
+  hostnames:
+    {{- range $hostname := $hostnameList }}
+    - {{ $hostname | quote }}
     {{- end }}
   {{- end }}
   rules:
