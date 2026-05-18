@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2] - 2026-05-18
+
+### Fixed
+- **GRPCRoute & TLSRoute hostname inheritance**: Both now inherit hostnames from `global.ingress.hosts` when `hostnames` is not explicitly set per-route, matching HTTPRoute behavior. Previously these routes only emitted `spec.hostnames` when explicitly set per-route, requiring duplicate hostname configuration.
+- Bare `*` filtering also applied to GRPCRoute and TLSRoute hostname sources for consistency with HTTPRoute (Gateway API CRD validation rejects bare `*`).
+- Per-route `additionalHostnames` and global `gatewayAPI.grpcRoute.additionalHostnames` / `gatewayAPI.tlsRoute.additionalHostnames` are now supported as additive sources, mirroring the HTTPRoute pattern.
+
 ## [1.7.1] - 2026-05-15
 
 ### Fixed

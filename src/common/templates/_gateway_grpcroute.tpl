@@ -75,9 +75,40 @@ spec:
       port: {{ $parentRefPort }}
       {{- end }}
   {{- end }}
+  {{- /* Hostname inheritance: per-route hostnames override; otherwise inherit from global.ingress.hosts.
+  Gateway API hostname validation rejects bare "*"; filter it from any source. */}}
+  {{- $hostnameList := list }}
   {{- if $route.hostnames }}
+    {{- range $route.hostnames }}
+      {{- if ne . "*" }}
+        {{- $hostnameList = append $hostnameList . }}
+      {{- end }}
+    {{- end }}
+  {{- else if not (dig "ingress" "disableHostInIngress" false $.Values.global) }}
+    {{- range (dig "ingress" "hosts" list $.Values.global) }}
+      {{- if ne . "*" }}
+        {{- $hostnameList = append $hostnameList . }}
+      {{- end }}
+    {{- end }}
+    {{- $globalGRPCRoute := dig "grpcRoute" dict (dig "gatewayAPI" dict $.Values.global) }}
+    {{- if $globalGRPCRoute.additionalHostnames }}
+      {{- range $hostname := $globalGRPCRoute.additionalHostnames }}
+        {{- if ne $hostname "*" }}
+          {{- $hostnameList = append $hostnameList $hostname }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if $route.additionalHostnames }}
+      {{- range $hostname := $route.additionalHostnames }}
+        {{- if ne $hostname "*" }}
+          {{- $hostnameList = append $hostnameList $hostname }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if $hostnameList }}
   hostnames:
-    {{- range $hostname := $route.hostnames }}
+    {{- range $hostname := $hostnameList }}
     - {{ $hostname | quote }}
     {{- end }}
   {{- end }}
