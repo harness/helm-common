@@ -8,7 +8,7 @@ USAGE:
 */}}
 {{- define "harnesscommon.v2.renderClientTrafficPolicy" }}
 {{- $ := .ctx }}
-{{- if and $.Values.global.gatewayAPI.enabled $.Values.global.ingress.enabled -}}
+{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
 
 {{- $clientPolicy := dig "policies" "clientTraffic" dict $.Values.global.gatewayAPI }}
 {{- if and $clientPolicy (dig "enabled" false $clientPolicy) }}

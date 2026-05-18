@@ -11,7 +11,7 @@ USAGE:
 {{- $routeName := .routeName }}
 {{- $annotations := .annotations }}
 
-{{- if and $.Values.global.gatewayAPI.enabled $annotations }}
+{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) $annotations }}
 {{- $hasNginxAnnotations := false }}
 {{- $suggestions := list }}
 

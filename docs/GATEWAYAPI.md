@@ -6,10 +6,20 @@ This document describes how to use the GatewayAPI templates to generate Kubernet
 
 The helm-common library provides comprehensive Gateway API support through multiple templates:
 
+**Route Types:**
 - **`_gateway_httproute.tpl`** - HTTPRoute with header manipulation and URL rewriting
+- **`_gateway_grpcroute.tpl`** - Native GRPCRoute with method-level matching
+- **`_gateway_tcproute.tpl`** - TCPRoute for raw TCP traffic (databases, Redis, etc.)
+- **`_gateway_tlsroute.tpl`** - TLSRoute for TLS passthrough without termination
+- **`_gateway_udproute.tpl`** - UDPRoute for UDP traffic (DNS, game servers, etc.)
+
+**Policies:**
 - **`_gateway_backendtrafficpolicy.tpl`** - Backend timeouts, connection settings, protocol, retries
 - **`_gateway_clienttrafficpolicy.tpl`** - Client-side connection limits and timeouts
 - **`_gateway_securitypolicy.tpl`** - IP whitelisting, CORS, JWT authentication
+- **`_gateway_backendtlspolicy.tpl`** - TLS configuration for backend connections
+
+**Helpers:**
 - **`_gateway_migration_helper.tpl`** - Prints migration suggestions for nginx annotations
 
 Gateway API is the next-generation ingress solution for Kubernetes, offering more expressiveness, extensibility, and role-oriented design compared to traditional Ingress resources.
@@ -20,6 +30,456 @@ Gateway API is the next-generation ingress solution for Kubernetes, offering mor
 - Provider-agnostic API design
 - Support for modern proxy features (gRPC, HTTP/2, etc.)
 - Hybrid policy approach: shared defaults + per-route overrides
+
+## Supported Resource Types
+
+All resources are rendered automatically by a single `renderIngress` call when `global.gatewayAPI.enabled: true`.
+
+**Stable Route Types:**
+
+| Resource | API Version | Description | Config Location |
+|----------|-------------|-------------|-----------------|
+| **HTTPRoute** | `gateway.networking.k8s.io/v1` | L7 HTTP routing with regex paths, header manipulation, URL rewriting | `ingress.objects` |
+| **GRPCRoute** | `gateway.networking.k8s.io/v1` | Native gRPC routing with service/method matching | `ingress.grpcRoutes` |
+
+**Experimental Route Types:**
+
+| Resource | API Version | Description | Config Location |
+|----------|-------------|-------------|-----------------|
+| **TCPRoute** | `gateway.networking.k8s.io/v1alpha2` | Raw TCP traffic (databases, Redis, custom protocols) | `ingress.tcpRoutes` |
+| **TLSRoute** | `gateway.networking.k8s.io/v1alpha2` | TLS passthrough without termination (SNI-based) | `ingress.tlsRoutes` |
+| **UDPRoute** | `gateway.networking.k8s.io/v1alpha2` | UDP traffic (DNS, game servers, custom protocols) | `ingress.udpRoutes` |
+
+**Envoy Gateway Policies:**
+
+| Resource | API Version | Description | Config Location |
+|----------|-------------|-------------|-----------------|
+| **BackendTrafficPolicy** | `gateway.envoyproxy.io/v1alpha1` | Timeouts, protocol, retries, load balancing | `global.gatewayAPI.policies.backendTraffic` or per-route |
+| **ClientTrafficPolicy** | `gateway.envoyproxy.io/v1alpha1` | Client connection limits, HTTP/2 settings | `global.gatewayAPI.policies.clientTraffic` |
+| **SecurityPolicy** | `gateway.envoyproxy.io/v1alpha1` | IP whitelisting, CORS, JWT | `global.gatewayAPI.policies.security` or per-route |
+| **HTTPRouteFilter** | `gateway.envoyproxy.io/v1alpha1` | URL rewrite rules (auto-generated from rewrite-target annotation) | Auto |
+
+**Gateway API Policies:**
+
+| Resource | API Version | Description | Config Location |
+|----------|-------------|-------------|-----------------|
+| **BackendTLSPolicy** | `gateway.networking.k8s.io/v1alpha3` | TLS config for gateway-to-backend connections | `ingress.backendTLSPolicies` |
+
+## gRPC Support
+
+**A single Envoy Gateway handles both HTTP and gRPC traffic.** You do NOT need a separate gateway for gRPC. There are two approaches:
+
+| Approach | Resource | When to Use |
+|----------|----------|-------------|
+| **HTTPRoute + protocol** | `HTTPRoute` + `BackendTrafficPolicy.protocol: "GRPC"` | Simple path-based gRPC routing, migrating from nginx |
+| **Native GRPCRoute** | `GRPCRoute` | Method-level matching (service + method name), header-based matching |
+
+### Approach 1: HTTPRoute + BackendTrafficPolicy Protocol
+
+The simpler approach. Define gRPC service paths in `ingress.objects` like HTTP paths and set `protocol: "GRPC"` on the BackendTrafficPolicy.
+
+```yaml
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: envoy-gateway
+
+ingress:
+  objects:
+    # HTTP service - uses default HTTP protocol
+    - name: "web-api"
+      paths:
+        - path: "/api/v1/.*"
+          backend:
+            service:
+              name: web-api-svc
+              port: 8080
+
+    # gRPC service - override protocol per-route
+    - name: "grpc-service"
+      gatewayAPI:
+        backendTraffic:
+          protocol: "GRPC"
+      paths:
+        - path: "/grpc\\.health\\.v1\\.Health/.*"
+          backend:
+            service:
+              name: grpc-svc
+              port: 9090
+        - path: "/my\\.package\\.MyService/.*"
+          backend:
+            service:
+              name: grpc-svc
+              port: 9090
+```
+
+This generates:
+- One `HTTPRoute` for `web-api` (standard HTTP backend)
+- One `HTTPRoute` for `grpc-service` (same kind, same gateway)
+- One `BackendTrafficPolicy` for `grpc-service` with `protocol: GRPC`
+
+If **all** services use gRPC, set it globally instead of per-route:
+
+```yaml
+global:
+  gatewayAPI:
+    policies:
+      backendTraffic:
+        enabled: true
+        protocol: "GRPC"
+```
+
+### Approach 2: Native GRPCRoute
+
+For native gRPC service/method matching without regex paths. Define routes under `ingress.grpcRoutes`:
+
+```yaml
+ingress:
+  grpcRoutes:
+    - name: grpc-api
+      hostnames:
+        - grpc.example.com
+      rules:
+        # Match a specific method on a service
+        - matches:
+            - method:
+                service: my.package.UserService
+                method: GetUser
+                type: Exact
+          backendRefs:
+            - name: user-grpc-svc
+              port: 9090
+
+        # Match all methods on a service
+        - matches:
+            - method:
+                service: my.package.OrderService
+          backendRefs:
+            - name: order-grpc-svc
+              port: 9090
+
+        # Match with header conditions
+        - matches:
+            - method:
+                service: my.package.AdminService
+              headers:
+                - name: x-admin-token
+                  value: "valid"
+          backendRefs:
+            - name: admin-grpc-svc
+              port: 9090
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-api
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: default
+  hostnames:
+    - "grpc.example.com"
+  rules:
+    - matches:
+        - method:
+            service: "my.package.UserService"
+            method: "GetUser"
+            type: Exact
+      backendRefs:
+        - name: user-grpc-svc
+          port: 9090
+    - matches:
+        - method:
+            service: "my.package.OrderService"
+      backendRefs:
+        - name: order-grpc-svc
+          port: 9090
+```
+
+GRPCRoute supports the same `parentRef` override pattern as other routes (local overrides global).
+
+### gRPC Timeouts
+
+gRPC services often need longer timeouts for streaming RPCs:
+
+```yaml
+ingress:
+  objects:
+    - name: "grpc-streaming"
+      gatewayAPI:
+        backendTraffic:
+          protocol: "GRPC"
+          timeout:
+            http:
+              requestTimeout: "3600s"    # 1 hour for long-running streams
+              connectionIdleTimeout: "600s"
+      paths:
+        - path: "/my\\.package\\.StreamService/.*"
+```
+
+## TCPRoute
+
+Routes raw TCP traffic to backend services. Use for databases, Redis, custom TCP protocols, or any non-HTTP service.
+
+**Gateway requirement:** The Gateway must have a TCP listener configured for the target port.
+
+### Example: Database and Redis
+
+```yaml
+ingress:
+  tcpRoutes:
+    # PostgreSQL
+    - name: postgres-route
+      parentRef:
+        sectionName: tcp-5432    # Must match a Gateway listener name
+        port: 5432
+      rules:
+        - backendRefs:
+            - name: postgres-svc
+              port: 5432
+
+    # Redis with weighted traffic splitting
+    - name: redis-route
+      parentRef:
+        sectionName: tcp-6379
+        port: 6379
+      rules:
+        - backendRefs:
+            - name: redis-primary
+              port: 6379
+              weight: 80
+            - name: redis-replica
+              port: 6379
+              weight: 20
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: postgres-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: default
+      sectionName: tcp-5432
+      port: 5432
+  rules:
+    - backendRefs:
+        - name: postgres-svc
+          port: 5432
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: redis-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: default
+      sectionName: tcp-6379
+      port: 6379
+  rules:
+    - backendRefs:
+        - name: redis-primary
+          port: 6379
+          weight: 80
+        - name: redis-replica
+          port: 6379
+          weight: 20
+```
+
+### TCPRoute `parentRef` Override
+
+Each TCPRoute can override any field from `global.gatewayAPI.parentRef`:
+
+```yaml
+ingress:
+  tcpRoutes:
+    - name: my-tcp-route
+      parentRef:
+        name: tcp-gateway         # Override gateway name
+        sectionName: tcp-3306     # Target specific listener
+        port: 3306
+      rules:
+        - backendRefs:
+            - name: mysql-svc
+              port: 3306
+```
+
+Fields not specified in the local `parentRef` fall back to the global `parentRef`.
+
+## TLSRoute
+
+Routes TLS traffic without termination (passthrough) based on SNI hostname. The Gateway does NOT decrypt the traffic — it forwards the encrypted connection to the backend based on the TLS Server Name Indication.
+
+**Gateway requirement:** The Gateway must have a TLS listener with `mode: Passthrough`.
+
+### Example: TLS Passthrough
+
+```yaml
+ingress:
+  tlsRoutes:
+    - name: db-passthrough
+      hostnames:
+        - db.example.com
+        - db-replica.example.com
+      parentRef:
+        sectionName: tls-passthrough
+      rules:
+        - backendRefs:
+            - name: db-svc
+              port: 5432
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: db-passthrough
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: default
+      sectionName: tls-passthrough
+  hostnames:
+    - "db.example.com"
+    - "db-replica.example.com"
+  rules:
+    - backendRefs:
+        - name: db-svc
+          port: 5432
+```
+
+### When to Use TLSRoute vs TCPRoute
+
+| Use Case | Route Type | Why |
+|----------|------------|-----|
+| Backend handles its own TLS, you want SNI routing | **TLSRoute** | Routes by hostname without decrypting |
+| Raw TCP, no TLS, or gateway terminates TLS | **TCPRoute** | No SNI available for routing |
+| Multiple TLS backends on same port, different hostnames | **TLSRoute** | SNI lets you multiplex |
+
+## UDPRoute
+
+Routes UDP traffic to backend services. Use for DNS servers, game servers, or custom UDP protocols.
+
+**Gateway requirement:** The Gateway must have a UDP listener configured for the target port.
+
+### Example: DNS Server
+
+```yaml
+ingress:
+  udpRoutes:
+    - name: dns-route
+      parentRef:
+        sectionName: udp-53
+        port: 53
+      rules:
+        - backendRefs:
+            - name: coredns-svc
+              port: 53
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: dns-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: default
+      sectionName: udp-53
+      port: 53
+  rules:
+    - backendRefs:
+        - name: coredns-svc
+          port: 53
+```
+
+## BackendTLSPolicy
+
+Configures TLS settings for connections **from the Gateway to backend Services**. Use when your backend expects TLS connections (mTLS, internal TLS).
+
+This is a standard Gateway API resource (not Envoy-specific). Define under `ingress.backendTLSPolicies`.
+
+### Example: CA Certificate Reference
+
+```yaml
+ingress:
+  backendTLSPolicies:
+    - name: api-backend-tls
+      targetRef:
+        name: api-service         # Target Service name
+        port: 8443                # Optional: specific port
+      validation:
+        hostname: api-service.default.svc.cluster.local
+        caCertificateRefs:
+          - name: backend-ca-cert  # Secret containing the CA cert
+            kind: Secret           # Optional, defaults to Secret
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: api-backend-tls
+  namespace: default
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: api-service
+      sectionName: "8443"
+  validation:
+    hostname: "api-service.default.svc.cluster.local"
+    caCertificateRefs:
+      - name: backend-ca-cert
+        group: ""
+        kind: Secret
+```
+
+### Example: System Trust Store
+
+Use the system CA bundle instead of explicit certificates:
+
+```yaml
+ingress:
+  backendTLSPolicies:
+    - name: external-tls
+      targetRef:
+        name: external-service
+      validation:
+        hostname: external.example.com
+        wellKnownCACertificates: "System"
+```
 
 ## Migration Approach: Guided, Not Automatic
 
@@ -373,10 +833,15 @@ both traditional Ingress AND Gateway API resources (HTTPRoute + policies) when
 
 This single include handles everything:
 - Traditional `Ingress` objects (always, when `global.ingress.enabled`)
-- `HTTPRoute` resources (when `global.gatewayAPI.enabled`)
+- `HTTPRoute` resources (when `global.gatewayAPI.enabled`, from `ingress.objects`)
+- `GRPCRoute` resources (when `global.gatewayAPI.enabled`, from `ingress.grpcRoutes`)
+- `TCPRoute` resources (when `global.gatewayAPI.enabled`, from `ingress.tcpRoutes`)
+- `TLSRoute` resources (when `global.gatewayAPI.enabled`, from `ingress.tlsRoutes`)
+- `UDPRoute` resources (when `global.gatewayAPI.enabled`, from `ingress.udpRoutes`)
 - `BackendTrafficPolicy` (when `global.gatewayAPI.policies.backendTraffic.enabled`)
 - `ClientTrafficPolicy` (when `global.gatewayAPI.policies.clientTraffic.enabled`)
 - `SecurityPolicy` (when `global.gatewayAPI.policies.security.enabled`)
+- `BackendTLSPolicy` (when `global.gatewayAPI.enabled`, from `ingress.backendTLSPolicies`)
 
 With custom ingress configuration:
 
@@ -470,7 +935,7 @@ global:
 | `disableHostInIngress` | bool | `false` | Use wildcard `*` hostname instead of specific hosts |
 | `objects.annotations` | object | `{}` | Annotations applied to all ingress/HTTPRoute objects |
 
-### ingress.objects (service-level)
+### ingress.objects (service-level, used by HTTPRoute)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -487,6 +952,61 @@ global:
 | `paths[].path` | string | Path regex for routing (supports template rendering) |
 | `paths[].backend.service.name` | string | Backend service name (defaults to Chart.Name) |
 | `paths[].backend.service.port` | int | Backend service port (defaults to `.Values.service.port`) |
+
+### ingress.grpcRoutes
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Route name (optional, auto-generated as `<chart>-grpc-<index>`) |
+| `hostnames` | array | SNI hostnames for the route |
+| `annotations` | object | Custom annotations |
+| `parentRef` | object | Override `global.gatewayAPI.parentRef` (name/namespace/sectionName/port) |
+| `rules[].matches[].method.service` | string | gRPC service name (e.g., `my.package.MyService`) |
+| `rules[].matches[].method.method` | string | gRPC method name (optional, empty matches all methods) |
+| `rules[].matches[].method.type` | string | Match type: `Exact` (default) or `RegularExpression` |
+| `rules[].matches[].headers` | array | Header match conditions (name/value/type) |
+| `rules[].filters` | array | Request/response filters (rendered as-is) |
+| `rules[].backendRefs` | array | Backend services (name/port/weight) |
+
+### ingress.tcpRoutes
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Route name (optional, auto-generated as `<chart>-tcp-<index>`) |
+| `annotations` | object | Custom annotations |
+| `parentRef` | object | Override `global.gatewayAPI.parentRef` (name/namespace/sectionName/port) |
+| `rules[].backendRefs` | array | Backend services (name/port/weight) |
+
+### ingress.tlsRoutes
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Route name (optional, auto-generated as `<chart>-tls-<index>`) |
+| `hostnames` | array | SNI hostnames for passthrough routing |
+| `annotations` | object | Custom annotations |
+| `parentRef` | object | Override `global.gatewayAPI.parentRef` (name/namespace/sectionName/port) |
+| `rules[].backendRefs` | array | Backend services (name/port/weight) |
+
+### ingress.udpRoutes
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Route name (optional, auto-generated as `<chart>-udp-<index>`) |
+| `annotations` | object | Custom annotations |
+| `parentRef` | object | Override `global.gatewayAPI.parentRef` (name/namespace/sectionName/port) |
+| `rules[].backendRefs` | array | Backend services (name/port/weight) |
+
+### ingress.backendTLSPolicies
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Policy name (optional, auto-generated as `<chart>-backend-tls-<index>`) |
+| `annotations` | object | Custom annotations |
+| `targetRef.name` | string | Target Service name (required) |
+| `targetRef.port` | int | Target Service port (optional, rendered as sectionName) |
+| `validation.hostname` | string | Expected backend certificate hostname (required) |
+| `validation.caCertificateRefs` | array | CA certificate references (name, optional group/kind) |
+| `validation.wellKnownCACertificates` | string | Use system trust store: `"System"` |
 
 ## Migration Example with Suggestions
 
@@ -690,6 +1210,8 @@ To add GatewayAPI support to an existing service using nginx-ingress:
 5. **Server alias regex limitation**: Gateway API supports wildcards (`*.domain.com`) but NOT regex patterns like nginx `server-alias`
 6. **ClientTrafficPolicy scope**: ClientTrafficPolicy attaches to the Gateway itself, not individual routes, so settings affect all routes through that Gateway
 7. **Policy merge behavior**: When multiple policies target the same resource, Envoy Gateway merges them (Gateway → HTTPRoute → Service precedence)
+8. **Experimental API versions**: TCPRoute, TLSRoute, and UDPRoute use `v1alpha2`; BackendTLSPolicy uses `v1alpha3`. These APIs may change in future Gateway API releases
+9. **Gateway listener requirements**: TCPRoute, TLSRoute, and UDPRoute require matching listeners on the Gateway (TCP/TLS/UDP respectively). HTTPRoute and GRPCRoute use HTTP/HTTPS listeners
 
 ## Advanced Use Cases
 
@@ -830,8 +1352,13 @@ kubectl get httproute <name> -n your-namespace -o yaml
 
 - `_ingress.tpl` - Unified entry point: renders Ingress + all Gateway API resources via `renderIngress`
 - `_gateway_httproute.tpl` - HTTPRoute generation with header manipulation and additional hostnames
+- `_gateway_grpcroute.tpl` - Native GRPCRoute with service/method matching
+- `_gateway_tcproute.tpl` - TCPRoute for raw TCP traffic
+- `_gateway_tlsroute.tpl` - TLSRoute for TLS passthrough
+- `_gateway_udproute.tpl` - UDPRoute for UDP traffic
 - `_gateway_backendtrafficpolicy.tpl` - Backend timeouts, connection settings, protocol, retries
 - `_gateway_clienttrafficpolicy.tpl` - Client-side connection limits and timeouts
 - `_gateway_securitypolicy.tpl` - IP whitelisting, CORS, JWT authentication
+- `_gateway_backendtlspolicy.tpl` - TLS config for gateway-to-backend connections
 - `_gateway_migration_helper.tpl` - Prints migration suggestions for nginx annotations
 - `_service.tpl` - Service resource template

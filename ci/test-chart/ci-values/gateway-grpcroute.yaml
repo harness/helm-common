@@ -1,0 +1,36 @@
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - grpc.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+      sectionName: grpc
+
+ingress:
+  grpcRoutes:
+    - name: grpc-api
+      hostnames:
+        - grpc.example.com
+      rules:
+        - matches:
+            - method:
+                service: mycompany.UserService
+                method: GetUser
+                type: Exact
+          backendRefs:
+            - name: user-grpc-svc
+              port: 9090
+        - matches:
+            - method:
+                service: mycompany.OrderService
+          backendRefs:
+            - name: order-grpc-svc
+              port: 9090
+
+service:
+  port: 8080

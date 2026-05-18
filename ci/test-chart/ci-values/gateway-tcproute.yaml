@@ -1,0 +1,37 @@
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  tcpRoutes:
+    - name: postgres-route
+      parentRef:
+        sectionName: tcp-5432
+        port: 5432
+      rules:
+        - backendRefs:
+            - name: postgres-svc
+              port: 5432
+    - name: redis-route
+      parentRef:
+        sectionName: tcp-6379
+        port: 6379
+      rules:
+        - backendRefs:
+            - name: redis-svc
+              port: 6379
+              weight: 80
+            - name: redis-replica-svc
+              port: 6379
+              weight: 20
+
+service:
+  port: 8080

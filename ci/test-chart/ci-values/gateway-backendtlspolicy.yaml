@@ -1,0 +1,31 @@
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  backendTLSPolicies:
+    - name: api-backend-tls
+      targetRef:
+        name: api-service
+        port: 8443
+      validation:
+        hostname: api-service.default.svc.cluster.local
+        caCertificateRefs:
+          - name: backend-ca-cert
+    - name: system-trust-tls
+      targetRef:
+        name: external-service
+      validation:
+        hostname: external.example.com
+        wellKnownCACertificates: "System"
+
+service:
+  port: 8080

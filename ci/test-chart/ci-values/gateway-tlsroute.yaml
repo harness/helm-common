@@ -1,0 +1,27 @@
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  tlsRoutes:
+    - name: db-passthrough
+      hostnames:
+        - db.example.com
+        - db-replica.example.com
+      parentRef:
+        sectionName: tls-passthrough
+      rules:
+        - backendRefs:
+            - name: db-svc
+              port: 5432
+
+service:
+  port: 8080
