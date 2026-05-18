@@ -1,7 +1,5 @@
 global:
   ha: false
-  # Namespace used as default for gatewayAPI.parentRef.namespace when not explicitly set
-  namespace: ""
   gatewayAPI:
     # Enable GatewayAPI HTTPRoute generation (requires global.ingress.enabled)
     enabled: false
