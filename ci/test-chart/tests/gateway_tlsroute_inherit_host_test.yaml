@@ -1,0 +1,26 @@
+suite: Gateway API TLSRoute hostname inheritance (harnesscommon.v2.renderTLSRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-tlsroute-inherit-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: TLSRoute should inherit hostnames from global.ingress.hosts when not set per-route
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: db-svc
+    asserts:
+      - isKind:
+          of: TLSRoute
+      - equal:
+          path: spec.hostnames[0]
+          value: tls.example.com
+      - equal:
+          path: spec.hostnames[1]
+          value: "*.tls.example.com"
+      - lengthEqual:
+          path: spec.hostnames
+          count: 2

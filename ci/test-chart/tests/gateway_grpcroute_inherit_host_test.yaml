@@ -1,0 +1,26 @@
+suite: Gateway API GRPCRoute hostname inheritance (harnesscommon.v2.renderGRPCRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-grpcroute-inherit-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: GRPCRoute should inherit hostnames from global.ingress.hosts when not set per-route
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: user-grpc-svc
+    asserts:
+      - isKind:
+          of: GRPCRoute
+      - equal:
+          path: spec.hostnames[0]
+          value: grpc.example.com
+      - equal:
+          path: spec.hostnames[1]
+          value: "*.grpc.example.com"
+      - lengthEqual:
+          path: spec.hostnames
+          count: 2
