@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.7.2] - 2026-05-18
+
+### Fixed
+- **GRPCRoute & TLSRoute hostname inheritance**: Both now inherit hostnames from `global.ingress.hosts` when `hostnames` is not explicitly set per-route, matching HTTPRoute behavior. Previously these routes only emitted `spec.hostnames` when explicitly set per-route, requiring duplicate hostname configuration.
+- Bare `*` filtering also applied to GRPCRoute and TLSRoute hostname sources for consistency with HTTPRoute (Gateway API CRD validation rejects bare `*`).
+- Per-route `additionalHostnames` and global `gatewayAPI.grpcRoute.additionalHostnames` / `gatewayAPI.tlsRoute.additionalHostnames` are now supported as additive sources, mirroring the HTTPRoute pattern.
+
+## [1.7.1] - 2026-05-15
+
+### Fixed
+- HTTPRoute hostname validation error when `global.ingress.disableHostInIngress: true` or when `global.ingress.hosts` contains bare `"*"`. Gateway API CRD validation rejects bare `*` (regex requires `*.<domain>` or specific hostname). The template now filters bare `*` entries from all hostname sources (`hosts`, `additionalHostnames` global and per-route) and omits the `hostnames` field entirely when the resulting list is empty, so the HTTPRoute inherits from the parent Gateway listener.
+
+## [1.7.0] - 2026-05-14
+
+### Added
+- **GRPCRoute**: Native gRPC routing with service/method-level matching (`ingress.grpcRoutes`)
+- **TCPRoute**: Raw TCP traffic routing for databases, Redis, custom protocols (`ingress.tcpRoutes`)
+- **TLSRoute**: TLS passthrough routing based on SNI hostname (`ingress.tlsRoutes`)
+- **UDPRoute**: UDP traffic routing for DNS, game servers, etc. (`ingress.udpRoutes`)
+- **BackendTLSPolicy**: TLS configuration for gateway-to-backend connections (`ingress.backendTLSPolicies`)
+- All new route types support per-route `parentRef` override of global gateway reference
+- All new route types support weighted backend traffic splitting
+
+### Fixed
+- Nil pointer safety: all 10 gateway templates now use `dig` instead of direct nested map access for `global.gatewayAPI.enabled` guard
+
 ## [1.6.3] - 2026-05-14
 
 ### Added

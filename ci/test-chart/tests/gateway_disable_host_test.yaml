@@ -1,0 +1,19 @@
+suite: Gateway API HTTPRoute disableHostInIngress (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-disable-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: HTTPRoute should omit hostnames field when disableHostInIngress is true
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: test-service
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - notExists:
+          path: spec.hostnames

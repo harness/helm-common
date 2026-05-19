@@ -1,0 +1,59 @@
+suite: Gateway API UDPRoute (harnesscommon.v2.renderUDPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-udproute.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render UDPRoute with correct kind and apiVersion
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: dns-svc
+    asserts:
+      - isKind:
+          of: UDPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1alpha2
+
+  - it: should have correct metadata
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: dns-svc
+    asserts:
+      - equal:
+          path: metadata.name
+          value: dns-route
+      - equal:
+          path: metadata.namespace
+          value: default
+
+  - it: should reference parent gateway with sectionName and port
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: dns-svc
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.parentRefs[0].sectionName
+          value: udp-53
+      - equal:
+          path: spec.parentRefs[0].port
+          value: 53
+
+  - it: should have correct backend ref
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: dns-svc
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: dns-svc
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 53

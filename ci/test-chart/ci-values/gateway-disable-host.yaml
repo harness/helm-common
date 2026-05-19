@@ -1,0 +1,25 @@
+global:
+  ingress:
+    enabled: true
+    disableHostInIngress: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api/.*
+          backend:
+            service:
+              name: test-service
+              port: 8080
+
+service:
+  port: 8080

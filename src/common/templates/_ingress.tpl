@@ -109,8 +109,13 @@ spec:
 {{- if and (hasKey .ctx.Values.global "gatewayAPI") (dig "gatewayAPI" "enabled" false .ctx.Values.global) }}
 # Gateway API resources (rendered by harnesscommon.v1.renderIngress)
 {{- include "harnesscommon.v2.renderHTTPRoute" . }}
+{{- include "harnesscommon.v2.renderGRPCRoute" . }}
+{{- include "harnesscommon.v2.renderTCPRoute" . }}
+{{- include "harnesscommon.v2.renderTLSRoute" . }}
+{{- include "harnesscommon.v2.renderUDPRoute" . }}
 {{- include "harnesscommon.v2.renderBackendTrafficPolicy" . }}
 {{- include "harnesscommon.v2.renderClientTrafficPolicy" . }}
 {{- include "harnesscommon.v2.renderSecurityPolicy" . }}
+{{- include "harnesscommon.v2.renderBackendTLSPolicy" . }}
 {{- end }}
 {{- end }}
