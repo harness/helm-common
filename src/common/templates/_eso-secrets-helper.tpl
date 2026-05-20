@@ -229,6 +229,9 @@ spec:
   - secretKey: {{ lower $remoteKeyName | replace "-" "_" }}
     remoteRef:
       key: {{ $remoteKey.name }}
+      {{- if not (empty $remoteKey.version) }}
+      version: {{ $remoteKey.version | quote }}
+      {{- end }}
       {{- if not (empty $remoteKey.property) }}
       property: {{ $remoteKey.property }}
       {{- end }}

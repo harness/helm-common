@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.3] - 2026-05-20
+
+### Added
+- **ESO ExternalSecret `version` support**: `harnesscommon.secrets.generateExternalSecret` now emits `remoteRef.version` when a `version` field is provided on a `remoteKeys` entry. The value is rendered with quotes preserved (e.g. `version: "1"`) so numeric-looking versions stay as strings. When `version` is absent or empty, no `version` field is emitted, preserving prior behavior.
+
 ## [1.7.2] - 2026-05-18
 
 ### Fixed
