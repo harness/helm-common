@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.0] - 2026-06-22
+
+### Added
+- **Resource Hierarchy Service secrets**: Added global service secrets injection for Resource Hierarchy Service via `harnesscommon.services.rhsEnv` template helper. Supports both Kubernetes secrets and External Secrets Operator (ESO) configuration under `global.services.resourceHierarchy`.
+
 ## [1.7.2] - 2026-05-18
 
 ### Fixed
