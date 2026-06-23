@@ -219,6 +219,26 @@ global:
       userKey: "user"
       passwordKey: "password"
       extraArgs: ""
+  # Service-to-service secrets configuration
+  # Automatically injects secrets for inter-service communication
+  services:
+    # Resource Hierarchy Service secrets
+    resourceHierarchy:
+      enabled: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              RESOURCE_HIERARCHY_SERVICE_SECRET: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                RESOURCE_HIERARCHY_SERVICE_SECRET:
+                  name: ""
+                  property: ""
   smtpCreateSecret:
     enabled: false
     SMTP_USERNAME: ""
