@@ -39,18 +39,47 @@ USAGE:
 {{- end }}
 
 {{/*
-Generic: Render K8S Env Spec for all secrets declared by services under
-`.Values.global.services`.
+Resolve the list of global service keys a chart depends on.
 
-For every enabled service entry, env vars are auto-derived from the declared
-secret keys (Kubernetes secrets + ESO remoteKeys) and rendered using the
-standard secret precedence (ESO > External K8S Secret > Default).
+The dependency list is sourced (in precedence order) from:
+  1. an explicit `services` argument (list), when provided
+  2. `.Values.serviceSecretDependencies` (list)
 
-Each service entry may optionally declare:
+Returns a comma-joined string of service keys (empty when no dependencies are
+declared). This is the filter that ensures a workload only receives the
+credentials of the services it actually depends on.
+
+USAGE:
+{{- include "harnesscommon.services.dependencies" (dict "ctx" $) }}
+*/}}
+{{- define "harnesscommon.services.dependencies" }}
+    {{- $ := .ctx }}
+    {{- $dependencies := .services }}
+    {{- if not $dependencies }}
+        {{- $dependencies = ($.Values.serviceSecretDependencies | default (list)) }}
+    {{- end }}
+    {{- $dependencies | join "," }}
+{{- end }}
+
+{{/*
+Generic: Render K8S Env Spec for the secrets of the services a chart depends on.
+
+For every dependency declared via `.Values.serviceSecretDependencies` (or the
+optional `services` argument), env vars are auto-derived from that service's
+declared secret keys (Kubernetes secrets + ESO remoteKeys) and rendered using
+the standard secret precedence (ESO > External K8S Secret > Default).
+
+Services NOT listed as a dependency are skipped, so a workload never receives
+credentials it does not depend on. When no dependencies are declared, nothing
+is rendered.
+
+Each service entry under `global.services` may optionally declare:
   - enabled       (default: true)        whether to render the service secrets
   - ctxIdentifier  (default: <serviceKey>) prefix used for the ESO secret name
 
 VALUES SHAPE:
+serviceSecretDependencies:
+  - resourceHierarchy
 global:
   services:
     resourceHierarchy:
@@ -62,6 +91,7 @@ global:
 
 USAGE:
 {{- include "harnesscommon.services.renderServiceSecretsEnv" (dict "ctx" $) | indent 12 }}
+{{- include "harnesscommon.services.renderServiceSecretsEnv" (dict "ctx" $ "services" (list "resourceHierarchy")) | indent 12 }}
 */}}
 {{- define "harnesscommon.services.renderServiceSecretsEnv" }}
     {{- $ := .ctx }}
@@ -69,8 +99,13 @@ USAGE:
     {{- if and $.Values.global $.Values.global.services }}
         {{- $globalServicesCtx = $.Values.global.services }}
     {{- end }}
+    {{- $dependenciesStr := include "harnesscommon.services.dependencies" (dict "ctx" $ "services" .services) | trim }}
+    {{- $dependencies := list }}
+    {{- if $dependenciesStr }}
+        {{- $dependencies = splitList "," $dependenciesStr }}
+    {{- end }}
     {{- range $serviceKey, $serviceCtx := $globalServicesCtx }}
-        {{- if $serviceCtx }}
+        {{- if and $serviceCtx (has $serviceKey $dependencies) }}
             {{- $enabled := dig "enabled" true $serviceCtx }}
             {{- $serviceSecretsCtx := dig "secrets" (dict) $serviceCtx }}
             {{- if and $enabled $serviceSecretsCtx }}
@@ -94,14 +129,22 @@ USAGE:
 {{- end }}
 
 {{/*
-Generic: Generate ESO ExternalSecret CRDs for all services declared under
-`.Values.global.services`.
+Generic: Generate ESO ExternalSecret CRDs for the services a chart is responsible
+for materializing.
 
-For every enabled service entry with valid ESO secrets, an ExternalSecret is
-generated using the service's ESO secret context identifier as the name prefix.
+Like the env helper, the set of services is filtered by
+`.Values.serviceSecretDependencies` (or the optional `services` argument), so a
+chart only emits the ExternalSecret CRDs it needs. This prevents multiple charts
+in a shared namespace from emitting duplicate ExternalSecret resources with the
+same name.
+
+For every filtered, enabled service entry with valid ESO secrets, an
+ExternalSecret is generated using the service's ESO secret context identifier as
+the name prefix.
 
 USAGE:
 {{- include "harnesscommon.services.generateServiceExternalSecrets" (dict "ctx" $) }}
+{{- include "harnesscommon.services.generateServiceExternalSecrets" (dict "ctx" $ "services" (list "resourceHierarchy")) }}
 */}}
 {{- define "harnesscommon.services.generateServiceExternalSecrets" }}
     {{- $ := .ctx }}
@@ -109,8 +152,13 @@ USAGE:
     {{- if and $.Values.global $.Values.global.services }}
         {{- $globalServicesCtx = $.Values.global.services }}
     {{- end }}
+    {{- $dependenciesStr := include "harnesscommon.services.dependencies" (dict "ctx" $ "services" .services) | trim }}
+    {{- $dependencies := list }}
+    {{- if $dependenciesStr }}
+        {{- $dependencies = splitList "," $dependenciesStr }}
+    {{- end }}
     {{- range $serviceKey, $serviceCtx := $globalServicesCtx }}
-        {{- if $serviceCtx }}
+        {{- if and $serviceCtx (has $serviceKey $dependencies) }}
             {{- $enabled := dig "enabled" true $serviceCtx }}
             {{- $serviceSecretsCtx := dig "secrets" (dict) $serviceCtx }}
             {{- if and $enabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $serviceSecretsCtx)) "true") }}

@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.9.0] - 2026-06-25
+## [1.8.1] - 2026-06-25
 
 ### Added
-- **Generic global service secrets**: Added `harnesscommon.services.renderServiceSecretsEnv` and `harnesscommon.services.generateServiceExternalSecrets`, which iterate over every entry under `global.services.<service>` and render secrets (Kubernetes secrets + External Secrets Operator) as environment variables / `ExternalSecret` CRDs. Env var names are auto-derived from the declared secret keys, so any service can opt in by listing its secrets in `values.yaml`. Each service entry supports an optional `enabled` flag and a `ctxIdentifier` (ESO secret name prefix, defaults to the service key).
+- **Generic global service secrets**: Added `harnesscommon.services.renderServiceSecretsEnv` and `harnesscommon.services.generateServiceExternalSecrets`, which render secrets (Kubernetes secrets + External Secrets Operator) declared under `global.services.<service>` as environment variables / `ExternalSecret` CRDs. Env var names are auto-derived from the declared secret keys, so any service can opt in by listing its secrets in `values.yaml`. Each service entry supports an optional `enabled` flag and a `ctxIdentifier` (ESO secret name prefix, defaults to the service key).
+- **Dependency filtering**: Both helpers are scoped by a chart-level `serviceSecretDependencies` list (or an explicit `services` argument). A workload only receives the credentials of the services it declares as dependencies; with no dependencies declared, nothing is rendered. This prevents global service credentials from leaking into every workload and avoids duplicate `ExternalSecret` resources across charts in a shared namespace. Resolved via `harnesscommon.services.dependencies`.
 
 ### Removed
 - `harnesscommon.services.rhsEnv` has been removed in favor of `harnesscommon.services.renderServiceSecretsEnv`. The only consumer (Resource Hierarchy Service) now uses the generic helper.
