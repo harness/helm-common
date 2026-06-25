@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0] - 2026-06-25
+
+### Added
+- **Generic global service secrets**: Added `harnesscommon.services.renderServiceSecretsEnv` and `harnesscommon.services.generateServiceExternalSecrets`, which iterate over every entry under `global.services.<service>` and render secrets (Kubernetes secrets + External Secrets Operator) as environment variables / `ExternalSecret` CRDs. Env var names are auto-derived from the declared secret keys, so any service can opt in by listing its secrets in `values.yaml`. Each service entry supports an optional `enabled` flag and a `ctxIdentifier` (ESO secret name prefix, defaults to the service key).
+
+### Removed
+- `harnesscommon.services.rhsEnv` has been removed in favor of `harnesscommon.services.renderServiceSecretsEnv`. The only consumer (Resource Hierarchy Service) now uses the generic helper.
+
 ## [1.8.0] - 2026-06-22
 
 ### Added

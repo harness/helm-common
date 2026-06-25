@@ -31,6 +31,7 @@ run_scenario "Gateway API (policies)" "${VALUES_DIR}/gateway-policies.yaml"
 run_scenario "Gateway API (headers)" "${VALUES_DIR}/gateway-headers.yaml"
 run_scenario "Gateway API (migration)" "${VALUES_DIR}/gateway-migration.yaml"
 run_scenario "Gateway API (per-route overrides)" "${VALUES_DIR}/gateway-per-route-override.yaml"
+run_scenario "Service Secrets (generic)" "${VALUES_DIR}/services-secrets.yaml"
 echo "All template scenarios passed."
 
 echo ""
