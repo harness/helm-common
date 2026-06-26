@@ -10,6 +10,8 @@ USAGE:
 {{- define "harnesscommon.services.esoSecretCtxIdentifier" }}
     {{- $ := .ctx }}
     {{- $ctxIdentifier := default .serviceKey (dig "ctxIdentifier" "" .serviceCtx) }}
+    {{- /* Normalize to a valid lowercase RFC-1123 name (e.g. camelCase service keys like "resourceHierarchy" -> "resource-hierarchy"). */}}
+    {{- $ctxIdentifier = $ctxIdentifier | kebabcase }}
     {{- include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" $ctxIdentifier) | trim }}
 {{- end }}
 
