@@ -18,6 +18,22 @@ run_scenario() {
   helm template "$RELEASE_NAME" "$CHART_DIR" -f "$values_file" >/dev/null
 }
 
+run_fail_scenario() {
+  local name="$1"
+  local values_file="$2"
+  local expected_error="$3"
+  echo "  Scenario (expect failure): $name (${values_file})"
+  local output
+  output=$(helm template "$RELEASE_NAME" "$CHART_DIR" -f "$values_file" 2>&1) || true
+  if echo "$output" | grep -q "$expected_error"; then
+    return 0
+  else
+    echo "  FAIL: expected error containing '$expected_error' was not produced"
+    echo "  Actual output: $output"
+    return 1
+  fi
+}
+
 echo "Rendering scenarios..."
 run_scenario "HPA"           "${VALUES_DIR}/hpa.yaml"
 run_scenario "PDB"           "${VALUES_DIR}/pdb.yaml"
@@ -33,6 +49,13 @@ run_scenario "Gateway API (migration)" "${VALUES_DIR}/gateway-migration.yaml"
 run_scenario "Gateway API (per-route overrides)" "${VALUES_DIR}/gateway-per-route-override.yaml"
 run_scenario "Service Secrets (generic)" "${VALUES_DIR}/services-secrets.yaml"
 echo "All template scenarios passed."
+
+echo ""
+echo "Negative scenarios (expect failure)..."
+run_fail_scenario "Service Secrets (missing dependency)" \
+  "${VALUES_DIR}/services-secrets-missing-dep.yaml" \
+  "is not defined under global.services"
+echo "All negative scenarios passed."
 
 echo ""
 echo "Running helm-unittest..."

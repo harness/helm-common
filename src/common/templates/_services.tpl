@@ -64,6 +64,35 @@ USAGE:
 {{- end }}
 
 {{/*
+Validate that every declared dependency exists under global.services.
+
+Fails the template render with a descriptive error if any entry in the
+dependency list (from `serviceSecretDependencies` or the `services` argument)
+does not have a corresponding key under `global.services`.
+
+USAGE:
+{{- include "harnesscommon.services.validateDependencies" (dict "ctx" $) }}
+{{- include "harnesscommon.services.validateDependencies" (dict "ctx" $ "services" (list "resourceHierarchy")) }}
+*/}}
+{{- define "harnesscommon.services.validateDependencies" }}
+    {{- $ := .ctx }}
+    {{- $globalServicesCtx := dict }}
+    {{- if and $.Values.global $.Values.global.services }}
+        {{- $globalServicesCtx = $.Values.global.services }}
+    {{- end }}
+    {{- $dependenciesStr := include "harnesscommon.services.dependencies" (dict "ctx" $ "services" .services) | trim }}
+    {{- $dependencies := list }}
+    {{- if $dependenciesStr }}
+        {{- $dependencies = splitList "," $dependenciesStr }}
+    {{- end }}
+    {{- range $dep := $dependencies }}
+        {{- if not (hasKey $globalServicesCtx $dep) }}
+            {{- fail (printf "serviceSecretDependencies: dependency '%s' is not defined under global.services" $dep) }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+
+{{/*
 Generic: Render K8S Env Spec for the secrets of the services a chart depends on.
 
 For every dependency declared via `.Values.serviceSecretDependencies` (or the
@@ -97,6 +126,7 @@ USAGE:
 */}}
 {{- define "harnesscommon.services.renderServiceSecretsEnv" }}
     {{- $ := .ctx }}
+    {{- include "harnesscommon.services.validateDependencies" (dict "ctx" $ "services" .services) }}
     {{- $globalServicesCtx := dict }}
     {{- if and $.Values.global $.Values.global.services }}
         {{- $globalServicesCtx = $.Values.global.services }}
@@ -150,6 +180,7 @@ USAGE:
 */}}
 {{- define "harnesscommon.services.generateServiceExternalSecrets" }}
     {{- $ := .ctx }}
+    {{- include "harnesscommon.services.validateDependencies" (dict "ctx" $ "services" .services) }}
     {{- $globalServicesCtx := dict }}
     {{- if and $.Values.global $.Values.global.services }}
         {{- $globalServicesCtx = $.Values.global.services }}
