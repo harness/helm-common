@@ -4,6 +4,43 @@ USAGE:
 or
 {{- include "harnesscommon.v2.renderHTTPRoute" (dict "gateway" .Values.other.gateway "ctx" $) }}
 */}}
+
+{{/*
+Compute the deterministic name of the HTTPRouteFilter (Envoy Gateway urlRewrite)
+for a given route + rendered path. This MUST be the single source of truth: the
+per-rule `extensionRef.name` (the reference) and the `HTTPRouteFilter.metadata.name`
+(the target) are emitted from separate blocks, so both call this helper to guarantee
+the reference can never point at a name that isn't emitted.
+
+USAGE:
+{{ include "harnesscommon.v2.httpRouteFilterName" (dict "routeName" $chunkRouteName "path" $renderedPath) }}
+where $renderedPath is the already-rendered path string.
+*/}}
+{{- define "harnesscommon.v2.httpRouteFilterName" -}}
+{{- $routeName := .routeName -}}
+{{- $renderedPath := .path -}}
+{{- $step1 := $renderedPath | trimPrefix "/" -}}
+{{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" -}}
+{{- $step3 := regexReplaceAll "/" $step2 "-" -}}
+{{- $step4 := regexReplaceAll "-+" $step3 "-" -}}
+{{- $pathSlugFull := $step4 | trimSuffix "-" | lower -}}
+{{- $shortHash := sha1sum $renderedPath | trunc 6 -}}
+{{- $maxPathLen := sub 253 (add (len $routeName) 8) | int -}}
+{{- $pathSlug := "" -}}
+{{- if $pathSlugFull -}}
+  {{- if gt (len $pathSlugFull) $maxPathLen -}}
+    {{- $pathSlug = trunc $maxPathLen $pathSlugFull | trimSuffix "-" -}}
+  {{- else -}}
+    {{- $pathSlug = $pathSlugFull -}}
+  {{- end -}}
+{{- end -}}
+{{- if $pathSlug -}}
+{{- cat $routeName "-" $pathSlug "-" $shortHash | nospace -}}
+{{- else -}}
+{{- cat $routeName "-" $shortHash | nospace -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "harnesscommon.v2.renderHTTPRoute" }}
 {{- $ := .ctx }}
 {{- $ingress := $.Values.ingress }}
@@ -115,7 +152,14 @@ spec:
   rules:
     {{- range $idx := $chunkPaths }}
     {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
-    {{- $servicePort := dig "backend" "service" "port" $.Values.service.port $idx }}
+    {{- /* Gateway API routes through the Service (envoy -> Service ClusterIP), so
+    backendRef.port MUST be the Service's spec.ports[].port -- NOT the nginx
+    backend.service.port, which is the pod/targetPort that nginx connects to
+    directly via endpoints. Using the targetPort here yields
+    ResolvedRefs=False "TCP Port <n> not found on Service" and 500s the route.
+    Precedence: per-path gatewayAPI.backend.service.port > per-object
+    gatewayAPI.backend.service.port > chart service.port (the Service's declared port). */}}
+    {{- $servicePort := dig "gatewayAPI" "backend" "service" "port" (dig "gatewayAPI" "backend" "service" "port" $.Values.service.port $object) $idx }}
     {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
     {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
     {{- $hasRewriteTarget := and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
@@ -228,29 +272,16 @@ spec:
               {{- end }}
             {{- end }}
         {{- end }}
-        {{- /* URL Rewrite filter (existing logic) */}}
+        {{- /* URL Rewrite filter. The extensionRef name is computed by the shared
+        helper so it always matches the emitted HTTPRouteFilter below (same predicate,
+        same computed name) -- never a dangling reference. */}}
         {{- if $hasRewriteTarget }}
         {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-        {{- $step1 := $renderedPath | trimPrefix "/" }}
-        {{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" }}
-        {{- $step3 := regexReplaceAll "/" $step2 "-" }}
-        {{- $step4 := regexReplaceAll "-+" $step3 "-" }}
-        {{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
-        {{- $shortHash := sha1sum $renderedPath | trunc 6 }}
-        {{- $maxPathLen := sub 253 (add (len $chunkRouteName) 8) | int }}
-        {{- $pathSlug := "" }}
-        {{- if $pathSlugFull }}
-          {{- if gt (len $pathSlugFull) $maxPathLen }}
-            {{- $pathSlug = trunc $maxPathLen $pathSlugFull | trimSuffix "-" }}
-          {{- else }}
-            {{- $pathSlug = $pathSlugFull }}
-          {{- end }}
-        {{- end }}
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
-            name: {{ if $pathSlug }}{{ cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $chunkRouteName "-" $shortHash | nospace }}{{ end }}
+            name: {{ include "harnesscommon.v2.httpRouteFilterName" (dict "routeName" $chunkRouteName "path" $renderedPath) }}
         {{- end }}
       {{- end }}
       # Backend services
@@ -272,22 +303,7 @@ with the same id, which would fail rendering. */}}
 {{- $seenFilterNames := dict }}
 {{- range $idx := $chunkPaths }}
 {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
-{{- $step1 := $renderedPath | trimPrefix "/" }}
-{{- $step2 := regexReplaceAll "[^a-zA-Z0-9/]" $step1 "" }}
-{{- $step3 := regexReplaceAll "/" $step2 "-" }}
-{{- $step4 := regexReplaceAll "-+" $step3 "-" }}
-{{- $pathSlugFull := $step4 | trimSuffix "-" | lower }}
-{{- $shortHash := sha1sum $renderedPath | trunc 6 }}
-{{- $maxPathLen := sub 253 (add (len $chunkRouteName) 8) | int }}
-{{- $pathSlug := "" }}
-{{- if $pathSlugFull }}
-  {{- if gt (len $pathSlugFull) $maxPathLen }}
-    {{- $pathSlug = trunc $maxPathLen $pathSlugFull | trimSuffix "-" }}
-  {{- else }}
-    {{- $pathSlug = $pathSlugFull }}
-  {{- end }}
-{{- end }}
-{{- $filterName := ternary (cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace) (cat $chunkRouteName "-" $shortHash | nospace) (ne $pathSlug "") }}
+{{- $filterName := include "harnesscommon.v2.httpRouteFilterName" (dict "routeName" $chunkRouteName "path" $renderedPath) }}
 {{- if not (hasKey $seenFilterNames $filterName) }}
 {{- $_ := set $seenFilterNames $filterName true }}
 ---

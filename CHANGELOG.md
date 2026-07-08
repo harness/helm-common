@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.2] - 2026-07-08
+
+### Fixed
+- **HTTPRoute `backendRef.port` used the nginx targetPort instead of the Service port**: Gateway API routes through the Service (envoy → Service ClusterIP), so `backendRef.port` must equal the Service's `spec.ports[].port`, not the nginx `backend.service.port` (which is the pod/targetPort nginx connects to directly via endpoints). The mismatch caused `ResolvedRefs=False: "TCP Port <n> not found on Service"` and 500s on affected routes (prod6: `/ng/*`, `/platform_ui/*`, registry, harness-intelligence). HTTPRoute `backendRef.port` now defaults to the chart `service.port` and accepts a per-object/per-path `gatewayAPI.backend.service.port` override; the nginx Ingress path is unchanged.
+- **HTTPRoute referenced an HTTPRouteFilter that was never emitted**: the per-rule `extensionRef.name` and the `HTTPRouteFilter.metadata.name` were computed in separate blocks and could diverge, producing a dangling reference (`ResolvedRefs=False: "Unable to translate HTTPRouteFilter"` → 500s). Both names now derive from a single shared helper (`harnesscommon.v2.httpRouteFilterName`), so the reference and its target can never differ.
+
 ## [1.8.1] - 2026-07-08
 
 ### Fixed

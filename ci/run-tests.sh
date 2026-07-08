@@ -33,6 +33,7 @@ run_scenario "Gateway API (migration)" "${VALUES_DIR}/gateway-migration.yaml"
 run_scenario "Gateway API (per-route overrides)" "${VALUES_DIR}/gateway-per-route-override.yaml"
 run_scenario "Gateway API (nil ingress)" "${VALUES_DIR}/gateway-nil-ingress.yaml"
 run_scenario "Gateway API (duplicate filter)" "${VALUES_DIR}/gateway-duplicate-filter.yaml"
+run_scenario "Gateway API (rewrite filter)" "${VALUES_DIR}/gateway-rewrite-filter.yaml"
 echo "All template scenarios passed."
 
 echo ""

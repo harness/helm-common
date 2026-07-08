@@ -1,0 +1,53 @@
+suite: Gateway API HTTPRouteFilter reference integrity (harnesscommon.v2.renderHTTPRoute)
+# Regression: the per-rule extensionRef and the HTTPRouteFilter it points at are
+# emitted from separate blocks. If their names diverge, the route references a
+# filter that is never emitted -> ResolvedRefs=False "Unable to translate
+# HTTPRouteFilter" -> 500s. Both names now come from the shared
+# harnesscommon.v2.httpRouteFilterName helper, so they must match. These tests
+# assert the concrete referenced name equals the concrete emitted filter name
+# for each distinct rewrite path.
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-rewrite-filter.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: HTTPRoute rule 0 extensionRef points at the /ng filter name
+    documentSelector:
+      path: kind
+      value: HTTPRoute
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: ExtensionRef
+      - equal:
+          path: spec.rules[0].filters[0].extensionRef.kind
+          value: HTTPRouteFilter
+      - equal:
+          path: spec.rules[0].filters[0].extensionRef.name
+          value: next-gen-ui-ng-ad548b
+      - equal:
+          path: spec.rules[1].filters[0].extensionRef.name
+          value: next-gen-ui-platformui-85b36d
+
+  - it: emits an HTTPRouteFilter for the /ng path matching the extensionRef name
+    documentSelector:
+      path: metadata.name
+      value: next-gen-ui-ng-ad548b
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter
+      - equal:
+          path: apiVersion
+          value: gateway.envoyproxy.io/v1alpha1
+
+  - it: emits an HTTPRouteFilter for the /platform_ui path matching the extensionRef name
+    documentSelector:
+      path: metadata.name
+      value: next-gen-ui-platformui-85b36d
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter
