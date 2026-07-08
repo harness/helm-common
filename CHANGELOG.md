@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.1] - 2026-07-08
+
+### Fixed
+- **Gateway routes/policies crash when consuming chart has no top-level `ingress:` key**: `dig "<routes>" list $ingress` panicked with `interface conversion: interface {} is nil, not map[string]interface {}` because `dig` casts its target to a map before reading keys, and the target (`$ingress`) was nil. All gateway route and policy templates now use `{{- $ingress := $.Values.ingress | default dict }}` (grpc/tcp/tls/udp routes, backendTLS/security/backendTraffic policies). This is distinct from the earlier missing-intermediate-key nil-safety fix — here the `dig` target itself was nil.
+- **Duplicate `HTTPRouteFilter` when two ingress paths slug to the same name**: paths that reduced to an identical slug + hash produced two `HTTPRouteFilter` resources with the same id, failing the post-renderer (`may not add resource with an already registered id`). The HTTPRoute template now dedupes emitted filter names per object.
+
 ## [1.8.0] - 2026-06-22
 
 ### Added

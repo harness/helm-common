@@ -266,6 +266,10 @@ spec:
       {{- end }}
     {{- end }}
 {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
+{{- /* Track filter names already emitted for this object so that duplicate paths
+(which slug + hash to an identical name) don't produce two HTTPRouteFilter resources
+with the same id, which would fail rendering. */}}
+{{- $seenFilterNames := dict }}
 {{- range $idx := $chunkPaths }}
 {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
 {{- $step1 := $renderedPath | trimPrefix "/" }}
@@ -283,11 +287,14 @@ spec:
     {{- $pathSlug = $pathSlugFull }}
   {{- end }}
 {{- end }}
+{{- $filterName := ternary (cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace) (cat $chunkRouteName "-" $shortHash | nospace) (ne $pathSlug "") }}
+{{- if not (hasKey $seenFilterNames $filterName) }}
+{{- $_ := set $seenFilterNames $filterName true }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:
-  name: {{ if $pathSlug }}{{ cat $chunkRouteName "-" $pathSlug "-" $shortHash | nospace }}{{ else }}{{ cat $chunkRouteName "-" $shortHash | nospace }}{{ end }}
+  name: {{ $filterName }}
   namespace: {{ $.Release.Namespace }}
   {{- if $.Values.global.commonLabels }}
   labels:
@@ -321,6 +328,7 @@ spec:
       replaceRegexMatch:
         pattern: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
         substitution: {{ include "harnesscommon.tplvalues.render" ( dict "value" ( regexReplaceAll "\\$" (get $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") "\\" ) "context" $) }}
+{{- end }} {{/* If filter name not already emitted */}}
 {{- end }} {{/* Range over chunk paths */}}
 {{- end }} {{/* If to create HTTPRouteFilter */}}
 {{- end }} {{/* Range over chunks */}}

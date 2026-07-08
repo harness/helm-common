@@ -21,7 +21,7 @@ ingress:
 */}}
 {{- define "harnesscommon.v2.renderBackendTLSPolicy" }}
 {{- $ := .ctx }}
-{{- $ingress := $.Values.ingress }}
+{{- $ingress := $.Values.ingress | default dict }}
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}

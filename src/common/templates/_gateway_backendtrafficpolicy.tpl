@@ -11,7 +11,7 @@ Supports hybrid approach (Option C):
 */}}
 {{- define "harnesscommon.v2.renderBackendTrafficPolicy" }}
 {{- $ := .ctx }}
-{{- $ingress := $.Values.ingress }}
+{{- $ingress := $.Values.ingress | default dict }}
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}

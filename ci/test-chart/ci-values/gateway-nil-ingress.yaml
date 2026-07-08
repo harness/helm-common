@@ -1,0 +1,25 @@
+# Edge case: gatewayAPI + ingress enabled globally, but the consuming chart
+# defines NO top-level `ingress:` key at all (so $.Values.ingress is nil).
+# Previously the gateway route/policy templates crashed with
+#   error calling dig: interface conversion: interface {} is nil, not map[string]interface {}
+# because `dig` casts its (nil) target to a map before reading keys.
+# The templates now guard with `$.Values.ingress | default dict`.
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+# Explicitly null the top-level `ingress` key to reproduce a consuming chart
+# (e.g. le-nextgen) that never defines one. `null` overrides the test chart's
+# own `ingress: {objects: []}` default in values.yaml, forcing $.Values.ingress
+# to be nil — the exact condition that triggered the dig panic in prod.
+ingress: null
+
+service:
+  port: 8080
