@@ -1,16 +1,12 @@
 # Changelog
 
-## [1.8.2] - 2026-07-08
-
-### Fixed
-- **HTTPRoute `backendRef.port` used the nginx targetPort instead of the Service port**: Gateway API routes through the Service (envoy → Service ClusterIP), so `backendRef.port` must equal the Service's `spec.ports[].port`, not the nginx `backend.service.port` (which is the pod/targetPort nginx connects to directly via endpoints). The mismatch caused `ResolvedRefs=False: "TCP Port <n> not found on Service"` and 500s on affected routes (prod6: `/ng/*`, `/platform_ui/*`, registry, harness-intelligence). HTTPRoute `backendRef.port` now defaults to the chart `service.port` and accepts a per-object/per-path `gatewayAPI.backend.service.port` override; the nginx Ingress path is unchanged.
-- **HTTPRoute referenced an HTTPRouteFilter that was never emitted**: the per-rule `extensionRef.name` and the `HTTPRouteFilter.metadata.name` were computed in separate blocks and could diverge, producing a dangling reference (`ResolvedRefs=False: "Unable to translate HTTPRouteFilter"` → 500s). Both names now derive from a single shared helper (`harnesscommon.v2.httpRouteFilterName`), so the reference and its target can never differ.
-
 ## [1.8.1] - 2026-07-08
 
 ### Fixed
 - **Gateway routes/policies crash when consuming chart has no top-level `ingress:` key**: `dig "<routes>" list $ingress` panicked with `interface conversion: interface {} is nil, not map[string]interface {}` because `dig` casts its target to a map before reading keys, and the target (`$ingress`) was nil. All gateway route and policy templates now use `{{- $ingress := $.Values.ingress | default dict }}` (grpc/tcp/tls/udp routes, backendTLS/security/backendTraffic policies). This is distinct from the earlier missing-intermediate-key nil-safety fix — here the `dig` target itself was nil.
 - **Duplicate `HTTPRouteFilter` when two ingress paths slug to the same name**: paths that reduced to an identical slug + hash produced two `HTTPRouteFilter` resources with the same id, failing the post-renderer (`may not add resource with an already registered id`). The HTTPRoute template now dedupes emitted filter names per object.
+- **HTTPRoute `backendRef.port` used the nginx targetPort instead of the Service port**: Gateway API routes through the Service (envoy → Service ClusterIP), so `backendRef.port` must equal the Service's `spec.ports[].port`, not the nginx `backend.service.port` (which is the pod/targetPort nginx connects to directly via endpoints). The mismatch caused `ResolvedRefs=False: "TCP Port <n> not found on Service"` and 500s on affected routes (prod6: `/ng/*`, `/platform_ui/*`, registry, harness-intelligence). HTTPRoute `backendRef.port` now defaults to the chart `service.port` and accepts a per-object/per-path `gatewayAPI.backend.service.port` override; the nginx Ingress path is unchanged.
+- **HTTPRoute referenced an HTTPRouteFilter that was never emitted**: the per-rule `extensionRef.name` and the `HTTPRouteFilter.metadata.name` were computed in separate blocks and could diverge, producing a dangling reference (`ResolvedRefs=False: "Unable to translate HTTPRouteFilter"` → 500s). Both names now derive from a single shared helper (`harnesscommon.v2.httpRouteFilterName`), so the reference and its target can never differ.
 
 ## [1.8.0] - 2026-06-22
 
