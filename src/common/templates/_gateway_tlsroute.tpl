@@ -19,7 +19,7 @@ ingress:
 */}}
 {{- define "harnesscommon.v2.renderTLSRoute" }}
 {{- $ := .ctx }}
-{{- $ingress := $.Values.ingress }}
+{{- $ingress := $.Values.ingress | default dict }}
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}

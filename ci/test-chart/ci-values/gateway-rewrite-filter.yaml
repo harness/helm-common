@@ -1,0 +1,28 @@
+# Gateway API HTTPRoute with rewrite-target -> each rule emits an ExtensionRef
+# pointing at an HTTPRouteFilter. Regression coverage for the "dangling
+# extensionRef" bug: every extensionRef.name MUST have a matching emitted
+# HTTPRouteFilter (both derive their name from the shared
+# harnesscommon.v2.httpRouteFilterName helper, so they cannot diverge).
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - ui.example.com
+    className: harness
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+ingress:
+  objects:
+    - name: next-gen-ui
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+      paths:
+        # Two DISTINCT paths -> two distinct filter names, each referenced and emitted.
+        - path: /ng(/|$)(.*)
+        - path: /platform_ui(/|$)(.*)
+
+service:
+  port: 8080

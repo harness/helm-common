@@ -1,0 +1,21 @@
+suite: Gateway API nil ingress edge case (harnesscommon.v1.renderIngress)
+# Regression: when a consuming chart enables gatewayAPI + ingress globally but
+# defines no top-level `ingress:` key ($.Values.ingress is nil), the gateway
+# route/policy templates used to crash on `dig "<routes>" list $ingress` with
+# "interface conversion: interface {} is nil". `ingress: null` in the ci-value
+# overrides the test chart's own default to reproduce that condition exactly.
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-nil-ingress.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render without error when top-level ingress is nil
+    asserts:
+      # The template renders successfully (no dig panic). With no routes
+      # defined, no gateway route/policy documents are produced.
+      - hasDocuments:
+          count: 0

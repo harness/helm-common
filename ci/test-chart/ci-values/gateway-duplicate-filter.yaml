@@ -1,0 +1,30 @@
+# Edge case: two paths in the same ingress object with a rewrite-target
+# annotation that slug + hash to an identical HTTPRouteFilter name.
+# Previously this emitted two HTTPRouteFilter resources with the same
+# metadata.name, which the post-renderer rejected with
+#   may not add resource with an already registered id: HTTPRouteFilter...
+# The HTTPRoute template now dedupes filter names per object, so only one
+# HTTPRouteFilter is rendered.
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - sd.example.com
+    className: harness
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+ingress:
+  objects:
+    - name: servicediscovery
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+      paths:
+        # Two identical paths -> identical slug + hash -> same filter name.
+        - path: /api/servicediscovery(/|$)(.*)
+        - path: /api/servicediscovery(/|$)(.*)
+
+service:
+  port: 8080

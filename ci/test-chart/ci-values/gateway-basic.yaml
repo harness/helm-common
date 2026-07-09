@@ -16,21 +16,32 @@ global:
 
 ingress:
   objects:
+    # api-routes: no gatewayAPI backend port override, so the HTTPRoute
+    # backendRef.port falls back to the chart's Service port (service.port: 8080).
+    # The nginx backend.service.port (4000, the pod/targetPort) is intentionally
+    # NOT used for Gateway API -- envoy routes through the Service.
     - name: api-routes
       paths:
         - path: /api(/|$)(.*)
           backend:
             service:
               name: test-service
-              port: 8080
+              port: 4000
 
+    # worker-routes: fronts a service whose Service port differs from the chart
+    # default, so it sets a per-object gatewayAPI backend port override (9090).
+    # The nginx targetPort (4001) again must not leak into backendRef.port.
     - name: worker-routes
+      gatewayAPI:
+        backend:
+          service:
+            port: 9090
       paths:
         - path: /worker/.*
           backend:
             service:
               name: worker-service
-              port: 9090
+              port: 4001
 
 service:
   port: 8080

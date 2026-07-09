@@ -1,0 +1,28 @@
+suite: Gateway API duplicate HTTPRouteFilter edge case (harnesscommon.v2.renderHTTPRoute)
+# Regression: two paths in the same ingress object with a rewrite-target
+# annotation that slug + hash to the same name used to emit two HTTPRouteFilter
+# resources with an identical metadata.name, failing the post-renderer with
+# "may not add resource with an already registered id". The template now dedupes
+# filter names per object, so exactly one HTTPRouteFilter is rendered.
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-duplicate-filter.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  # documentSelector without matchMany requires EXACTLY ONE matching document,
+  # so this test fails if the dedup regresses and a second HTTPRouteFilter with
+  # the same name reappears.
+  - it: should render exactly one HTTPRouteFilter for duplicate paths
+    documentSelector:
+      path: kind
+      value: HTTPRouteFilter
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter
+      - equal:
+          path: metadata.name
+          value: servicediscovery-api-servicediscovery-3f9838
