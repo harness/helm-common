@@ -283,7 +283,7 @@ USAGE:
 {{- end}}
 {{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
 {{- $conditionsList := .ctx.Values.secrets }}
-{{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq }}
+{{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq | sortAlpha }}
 {{- range $key := $mergedSecretKeys }}
     {{- if not (has $key $fileSecretMap) }}
     {{- $diggedCondition := dig "conditions" $key "NOTFOUND" $conditionsList }}
