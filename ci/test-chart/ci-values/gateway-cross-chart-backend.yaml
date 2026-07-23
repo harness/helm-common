@@ -1,0 +1,40 @@
+# Cross-chart backend port test: an ingress object whose backend.service.name
+# points at a DIFFERENT service and whose backend.service.port is that service's
+# Service port (9090), not the chart's own service.port (7090). The HTTPRoute
+# backendRef.port must use 9090 (from backend.service.port), not 7090 (service.port).
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+ingress:
+  objects:
+    # proxy-route: backend points at a different service (other-service:9090).
+    # The HTTPRoute must use 9090, not the chart's own service.port (7090).
+    - name: proxy-route
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /api/v1$1$2
+      paths:
+        - path: /proxy/api(/|$)(.*)
+          backend:
+            service:
+              name: other-service
+              port: 9090
+
+    # own-route: backend.service.port matches service.port (7090).
+    - name: own-route
+      paths:
+        - path: /api(/|$)(.*)
+          backend:
+            service:
+              name: test-service
+              port: 7090
+
+service:
+  port: 7090
