@@ -66,3 +66,15 @@ tests:
       - equal:
           path: spec.http2.maxConcurrentStreams
           value: 1000
+
+  - it: ClientTrafficPolicy should have correct path settings
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.path.disableMergeSlashes
+          value: true
+      - equal:
+          path: spec.path.escapedSlashesAction
+          value: KeepUnchanged

@@ -37,7 +37,16 @@ spec:
       {{- if $parentRefNamespace }}
       namespace: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRefNamespace "context" $) }}
       {{- end }}
-  {{- if or $clientPolicy.connection $clientPolicy.timeout $clientPolicy.http2 }}
+  {{- if or $clientPolicy.connection $clientPolicy.timeout $clientPolicy.http2 $clientPolicy.path }}
+  {{- if $clientPolicy.path }}
+  path:
+    {{- if $clientPolicy.path.disableMergeSlashes }}
+    disableMergeSlashes: {{ $clientPolicy.path.disableMergeSlashes }}
+    {{- end }}
+    {{- if $clientPolicy.path.escapedSlashesAction }}
+    escapedSlashesAction: {{ $clientPolicy.path.escapedSlashesAction }}
+    {{- end }}
+  {{- end }}
   {{- if $clientPolicy.connection }}
   connection:
     {{- if $clientPolicy.connection.bufferLimit }}
