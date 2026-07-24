@@ -1,9 +1,12 @@
 # Changelog
 
-## [1.8.4] - 2026-07-24
+## [1.9.0] - 2026-07-24
 
 ### Added
 - **`BackendTrafficPolicy` full passthrough support**: All Envoy Gateway BackendTrafficPolicy spec fields are now supported via YAML passthrough. This includes `useClientProtocol`, `circuitBreaker`, `healthCheck`, `tcpKeepalive`, `http2`, `dns`, `rateLimit`, `faultInjection`, `compression`, and all other fields from the Envoy Gateway API. Service owners can now use any BackendTrafficPolicy field by referencing the Envoy Gateway documentation (https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy). The template uses `toYaml` passthrough, eliminating the need to update helm-common for new Envoy Gateway features.
+
+### Changed
+- **Breaking**: BackendTrafficPolicy template refactored from field-by-field rendering to full YAML passthrough. Existing configurations continue to work unchanged, but the internal implementation is fundamentally different. This enables zero-maintenance support for all Envoy Gateway features.
 
 ## [1.8.3] - 2026-07-24
 
