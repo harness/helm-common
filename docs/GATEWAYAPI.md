@@ -653,6 +653,7 @@ Controls traffic from the Gateway to backend Services:
 - Timeouts (request, idle, connect)
 - Connection settings (buffer limits)
 - Backend protocol (gRPC, H2C, HTTP)
+- **useClientProtocol** - Mirror downstream protocol to upstream (HTTP/1.1 or HTTP/2)
 - Load balancing
 - Retry policies
 
@@ -663,6 +664,7 @@ global:
     policies:
       backendTraffic:
         enabled: true
+        useClientProtocol: true          # Mirror client protocol (HTTP/1.1 → HTTP/1.1, HTTP/2 → HTTP/2)
         timeout:
           http:
             requestTimeout: "300s"       # 5 minute default
@@ -688,7 +690,52 @@ ingress:
               requestTimeout: "3600s"    # Override: 1 hour for reports
       paths:
         - path: "/reports/.*"
+
+    # Service that requires HTTP/2 upstream (opt-out of gateway-level useClientProtocol)
+    - name: "http2-only-service"
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false       # Force HTTP/2 upstream
+      paths:
+        - path: "/stream/.*"
 ```
+
+#### useClientProtocol: HTTP/1.1 vs HTTP/2 Upstream
+
+**Problem:** Envoy Gateway defaults to HTTP/2 upstream for all routes. On HTTP/1.1 services, this causes head-of-line blocking — a slow request holds the single multiplexed connection, stalling all subsequent requests.
+
+**Solution:** Set `useClientProtocol: true` at the **gateway level** (in the gateway chart) to make envoy mirror the downstream protocol (HTTP/1.1 clients → HTTP/1.1 upstream, HTTP/2 clients → HTTP/2 upstream). This opens a connection per request for HTTP/1.1 clients, eliminating HOL blocking.
+
+**Opt-out for services that require HTTP/2 upstream:** Some services produce UPE 502s or protocol errors when `useClientProtocol: true` is in effect. These services require HTTP/2 upstream and must opt out:
+
+```yaml
+global:
+  gatewayAPI:
+    policies:
+      backendTraffic:
+        enabled: true
+        useClientProtocol: false  # Opt out all routes
+```
+
+Or per-route:
+
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+      paths:
+        - path: "/api/.*"
+```
+
+**When to set `false`:**
+- Service produces UPE 502s or protocol errors with HTTP/1.1 upstream
+- Service has gRPC sibling ports and HTTP/1.1 upstream breaks multiplexing
+- Service depends on HTTP/2 connection multiplexing or server push
+
+**Default:** The gateway-level policy is typically set in the gateway infrastructure chart, NOT in individual service charts. Service charts only override when needed.
 
 ### ClientTrafficPolicy
 

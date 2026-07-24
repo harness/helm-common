@@ -1,0 +1,35 @@
+# Gateway API BackendTrafficPolicy with global useClientProtocol: false
+# Tests global override when all routes require HTTP/2 upstream
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+    policies:
+      backendTraffic:
+        enabled: true
+        useClientProtocol: false
+
+ingress:
+  objects:
+    - name: api-route
+      paths:
+        - path: /api/.*
+
+    - name: stream-route
+      paths:
+        - path: /stream/.*
+
+    - name: websocket-route
+      paths:
+        - path: /ws/.*
+
+service:
+  port: 8080

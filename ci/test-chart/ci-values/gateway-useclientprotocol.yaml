@@ -1,0 +1,68 @@
+# Gateway API BackendTrafficPolicy with useClientProtocol: false
+# Tests per-route override when service requires HTTP/2 upstream
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  objects:
+    # Per-route useClientProtocol: false override
+    - name: api-route
+      paths:
+        - path: /api/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: stream-route
+      paths:
+        - path: /stream/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: websocket-route
+      paths:
+        - path: /ws/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: download-route
+      paths:
+        - path: /download/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: upload-route
+      paths:
+        - path: /upload/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: admin-route
+      paths:
+        - path: /admin/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+    - name: internal-route
+      paths:
+        - path: /internal/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+
+service:
+  port: 8080

@@ -60,7 +60,7 @@ spec:
       kind: HTTPRoute
       name: {{ $routeName }}
     {{- end }}
-  {{- if or $globalBackendPolicy.timeout $globalBackendPolicy.connection $globalBackendPolicy.protocol $globalBackendPolicy.loadBalancer $globalBackendPolicy.retry }}
+  {{- if or $globalBackendPolicy.timeout $globalBackendPolicy.connection $globalBackendPolicy.protocol (hasKey $globalBackendPolicy "useClientProtocol") $globalBackendPolicy.loadBalancer $globalBackendPolicy.retry }}
   {{- if $globalBackendPolicy.timeout }}
   timeout:
     {{- if $globalBackendPolicy.timeout.http }}
@@ -88,6 +88,9 @@ spec:
   {{- if $globalBackendPolicy.protocol }}
   protocol: {{ $globalBackendPolicy.protocol }}
   {{- end }}
+  {{ if hasKey $globalBackendPolicy "useClientProtocol" -}}
+  useClientProtocol: {{ if $globalBackendPolicy.useClientProtocol }}true{{ else }}false{{ end }}
+  {{ end -}}
   {{- $globalLoadBalancerType := dig "loadBalancer" "type" "" $globalBackendPolicy }}
   {{- if $globalLoadBalancerType }}
   loadBalancer:
@@ -127,7 +130,7 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: {{ $routeName }}
-  {{- if or $policy.timeout $policy.connection $policy.protocol $policy.loadBalancer $policy.retry }}
+  {{- if or $policy.timeout $policy.connection $policy.protocol (hasKey $policy "useClientProtocol") $policy.loadBalancer $policy.retry }}
   {{- if $policy.timeout }}
   timeout:
     {{- if $policy.timeout.http }}
@@ -155,6 +158,9 @@ spec:
   {{- if $policy.protocol }}
   protocol: {{ $policy.protocol }}
   {{- end }}
+  {{ if hasKey $policy "useClientProtocol" -}}
+  useClientProtocol: {{ if $policy.useClientProtocol }}true{{ else }}false{{ end }}
+  {{ end -}}
   {{- $loadBalancerType := dig "loadBalancer" "type" "" $policy }}
   {{- if $loadBalancerType }}
   loadBalancer:
