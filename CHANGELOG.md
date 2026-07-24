@@ -3,7 +3,7 @@
 ## [1.8.4] - 2026-07-24
 
 ### Added
-- **`BackendTrafficPolicy` useClientProtocol per-route override**: `ingress.objects[].gatewayAPI.backendTraffic.useClientProtocol` now renders the `useClientProtocol` field in BackendTrafficPolicy resources. Use this to override the gateway-level default on specific routes. Set to `false` to force HTTP/2 upstream when your service produces UPE 502s or protocol errors with HTTP/1.1 upstream (services with gRPC sibling ports, HTTP/2 multiplexing dependencies, etc.).
+- **`BackendTrafficPolicy` full passthrough support**: All Envoy Gateway BackendTrafficPolicy spec fields are now supported via YAML passthrough. This includes `useClientProtocol`, `circuitBreaker`, `healthCheck`, `tcpKeepalive`, `http2`, `dns`, `rateLimit`, `faultInjection`, `compression`, and all other fields from the Envoy Gateway API. Service owners can now use any BackendTrafficPolicy field by referencing the Envoy Gateway documentation (https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy). The template uses `toYaml` passthrough, eliminating the need to update helm-common for new Envoy Gateway features.
 
 ## [1.8.3] - 2026-07-24
 

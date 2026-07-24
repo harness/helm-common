@@ -1,0 +1,52 @@
+# Gateway API BackendTrafficPolicy with advanced fields (passthrough)
+# Tests that all Envoy Gateway BackendTrafficPolicy spec fields are supported
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  objects:
+    - name: advanced-route
+      paths:
+        - path: /api/.*
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false
+          circuitBreaker:
+            maxConnections: 1024
+            maxPendingRequests: 1024
+            maxParallelRequests: 1024
+            maxRequestsPerConnection: 1
+          healthCheck:
+            active:
+              timeout: 1s
+              interval: 5s
+              unhealthyThreshold: 3
+              healthyThreshold: 1
+              type: HTTP
+              http:
+                path: /health
+                expectedStatuses:
+                  - 200
+                  - 204
+          tcpKeepalive:
+            probes: 3
+            interval: 30s
+            idleTime: 300s
+          timeout:
+            http:
+              requestTimeout: 300s
+              connectionIdleTimeout: 600s
+            tcp:
+              connectTimeout: 30s
+
+service:
+  port: 8080
