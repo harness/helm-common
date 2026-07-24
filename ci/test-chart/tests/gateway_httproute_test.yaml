@@ -55,11 +55,10 @@ tests:
           path: spec.hostnames
           content: api-staging.example.com
 
-  - it: first HTTPRoute backendRef.port uses the Service port, not the nginx targetPort
-    # Bug 1 regression: Gateway API routes through the Service, so backendRef.port
-    # must equal the Service spec.ports[].port (service.port: 8080 here) -- NOT the
-    # nginx backend.service.port (4000, the pod/targetPort). A targetPort here yields
-    # ResolvedRefs=False "TCP Port not found on Service" and 500s the route.
+  - it: first HTTPRoute backendRef.port falls back to service.port when backend.service.port is absent
+    # When no backend.service.port is set on the path, backendRef.port must equal
+    # the chart's service.port (8080). Gateway API routes through the Service ClusterIP,
+    # so this must be a real Service spec.ports[].port.
     documentSelector:
       path: spec.rules[0].backendRefs[0].name
       value: test-service

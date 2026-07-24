@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.2] - 2026-07-23
+
+### Fixed
+- **HTTPRoute `backendRef.port` ignored `backend.service.port` set on ingress paths**: When a chart routes through a *different* service (e.g. ng-manager delegating `/ng/api/delegate-token-ng` to harness-manager:9090), the nginx Ingress path carries `backend.service.port: 9090` — which is a Service port per the k8s Ingress spec. Previously the HTTPRoute template skipped this value and fell through to the chart's own `service.port`, causing `ResolvedRefs=False "TCP Port <n> not found on Service"`. Port resolution precedence is now: per-path `gatewayAPI.backend.service.port` > per-object `gatewayAPI.backend.service.port` > per-path `backend.service.port` > per-object `backend.service.port` > chart `service.port`.
+
 ## [1.8.1] - 2026-07-08
 
 ### Fixed

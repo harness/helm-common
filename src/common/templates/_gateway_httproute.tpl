@@ -153,13 +153,17 @@ spec:
     {{- range $idx := $chunkPaths }}
     {{- $serviceName := dig "backend" "service" "name" $.Chart.Name $idx }}
     {{- /* Gateway API routes through the Service (envoy -> Service ClusterIP), so
-    backendRef.port MUST be the Service's spec.ports[].port -- NOT the nginx
-    backend.service.port, which is the pod/targetPort that nginx connects to
-    directly via endpoints. Using the targetPort here yields
-    ResolvedRefs=False "TCP Port <n> not found on Service" and 500s the route.
-    Precedence: per-path gatewayAPI.backend.service.port > per-object
-    gatewayAPI.backend.service.port > chart service.port (the Service's declared port). */}}
-    {{- $servicePort := dig "gatewayAPI" "backend" "service" "port" (dig "gatewayAPI" "backend" "service" "port" $.Values.service.port $object) $idx }}
+    backendRef.port MUST be the Service's spec.ports[].port.
+    The nginx backend.service.port is also a Service port (per the k8s Ingress spec —
+    nginx proxies directly to pod endpoints but the port value in the Ingress object
+    refers to the Service port). It is therefore safe to inherit it when no explicit
+    gatewayAPI override is present.
+    Precedence: per-path gatewayAPI.backend.service.port
+              > per-object gatewayAPI.backend.service.port
+              > per-path backend.service.port   (nginx Ingress Service port)
+              > per-object backend.service.port
+              > chart service.port */}}
+    {{- $servicePort := dig "gatewayAPI" "backend" "service" "port" (dig "gatewayAPI" "backend" "service" "port" (dig "backend" "service" "port" (dig "backend" "service" "port" $.Values.service.port $object) $idx) $object) $idx }}
     {{- $globalHttpRoute := dig "httpRoute" dict $.Values.global.gatewayAPI }}
     {{- $perRouteHttpRoute := dig "gatewayAPI" dict $object }}
     {{- $hasRewriteTarget := and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
