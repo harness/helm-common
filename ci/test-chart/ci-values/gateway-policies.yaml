@@ -42,6 +42,9 @@ global:
             requestReceivedTimeout: "60s"
         http2:
           maxConcurrentStreams: 1000
+        path:
+          disableMergeSlashes: true
+          escapedSlashesAction: KeepUnchanged
 
       # SecurityPolicy - shared default
       security:

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.8.3] - 2026-07-24
+
+### Added
+- **`ClientTrafficPolicy` path settings**: `global.gatewayAPI.policies.clientTraffic.path` now supports `disableMergeSlashes` and `escapedSlashesAction`. Required for services that use encoded slashes (`%2F`) in URL paths (e.g. git repo paths like `org%2Frepo`) — without `escapedSlashesAction: KeepUnchanged` envoy decodes `%2F` to `/` before routing, changing the path the backend receives.
+
 ## [1.8.2] - 2026-07-23
 
 ### Fixed

@@ -55,7 +55,7 @@ All resources are rendered automatically by a single `renderIngress` call when `
 | Resource | API Version | Description | Config Location |
 |----------|-------------|-------------|-----------------|
 | **BackendTrafficPolicy** | `gateway.envoyproxy.io/v1alpha1` | Timeouts, protocol, retries, load balancing | `global.gatewayAPI.policies.backendTraffic` or per-route |
-| **ClientTrafficPolicy** | `gateway.envoyproxy.io/v1alpha1` | Client connection limits, HTTP/2 settings | `global.gatewayAPI.policies.clientTraffic` |
+| **ClientTrafficPolicy** | `gateway.envoyproxy.io/v1alpha1` | Client connection limits, HTTP/2 settings, path handling | `global.gatewayAPI.policies.clientTraffic` |
 | **SecurityPolicy** | `gateway.envoyproxy.io/v1alpha1` | IP whitelisting, CORS, JWT | `global.gatewayAPI.policies.security` or per-route |
 | **HTTPRouteFilter** | `gateway.envoyproxy.io/v1alpha1` | URL rewrite rules (auto-generated from rewrite-target annotation) | Auto |
 
@@ -696,6 +696,7 @@ Controls traffic from clients to the Gateway (attaches to Gateway, not routes):
 - Client connection limits
 - Client timeouts
 - HTTP/2 settings
+- Path handling (slash merging, encoded slash behavior)
 
 **Example:**
 ```yaml
@@ -712,7 +713,12 @@ global:
             requestReceivedTimeout: "60s"
         http2:
           maxConcurrentStreams: 1000
+        path:
+          disableMergeSlashes: true      # preserve double slashes in paths
+          escapedSlashesAction: KeepUnchanged  # preserve %2F / %2f in paths
 ```
+
+> **`path` use case:** Services that embed encoded slashes or version strings in URL paths (e.g. `/api/v1/repos/org%2Frepo/branches`) require `escapedSlashesAction: KeepUnchanged` — without it envoy decodes `%2F` to `/` before routing, which changes the path the backend receives.
 
 ### SecurityPolicy
 
@@ -898,6 +904,8 @@ global:
 | `connection.connectionIdleTimeout` | string | `""` | Client connection idle timeout (e.g., "300s") |
 | `timeout.http.requestReceivedTimeout` | string | `""` | Request received timeout (e.g., "60s") - equivalent to nginx client_body_timeout |
 | `http2.maxConcurrentStreams` | int | `0` | Max concurrent HTTP/2 streams |
+| `path.disableMergeSlashes` | bool | `false` | Preserve consecutive slashes in request paths (envoy merges them by default) |
+| `path.escapedSlashesAction` | string | `""` | How to handle `%2F`/`%2f` in paths: `KeepUnchanged`, `UnescapeAndForward`, `UnescapeAndRedirect`, `RejectRequest` |
 
 ### global.gatewayAPI.policies.security
 
