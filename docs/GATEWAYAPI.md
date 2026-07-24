@@ -664,7 +664,6 @@ global:
     policies:
       backendTraffic:
         enabled: true
-        useClientProtocol: true          # Mirror client protocol (HTTP/1.1 → HTTP/1.1, HTTP/2 → HTTP/2)
         timeout:
           http:
             requestTimeout: "300s"       # 5 minute default
@@ -700,24 +699,11 @@ ingress:
         - path: "/stream/.*"
 ```
 
-#### useClientProtocol: HTTP/1.1 vs HTTP/2 Upstream
+#### useClientProtocol: Per-Route Override
 
-**Problem:** Envoy Gateway defaults to HTTP/2 upstream for all routes. On HTTP/1.1 services, this causes head-of-line blocking — a slow request holds the single multiplexed connection, stalling all subsequent requests.
+**Background:** The gateway-level policy sets `useClientProtocol: true` (envoy mirrors client protocol to upstream: HTTP/1.1 → HTTP/1.1, HTTP/2 → HTTP/2). This eliminates head-of-line blocking on HTTP/1.1 services.
 
-**Solution:** Set `useClientProtocol: true` at the **gateway level** (in the gateway chart) to make envoy mirror the downstream protocol (HTTP/1.1 clients → HTTP/1.1 upstream, HTTP/2 clients → HTTP/2 upstream). This opens a connection per request for HTTP/1.1 clients, eliminating HOL blocking.
-
-**Opt-out for services that require HTTP/2 upstream:** Some services produce UPE 502s or protocol errors when `useClientProtocol: true` is in effect. These services require HTTP/2 upstream and must opt out:
-
-```yaml
-global:
-  gatewayAPI:
-    policies:
-      backendTraffic:
-        enabled: true
-        useClientProtocol: false  # Opt out all routes
-```
-
-Or per-route:
+**When your service needs HTTP/2 upstream:** Some services produce UPE 502s or protocol errors with HTTP/1.1 upstream. Override `useClientProtocol` per-route:
 
 ```yaml
 ingress:
@@ -725,17 +711,17 @@ ingress:
     - name: api-service
       gatewayAPI:
         backendTraffic:
-          useClientProtocol: false
+          useClientProtocol: false  # Force HTTP/2 upstream for this route only
       paths:
         - path: "/api/.*"
 ```
 
-**When to set `false`:**
+**When to override with `false`:**
 - Service produces UPE 502s or protocol errors with HTTP/1.1 upstream
 - Service has gRPC sibling ports and HTTP/1.1 upstream breaks multiplexing
 - Service depends on HTTP/2 connection multiplexing or server push
 
-**Default:** The gateway-level policy is typically set in the gateway infrastructure chart, NOT in individual service charts. Service charts only override when needed.
+**Important:** Use **per-route overrides only**. Do NOT set this in `global.gatewayAPI.policies.backendTraffic` in your service chart — that would override the gateway default for all your routes.
 
 ### ClientTrafficPolicy
 

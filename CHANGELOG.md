@@ -3,7 +3,7 @@
 ## [1.8.4] - 2026-07-24
 
 ### Added
-- **`BackendTrafficPolicy` useClientProtocol support**: `global.gatewayAPI.policies.backendTraffic.useClientProtocol` and per-route `ingress.objects[].gatewayAPI.backendTraffic.useClientProtocol` now render the `useClientProtocol` field in BackendTrafficPolicy resources. Set to `true` to mirror downstream protocol (HTTP/1.1 → HTTP/1.1, HTTP/2 → HTTP/2) eliminating HTTP/2 head-of-line blocking on HTTP/1.1 backends. Set to `false` to force HTTP/2 upstream (required for services like harness-manager:9090 that break with HTTP/1.1 upstream). The gateway-level default is set in envoy-gateway-harness; individual charts opt out via this field.
+- **`BackendTrafficPolicy` useClientProtocol per-route override**: `ingress.objects[].gatewayAPI.backendTraffic.useClientProtocol` now renders the `useClientProtocol` field in BackendTrafficPolicy resources. Use this to override the gateway-level default on specific routes. Set to `false` to force HTTP/2 upstream when your service produces UPE 502s or protocol errors with HTTP/1.1 upstream (services with gRPC sibling ports, HTTP/2 multiplexing dependencies, etc.). **Per-route override only** — do not set in `global.gatewayAPI.policies.backendTraffic` as that would override the gateway default for all routes.
 
 ## [1.8.3] - 2026-07-24
 

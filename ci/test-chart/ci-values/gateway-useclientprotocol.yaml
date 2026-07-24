@@ -1,5 +1,6 @@
-# Gateway API BackendTrafficPolicy with useClientProtocol: false
-# Tests per-route override when service requires HTTP/2 upstream
+# Gateway API BackendTrafficPolicy with useClientProtocol: false per-route override
+# Tests per-route override when service requires HTTP/2 upstream (UPE 502s with HTTP/1.1)
+# NOTE: This is per-route override only - do NOT use global.gatewayAPI.policies.backendTraffic.useClientProtocol
 global:
   ingress:
     enabled: true
