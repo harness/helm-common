@@ -721,8 +721,6 @@ ingress:
 - Service has gRPC sibling ports and HTTP/1.1 upstream breaks multiplexing
 - Service depends on HTTP/2 connection multiplexing or server push
 
-**Important:** Use **per-route overrides only**. Do NOT set this in `global.gatewayAPI.policies.backendTraffic` in your service chart — that would override the gateway default for all your routes.
-
 ### ClientTrafficPolicy
 
 Controls traffic from clients to the Gateway (attaches to Gateway, not routes):

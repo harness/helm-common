@@ -3,7 +3,7 @@
 ## [1.8.4] - 2026-07-24
 
 ### Added
-- **`BackendTrafficPolicy` useClientProtocol per-route override**: `ingress.objects[].gatewayAPI.backendTraffic.useClientProtocol` now renders the `useClientProtocol` field in BackendTrafficPolicy resources. Use this to override the gateway-level default on specific routes. Set to `false` to force HTTP/2 upstream when your service produces UPE 502s or protocol errors with HTTP/1.1 upstream (services with gRPC sibling ports, HTTP/2 multiplexing dependencies, etc.). **Per-route override only** — do not set in `global.gatewayAPI.policies.backendTraffic` as that would override the gateway default for all routes.
+- **`BackendTrafficPolicy` useClientProtocol per-route override**: `ingress.objects[].gatewayAPI.backendTraffic.useClientProtocol` now renders the `useClientProtocol` field in BackendTrafficPolicy resources. Use this to override the gateway-level default on specific routes. Set to `false` to force HTTP/2 upstream when your service produces UPE 502s or protocol errors with HTTP/1.1 upstream (services with gRPC sibling ports, HTTP/2 multiplexing dependencies, etc.).
 
 ## [1.8.3] - 2026-07-24
 
