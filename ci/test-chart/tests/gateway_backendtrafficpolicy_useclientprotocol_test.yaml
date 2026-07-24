@@ -1,0 +1,55 @@
+suite: Gateway API BackendTrafficPolicy useClientProtocol
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-useclientprotocol.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should render BackendTrafficPolicy with useClientProtocol false for api-route
+    documentSelector:
+      path: metadata.name
+      value: api-route-backend-policy
+    asserts:
+      - isKind:
+          of: BackendTrafficPolicy
+      - equal:
+          path: apiVersion
+          value: gateway.envoyproxy.io/v1alpha1
+      - equal:
+          path: spec.targetRefs[0].group
+          value: gateway.networking.k8s.io
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: HTTPRoute
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-route
+      - equal:
+          path: spec.useClientProtocol
+          value: false
+
+  - it: should render BackendTrafficPolicy with useClientProtocol false for stream-route
+    documentSelector:
+      path: metadata.name
+      value: stream-route-backend-policy
+    asserts:
+      - isKind:
+          of: BackendTrafficPolicy
+      - equal:
+          path: spec.targetRefs[0].name
+          value: stream-route
+      - equal:
+          path: spec.useClientProtocol
+          value: false
+
+  - it: should have correct annotation for per-route override
+    documentSelector:
+      path: metadata.name
+      value: api-route-backend-policy
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/policy-type"]
+          value: per-route-override

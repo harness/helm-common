@@ -12,35 +12,114 @@ global:
 
     # Shared/default Envoy Gateway policies (Option C: Hybrid - shared defaults + per-route overrides)
     policies:
-      # BackendTrafficPolicy - backend timeouts, connection settings, protocol
+      # BackendTrafficPolicy - backend timeouts, connection settings, protocol, and more
       # These settings apply to traffic from Gateway to backend Services
+      # Full API reference: https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy
       backendTraffic:
         enabled: false
+
+        # All Envoy Gateway BackendTrafficPolicy spec fields are supported.
+        # Below are common examples. See API docs for complete list of fields:
+        # https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicyspec
+
         # Timeouts for backend connections
-        timeout:
-          http:
-            # e.g., "300s" - equivalent to nginx proxy-send-timeout
-            requestTimeout: ""
-            # e.g., "3600s" - connection idle timeout
-            connectionIdleTimeout: ""
-          tcp:
-            # e.g., "900s" - equivalent to nginx proxy-connect-timeout
-            connectTimeout: ""
+        # timeout:
+        #   http:
+        #     requestTimeout: "300s"           # Max time for complete request/response
+        #     connectionIdleTimeout: "3600s"   # Idle connection timeout
+        #   tcp:
+        #     connectTimeout: "30s"            # Connection establishment timeout
+
         # Backend connection settings
-        connection:
-          # e.g., "10240Mi" - equivalent to nginx client-max-body-size
-          bufferLimit: ""
-        # Backend protocol (gRPC, H2C, etc.)
-        # e.g., "GRPC" - equivalent to nginx backend-protocol: GRPC
-        protocol: ""
+        # connection:
+        #   bufferLimit: "10Gi"                # Max request/response buffer size
+
+        # Backend protocol (HTTP, GRPC, H2C)
+        # protocol: "GRPC"
+
+        # Use client protocol (HTTP/1.1 or HTTP/2) for upstream connections
+        # Set to false to force HTTP/2 upstream (per-route override only)
+        # useClientProtocol: false
+
         # Load balancing policy
-        # e.g., "RoundRobin", "LeastRequest", "Random"
-        loadBalancer:
-          type: ""
+        # loadBalancer:
+        #   type: "LeastRequest"               # RoundRobin, LeastRequest, Random, Maglev, ConsistentHash
+
         # Retry policy
-        retry:
-          numRetries: 0
-          perRetryTimeout: ""
+        # retry:
+        #   numRetries: 3
+        #   perRetryTimeout: "5s"
+        #   retryOn:
+        #     triggers:
+        #       - "5xx"
+        #       - "reset"
+        #     httpStatusCodes:
+        #       - 502
+        #       - 503
+
+        # Circuit breaker settings
+        # circuitBreaker:
+        #   maxConnections: 1024               # Max connections to backend
+        #   maxPendingRequests: 1024           # Max pending requests
+        #   maxParallelRequests: 1024          # Max parallel requests
+        #   maxRequestsPerConnection: 1        # Max requests per connection (0 = unlimited)
+
+        # Active health checking
+        # healthCheck:
+        #   active:
+        #     timeout: "1s"
+        #     interval: "5s"
+        #     unhealthyThreshold: 3
+        #     healthyThreshold: 1
+        #     type: "HTTP"
+        #     http:
+        #       path: "/health"
+        #       expectedStatuses:
+        #         - 200
+
+        # TCP keepalive settings
+        # tcpKeepalive:
+        #   probes: 3
+        #   interval: "30s"
+        #   idleTime: "300s"
+
+        # HTTP/2 settings for backend connections
+        # http2:
+        #   maxConcurrentStreams: 100
+        #   initialStreamWindowSize: "64Ki"
+        #   initialConnectionWindowSize: "1Mi"
+
+        # DNS resolution settings
+        # dns:
+        #   respectDnsTtl: true
+        #   dnsRefreshRate: "30s"
+
+        # Proxy protocol (v1 or v2)
+        # proxyProtocol:
+        #   version: "V2"
+
+        # Rate limiting
+        # rateLimit:
+        #   type: "Local"
+        #   local:
+        #     rules:
+        #       - limit:
+        #           requests: 100
+        #           unit: "Second"
+
+        # Fault injection for testing
+        # faultInjection:
+        #   delay:
+        #     fixedDelay: "5s"
+        #     percentage: 10.0
+        #   abort:
+        #     httpStatus: 503
+        #     percentage: 5.0
+
+        # Response compression
+        # compressor:
+        #   - type: "Gzip"
+        #   - type: "Brotli"
 
       # ClientTrafficPolicy - client-side settings (attaches to Gateway, not individual routes)
       # These settings apply to traffic from clients to the Gateway

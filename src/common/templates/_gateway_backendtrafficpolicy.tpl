@@ -1,6 +1,6 @@
 {{/*
 BackendTrafficPolicy template for Envoy Gateway
-Handles timeouts, connection settings, protocol, load balancing, and retries
+Handles timeouts, connection settings, protocol, load balancing, retries, and all Envoy Gateway BackendTrafficPolicy fields
 
 USAGE:
 {{- include "harnesscommon.v2.renderBackendTrafficPolicy" (dict "ctx" $) }}
@@ -8,6 +8,9 @@ USAGE:
 Supports hybrid approach (Option C):
 - Shared global policies that target multiple HTTPRoutes
 - Per-route override policies when needed
+
+All Envoy Gateway BackendTrafficPolicy spec fields are supported via passthrough.
+See https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy for full API reference.
 */}}
 {{- define "harnesscommon.v2.renderBackendTrafficPolicy" }}
 {{- $ := .ctx }}
@@ -60,48 +63,8 @@ spec:
       kind: HTTPRoute
       name: {{ $routeName }}
     {{- end }}
-  {{- if or $globalBackendPolicy.timeout $globalBackendPolicy.connection $globalBackendPolicy.protocol $globalBackendPolicy.loadBalancer $globalBackendPolicy.retry }}
-  {{- if $globalBackendPolicy.timeout }}
-  timeout:
-    {{- if $globalBackendPolicy.timeout.http }}
-    http:
-      {{- if $globalBackendPolicy.timeout.http.requestTimeout }}
-      requestTimeout: {{ $globalBackendPolicy.timeout.http.requestTimeout }}
-      {{- end }}
-      {{- if $globalBackendPolicy.timeout.http.connectionIdleTimeout }}
-      connectionIdleTimeout: {{ $globalBackendPolicy.timeout.http.connectionIdleTimeout }}
-      {{- end }}
-    {{- end }}
-    {{- if $globalBackendPolicy.timeout.tcp }}
-    tcp:
-      {{- if $globalBackendPolicy.timeout.tcp.connectTimeout }}
-      connectTimeout: {{ $globalBackendPolicy.timeout.tcp.connectTimeout }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-  {{- if $globalBackendPolicy.connection }}
-  connection:
-    {{- if $globalBackendPolicy.connection.bufferLimit }}
-    bufferLimit: {{ $globalBackendPolicy.connection.bufferLimit }}
-    {{- end }}
-  {{- end }}
-  {{- if $globalBackendPolicy.protocol }}
-  protocol: {{ $globalBackendPolicy.protocol }}
-  {{- end }}
-  {{- $globalLoadBalancerType := dig "loadBalancer" "type" "" $globalBackendPolicy }}
-  {{- if $globalLoadBalancerType }}
-  loadBalancer:
-    type: {{ $globalLoadBalancerType }}
-  {{- end }}
-  {{- $globalRetryNumRetries := dig "retry" "numRetries" 0 $globalBackendPolicy }}
-  {{- if gt ($globalRetryNumRetries | int) 0 }}
-  retry:
-    numRetries: {{ $globalRetryNumRetries | int }}
-    {{- $globalRetryTimeout := dig "retry" "perRetryTimeout" "" $globalBackendPolicy }}
-    {{- if $globalRetryTimeout }}
-    perRetryTimeout: {{ $globalRetryTimeout }}
-    {{- end }}
-  {{- end }}
+  {{- if $globalBackendPolicy }}
+  {{- toYaml $globalBackendPolicy | nindent 2 }}
   {{- end }}
 {{- end }}
 
@@ -127,48 +90,8 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: {{ $routeName }}
-  {{- if or $policy.timeout $policy.connection $policy.protocol $policy.loadBalancer $policy.retry }}
-  {{- if $policy.timeout }}
-  timeout:
-    {{- if $policy.timeout.http }}
-    http:
-      {{- if $policy.timeout.http.requestTimeout }}
-      requestTimeout: {{ $policy.timeout.http.requestTimeout }}
-      {{- end }}
-      {{- if $policy.timeout.http.connectionIdleTimeout }}
-      connectionIdleTimeout: {{ $policy.timeout.http.connectionIdleTimeout }}
-      {{- end }}
-    {{- end }}
-    {{- if $policy.timeout.tcp }}
-    tcp:
-      {{- if $policy.timeout.tcp.connectTimeout }}
-      connectTimeout: {{ $policy.timeout.tcp.connectTimeout }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-  {{- if $policy.connection }}
-  connection:
-    {{- if $policy.connection.bufferLimit }}
-    bufferLimit: {{ $policy.connection.bufferLimit }}
-    {{- end }}
-  {{- end }}
-  {{- if $policy.protocol }}
-  protocol: {{ $policy.protocol }}
-  {{- end }}
-  {{- $loadBalancerType := dig "loadBalancer" "type" "" $policy }}
-  {{- if $loadBalancerType }}
-  loadBalancer:
-    type: {{ $loadBalancerType }}
-  {{- end }}
-  {{- $retryNumRetries := dig "retry" "numRetries" 0 $policy }}
-  {{- if gt ($retryNumRetries | int) 0 }}
-  retry:
-    numRetries: {{ $retryNumRetries | int }}
-    {{- $retryTimeout := dig "retry" "perRetryTimeout" "" $policy }}
-    {{- if $retryTimeout }}
-    perRetryTimeout: {{ $retryTimeout }}
-    {{- end }}
-  {{- end }}
+  {{- if $policy }}
+  {{- toYaml $policy | nindent 2 }}
   {{- end }}
 {{- end }}
 

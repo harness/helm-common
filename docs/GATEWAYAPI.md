@@ -649,14 +649,29 @@ The library supports three types of Envoy Gateway policies with a **hybrid appro
 
 ### BackendTrafficPolicy
 
-Controls traffic from the Gateway to backend Services:
+Controls traffic from the Gateway to backend Services. **All Envoy Gateway BackendTrafficPolicy spec fields are supported** via passthrough.
+
+**Full API Reference:** https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy
+
+**Supported fields include:**
 - Timeouts (request, idle, connect)
 - Connection settings (buffer limits)
 - Backend protocol (gRPC, H2C, HTTP)
-- Load balancing
+- **useClientProtocol** - Mirror downstream protocol to upstream (HTTP/1.1 or HTTP/2)
+- Load balancing policies
 - Retry policies
+- **Circuit breaker** - Connection and request limits
+- **Health checks** - Active health checking
+- **TCP keepalive** - TCP connection keepalive
+- **HTTP/2 settings** - Backend HTTP/2 configuration
+- **DNS resolution** - Custom DNS settings
+- **Rate limiting** - Request rate limits
+- **Fault injection** - Testing delays and errors
+- **Compression** - Response compression (gzip, brotli)
+- **Proxy protocol** - PROXY protocol support
+- And more - see API docs for complete list
 
-**Global shared policy example:**
+**Basic example:**
 ```yaml
 global:
   gatewayAPI:
@@ -688,7 +703,151 @@ ingress:
               requestTimeout: "3600s"    # Override: 1 hour for reports
       paths:
         - path: "/reports/.*"
+
+    # Service that requires HTTP/2 upstream (opt-out of gateway-level useClientProtocol)
+    - name: "http2-only-service"
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false       # Force HTTP/2 upstream
+      paths:
+        - path: "/stream/.*"
 ```
+
+#### useClientProtocol: Per-Route Override
+
+**Background:** The gateway-level policy sets `useClientProtocol: true` (envoy mirrors client protocol to upstream: HTTP/1.1 → HTTP/1.1, HTTP/2 → HTTP/2). This eliminates head-of-line blocking on HTTP/1.1 services.
+
+**When your service needs HTTP/2 upstream:** Some services produce UPE 502s or protocol errors with HTTP/1.1 upstream. Override `useClientProtocol` per-route:
+
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          useClientProtocol: false  # Force HTTP/2 upstream for this route only
+      paths:
+        - path: "/api/.*"
+```
+
+**When to override with `false`:**
+- Service produces UPE 502s or protocol errors with HTTP/1.1 upstream
+- Service has gRPC sibling ports and HTTP/1.1 upstream breaks multiplexing
+- Service depends on HTTP/2 connection multiplexing or server push
+
+#### Advanced BackendTrafficPolicy Features
+
+**All Envoy Gateway BackendTrafficPolicy fields are supported.** Examples:
+
+**Circuit Breaker:**
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          circuitBreaker:
+            maxConnections: 1024               # Max connections to backend
+            maxPendingRequests: 1024           # Max queued requests
+            maxParallelRequests: 1024          # Max concurrent requests
+            maxRequestsPerConnection: 1        # Force new connection per request
+      paths:
+        - path: "/api/.*"
+```
+
+**Active Health Checks:**
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          healthCheck:
+            active:
+              timeout: 1s
+              interval: 5s
+              unhealthyThreshold: 3            # Mark unhealthy after 3 failures
+              healthyThreshold: 1              # Mark healthy after 1 success
+              type: HTTP
+              http:
+                path: /health
+                expectedStatuses:
+                  - 200
+                  - 204
+      paths:
+        - path: "/api/.*"
+```
+
+**TCP Keepalive:**
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          tcpKeepalive:
+            probes: 3                          # Number of probes before marking dead
+            interval: 30s                      # Interval between probes
+            idleTime: 300s                     # Time before first probe
+      paths:
+        - path: "/api/.*"
+```
+
+**HTTP/2 Backend Settings:**
+```yaml
+ingress:
+  objects:
+    - name: grpc-service
+      gatewayAPI:
+        backendTraffic:
+          protocol: GRPC
+          http2:
+            maxConcurrentStreams: 100
+            initialStreamWindowSize: 64Ki
+            initialConnectionWindowSize: 1Mi
+      paths:
+        - path: "/grpc/.*"
+```
+
+**Rate Limiting:**
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          rateLimit:
+            type: Local
+            local:
+              rules:
+                - limit:
+                    requests: 100
+                    unit: Second                # Minute, Hour, Day also supported
+      paths:
+        - path: "/api/.*"
+```
+
+**Fault Injection (Testing):**
+```yaml
+ingress:
+  objects:
+    - name: api-service
+      gatewayAPI:
+        backendTraffic:
+          faultInjection:
+            delay:
+              fixedDelay: 5s                   # Inject 5s delay
+              percentage: 10.0                 # On 10% of requests
+            abort:
+              httpStatus: 503                  # Return 503
+              percentage: 5.0                  # On 5% of requests
+      paths:
+        - path: "/api/.*"
+```
+
+**See the full API documentation for all available fields:**
+- https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicyspec
+- https://gateway.envoyproxy.io/docs/tasks/ (task guides for specific features)
 
 ### ClientTrafficPolicy
 
