@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.1] - 2026-07-27
+
+### Added
+- **HTTPRoute path match type cascade**: `_gateway_httproute.tpl` no longer hardcodes `type: RegularExpression`. Match type is now selected from (in precedence order): the `nginx.ingress.kubernetes.io/use-regex: "true"` object annotation → `RegularExpression`; then per-path Ingress `pathType` — `Prefix` → `PathPrefix`; then the default → `RegularExpression` (preserves the previous hardcoded behavior). Enables charts to opt into segment-prefix matching by setting `pathType: Prefix` on individual paths without touching the `use-regex` annotation. Backwards compatible — any path without `pathType: Prefix` still renders `RegularExpression`.
+
 ## [1.9.0] - 2026-07-24
 
 ### Added

@@ -1,0 +1,56 @@
+# HTTPRoute path match type cascade test values.
+# Verifies the precedence: per-path `pathType: Prefix` > `use-regex` annotation > default `RegularExpression`.
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  objects:
+    # Branch 1: use-regex annotation (no pathType) -> RegularExpression
+    - name: annotated-object
+      annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
+      paths:
+        - path: /annotated(/|$)(.*)
+          backend:
+            service:
+              name: annotated-service
+
+    # Branch 2: per-path pathType: Prefix -> PathPrefix
+    - name: prefix-object
+      paths:
+        - path: /prefix/
+          pathType: Prefix
+          backend:
+            service:
+              name: prefix-service
+
+    # Branch 3: neither pathType nor annotation -> default RegularExpression
+    - name: default-object
+      paths:
+        - path: /default(/|$)(.*)
+          backend:
+            service:
+              name: default-service
+
+    # Annotation wins over per-path pathType: use-regex overrides pathType: Prefix
+    - name: annotation-wins
+      annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
+      paths:
+        - path: /both/
+          pathType: Prefix
+          backend:
+            service:
+              name: both-service
+
+service:
+  port: 8080

@@ -1116,7 +1116,8 @@ global:
 | `gatewayAPI.upstreamHostOverride` | string | Per-route Host header override |
 | `gatewayAPI.additionalHostnames` | array | Per-route additional hostnames |
 | `paths` | array | List of path configurations with backend service references |
-| `paths[].path` | string | Path regex for routing (supports template rendering) |
+| `paths[].path` | string | Path value for routing (supports template rendering; regex or segment prefix depending on `pathType`) |
+| `paths[].pathType` | string | Ingress-spec path type. Only `Prefix` is honored — maps to HTTPRoute `PathPrefix` and overrides the `use-regex` annotation. Omit to fall back to the annotation branch (`RegularExpression` when `nginx.ingress.kubernetes.io/use-regex: "true"`) or the default `RegularExpression`. |
 | `paths[].backend.service.name` | string | Backend service name (defaults to Chart.Name) |
 | `paths[].backend.service.port` | int | Backend service port (defaults to `.Values.service.port`) |
 
@@ -1372,7 +1373,7 @@ To add GatewayAPI support to an existing service using nginx-ingress:
 
 1. **Envoy Gateway dependency**: Policies and HTTPRouteFilter require Envoy Gateway CRDs (`gateway.envoyproxy.io/v1alpha1`)
 2. **No auto-translation**: Nginx annotations are NOT automatically converted - you must add policy config to `values.yaml` based on migration suggestions
-3. **Path type**: All HTTPRoute paths use `RegularExpression` type to maintain compatibility with nginx regex patterns
+3. **Path match type**: HTTPRoute path `type` is selected by the following precedence: (1) per-path `pathType: Prefix` in `ingress.objects[].paths[].pathType` → `PathPrefix`; (2) `nginx.ingress.kubernetes.io/use-regex: "true"` object annotation → `RegularExpression` (nginx-regex compatibility branch); (3) default → `RegularExpression` (preserves prior hardcoded behavior). To opt into segment-prefix matching for an individual path, set `pathType: Prefix` on that path. Only `Prefix` is honored — `Exact` and `RegularExpression` values fall through to the annotation/default branches.
 4. **Gateway must exist**: The parent Gateway resource must be deployed before HTTPRoutes and policies can bind to it
 5. **Server alias regex limitation**: Gateway API supports wildcards (`*.domain.com`) but NOT regex patterns like nginx `server-alias`
 6. **ClientTrafficPolicy scope**: ClientTrafficPolicy attaches to the Gateway itself, not individual routes, so settings affect all routes through that Gateway

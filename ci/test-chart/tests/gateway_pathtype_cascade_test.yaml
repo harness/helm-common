@@ -1,0 +1,59 @@
+suite: HTTPRoute path match type cascade (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-pathtype-cascade.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: use-regex annotation falls through to RegularExpression when no pathType is set
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: annotated-service
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: RegularExpression
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /annotated(/|$)(.*)
+
+  - it: per-path pathType Prefix maps to Gateway API PathPrefix
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: prefix-service
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: PathPrefix
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /prefix/
+
+  - it: no pathType and no use-regex annotation defaults to RegularExpression
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: default-service
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: RegularExpression
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /default(/|$)(.*)
+
+  - it: use-regex annotation wins over per-path pathType Prefix
+    documentSelector:
+      path: spec.rules[0].backendRefs[0].name
+      value: both-service
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: RegularExpression
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /both/
