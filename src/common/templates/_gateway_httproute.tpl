@@ -171,9 +171,27 @@ spec:
     {{- $hasRequestHeaders := or $globalHttpRoute.requestHeaders $perRouteHttpRoute.requestHeaders }}
     {{- $hasResponseHeaders := or $globalHttpRoute.responseHeaders $perRouteHttpRoute.responseHeaders }}
     {{- $needsFilters := or $hasRewriteTarget $hasUpstreamVhost $hasRequestHeaders $hasResponseHeaders }}
+    {{- /* Determine HTTPRoute path match type.
+    Precedence:
+      1. nginx `use-regex: "true"` annotation on the ingress object -> RegularExpression.
+      2. Per-path `pathType: Prefix` -> PathPrefix.
+      3. Default -> RegularExpression. */}}
+    {{- $useRegexAnn := false }}
+    {{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/use-regex") }}
+      {{- if eq (lower (toString (index $objectAnnotations "nginx.ingress.kubernetes.io/use-regex"))) "true" }}
+        {{- $useRegexAnn = true }}
+      {{- end }}
+    {{- end }}
+    {{- $pathType := dig "pathType" "" $idx }}
+    {{- $pathMatchType := "RegularExpression" }}
+    {{- if $useRegexAnn }}
+      {{- $pathMatchType = "RegularExpression" }}
+    {{- else if eq $pathType "Prefix" }}
+      {{- $pathMatchType = "PathPrefix" }}
+    {{- end }}
     - matches:
         - path:
-            type: RegularExpression
+            type: {{ $pathMatchType }}
             value: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
       {{- if $needsFilters }}
       filters:
