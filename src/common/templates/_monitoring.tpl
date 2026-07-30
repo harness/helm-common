@@ -117,7 +117,7 @@ spec:
     matchLabels:
       {{ .label }}: {{ default $.Chart.Name .name }}
   podMetricsEndpoints:
-    - targetPort: {{ default 8889 (int $port) }}
+    - portNumber: {{ default 8889 (int $port) }}
       interval: {{ default "120s" $interval }}
       path: {{ default "/metrics" $path | quote }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).PodMetricsEndpointsConfig) "context" $ ) | nindent 6 }}
