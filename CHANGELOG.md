@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.3] - 2026-08-08
+
+### Fixed
+- **`ClientTrafficPolicy` targetRef namespace field removed**: `_gateway_clienttrafficpolicy.tpl` no longer renders `spec.targetRefs[0].namespace`. Envoy Gateway's `LocalPolicyTargetReference` type (used by ClientTrafficPolicy) has no `namespace` field in its CRD schema — policies only attach within their own namespace. The extra field passed silently under Helm 3's looser validation but fails server-side-apply schema validation under Helm 4 (`field not declared in schema`).
+
 ## [1.9.1] - 2026-07-27
 
 ### Added

@@ -33,9 +33,6 @@ tests:
       - equal:
           path: spec.targetRefs[0].name
           value: test-gateway
-      - equal:
-          path: spec.targetRefs[0].namespace
-          value: gateway-system
 
   - it: ClientTrafficPolicy should have correct connection settings
     documentSelector:
