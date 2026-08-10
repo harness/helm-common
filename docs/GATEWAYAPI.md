@@ -866,9 +866,9 @@ global:
         enabled: true
         connection:
           bufferLimit: "100Mi"           # 100MB max request body
-          connectionIdleTimeout: "300s"
         timeout:
           http:
+            idleTimeout: "300s"
             requestReceivedTimeout: "60s"
         http2:
           maxConcurrentStreams: 1000
@@ -1060,7 +1060,7 @@ global:
 |-----------|------|---------|-------------|
 | `enabled` | bool | `false` | Enable ClientTrafficPolicy (attaches to Gateway) |
 | `connection.bufferLimit` | string | `""` | Client request buffer limit (e.g., "100Mi") - equivalent to nginx proxy-body-size |
-| `connection.connectionIdleTimeout` | string | `""` | Client connection idle timeout (e.g., "300s") |
+| `timeout.http.idleTimeout` | string | `""` | Client connection idle timeout (e.g., "300s") |
 | `timeout.http.requestReceivedTimeout` | string | `""` | Request received timeout (e.g., "60s") - equivalent to nginx client_body_timeout |
 | `http2.maxConcurrentStreams` | int | `0` | Max concurrent HTTP/2 streams |
 | `path.disableMergeSlashes` | bool | `false` | Preserve consecutive slashes in request paths (envoy merges them by default) |

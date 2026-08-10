@@ -36,9 +36,9 @@ global:
         enabled: true
         connection:
           bufferLimit: "100Mi"
-          connectionIdleTimeout: "300s"
         timeout:
           http:
+            idleTimeout: "300s"
             requestReceivedTimeout: "60s"
         http2:
           maxConcurrentStreams: 1000

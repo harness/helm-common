@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.4] - 2026-08-10
+
+### Fixed
+- **`ClientTrafficPolicy` empty-block and invalid-field schema errors**: `_gateway_clienttrafficpolicy.tpl` had two remaining CRD schema mismatches. First, `connection`/`timeout` blocks were gated on parent dict existence rather than leaf field values, so charts using the library's own empty-string defaults (`values.yaml` `clientTraffic.connection`/`timeout`) rendered `connection:`/`timeout:` keys with nothing under them — `null`, rejected by the CRD (`must be of type object: "null"`). All leaf fields now resolved via `dig` and the parent block only renders when a leaf has a real value, which also makes the template safe when `connection`/`timeout`/`http2`/`path` are omitted entirely. Second, `connection.connectionIdleTimeout` was not a field the ClientTrafficPolicy CRD recognizes under `connection` — Envoy Gateway's actual field is `timeout.http.idleTimeout`. **Breaking**: the values key moved and was renamed to match — `clientTraffic.connection.connectionIdleTimeout` is now `clientTraffic.timeout.http.idleTimeout`.
+
 ## [1.9.3] - 2026-08-08
 
 ### Fixed

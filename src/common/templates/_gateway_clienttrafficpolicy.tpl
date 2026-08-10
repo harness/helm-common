@@ -33,37 +33,39 @@ spec:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRef.name "context" $) }}
-  {{- if or $clientPolicy.connection $clientPolicy.timeout $clientPolicy.http2 $clientPolicy.path }}
-  {{- if $clientPolicy.path }}
+  {{- $pathDisableMergeSlashes := dig "path" "disableMergeSlashes" "" $clientPolicy }}
+  {{- $pathEscapedSlashesAction := dig "path" "escapedSlashesAction" "" $clientPolicy }}
+  {{- $connectionBufferLimit := dig "connection" "bufferLimit" "" $clientPolicy }}
+  {{- $timeoutIdleTimeout := dig "timeout" "http" "idleTimeout" "" $clientPolicy }}
+  {{- $timeoutRequestReceivedTimeout := dig "timeout" "http" "requestReceivedTimeout" "" $clientPolicy }}
+  {{- $http2MaxConcurrentStreams := dig "http2" "maxConcurrentStreams" 0 $clientPolicy | int }}
+  {{- if or $pathDisableMergeSlashes $pathEscapedSlashesAction $connectionBufferLimit $timeoutIdleTimeout $timeoutRequestReceivedTimeout (gt $http2MaxConcurrentStreams 0) }}
+  {{- if or $pathDisableMergeSlashes $pathEscapedSlashesAction }}
   path:
-    {{- if $clientPolicy.path.disableMergeSlashes }}
-    disableMergeSlashes: {{ $clientPolicy.path.disableMergeSlashes }}
+    {{- if $pathDisableMergeSlashes }}
+    disableMergeSlashes: {{ $pathDisableMergeSlashes }}
     {{- end }}
-    {{- if $clientPolicy.path.escapedSlashesAction }}
-    escapedSlashesAction: {{ $clientPolicy.path.escapedSlashesAction }}
+    {{- if $pathEscapedSlashesAction }}
+    escapedSlashesAction: {{ $pathEscapedSlashesAction }}
     {{- end }}
   {{- end }}
-  {{- if $clientPolicy.connection }}
+  {{- if $connectionBufferLimit }}
   connection:
-    {{- if $clientPolicy.connection.bufferLimit }}
-    bufferLimit: {{ $clientPolicy.connection.bufferLimit }}
-    {{- end }}
-    {{- if $clientPolicy.connection.connectionIdleTimeout }}
-    connectionIdleTimeout: {{ $clientPolicy.connection.connectionIdleTimeout }}
-    {{- end }}
+    bufferLimit: {{ $connectionBufferLimit }}
   {{- end }}
-  {{- if $clientPolicy.timeout }}
+  {{- if or $timeoutIdleTimeout $timeoutRequestReceivedTimeout }}
   timeout:
-    {{- if $clientPolicy.timeout.http }}
     http:
-      {{- if $clientPolicy.timeout.http.requestReceivedTimeout }}
-      requestReceivedTimeout: {{ $clientPolicy.timeout.http.requestReceivedTimeout }}
+      {{- if $timeoutIdleTimeout }}
+      idleTimeout: {{ $timeoutIdleTimeout }}
       {{- end }}
-    {{- end }}
+      {{- if $timeoutRequestReceivedTimeout }}
+      requestReceivedTimeout: {{ $timeoutRequestReceivedTimeout }}
+      {{- end }}
   {{- end }}
-  {{- if and $clientPolicy.http2 $clientPolicy.http2.maxConcurrentStreams (gt ($clientPolicy.http2.maxConcurrentStreams | int) 0) }}
+  {{- if gt $http2MaxConcurrentStreams 0 }}
   http2:
-    maxConcurrentStreams: {{ $clientPolicy.http2.maxConcurrentStreams | int }}
+    maxConcurrentStreams: {{ $http2MaxConcurrentStreams }}
   {{- end }}
   {{- end }}
 {{- end }} {{/* if parentRef.name */}}
