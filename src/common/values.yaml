@@ -129,11 +129,11 @@ global:
         connection:
           # e.g., "1024Mi" - equivalent to nginx proxy-body-size
           bufferLimit: ""
-          # e.g., "3600s"
-          connectionIdleTimeout: ""
         # Client-side timeouts
         timeout:
           http:
+            # e.g., "3600s"
+            idleTimeout: ""
             # e.g., "3600s" - equivalent to nginx client_body_timeout
             requestReceivedTimeout: ""
         # HTTP/2 settings

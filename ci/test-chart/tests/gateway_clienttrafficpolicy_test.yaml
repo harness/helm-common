@@ -42,15 +42,15 @@ tests:
       - equal:
           path: spec.connection.bufferLimit
           value: 100Mi
-      - equal:
-          path: spec.connection.connectionIdleTimeout
-          value: 300s
 
   - it: ClientTrafficPolicy should have correct timeout settings
     documentSelector:
       path: kind
       value: ClientTrafficPolicy
     asserts:
+      - equal:
+          path: spec.timeout.http.idleTimeout
+          value: 300s
       - equal:
           path: spec.timeout.http.requestReceivedTimeout
           value: 60s
