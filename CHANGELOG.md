@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.5] - 2026-08-11
+
+### Fixed
+- **Nondeterministic env var ordering in `renderSecretsAsEnvironmentVariables`**: `_eso-secrets-helper.tpl`'s `$mergedSecretKeys` was built with `keys ... | uniq`, and Go's `keys` iterates maps in random order. Every `helm template`/`helm upgrade` could emit the pod's env vars in a different order, causing the container spec hash to change and triggering spurious pod rollouts on every apply even with no actual config change. `sortAlpha` is now applied after `uniq` so key order is stable across renders.
+
 ## [1.9.4] - 2026-08-10
 
 ### Fixed
