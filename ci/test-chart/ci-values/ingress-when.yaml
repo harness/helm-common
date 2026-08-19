@@ -1,0 +1,69 @@
+# Scenario: per-object when (allOf / anyOf / not) for harnesscommon.v1.renderIngress
+global:
+  ng:
+    enabled: true
+  cg:
+    enabled: true
+  featureA:
+    enabled: false
+  featureB:
+    enabled: true
+  ingress:
+    enabled: true
+    className: "nginx"
+    hosts:
+      - "test.example.com"
+    objects: {}
+ingress:
+  objects:
+    # Skipped: cg.enabled is true, so not equals "true" fails
+    - name: skipped-when-cg
+      when:
+        not:
+          key: global.cg.enabled
+          equals: "true"
+      paths:
+        - path: /
+          pathType: Prefix
+    # Included: ng on AND (featureA OR featureB)
+    - name: included-allof-anyof
+      when:
+        allOf:
+          - key: global.ng.enabled
+            equals: "true"
+          - anyOf:
+              - key: global.featureA.enabled
+                equals: "true"
+              - key: global.featureB.enabled
+                equals: "true"
+      paths:
+        - path: /ng
+          pathType: Prefix
+    # Always included (no when)
+    - name: always-included
+      paths:
+        - path: /always
+          pathType: Prefix
+    # Included: false values must not be treated as empty
+    - name: included-equals-false
+      when:
+        key: global.featureA.enabled
+        equals: "false"
+      paths:
+        - path: /feature-a-disabled
+          pathType: Prefix
+    # Skipped: absent path is treated as false, not a fail
+    - name: skipped-missing-key
+      when:
+        key: global.missing.enabled
+      paths:
+        - path: /missing
+          pathType: Prefix
+    # Included: absent path equals "false"
+    - name: included-missing-equals-false
+      when:
+        key: global.missing.enabled
+        equals: "false"
+      paths:
+        - path: /missing-off
+          pathType: Prefix

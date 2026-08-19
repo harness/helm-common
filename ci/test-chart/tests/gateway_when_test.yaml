@@ -1,0 +1,44 @@
+suite: HTTPRoute when conditions (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-when.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should skip the false when object (no extra Ingress/HTTPRoute/HTTPRouteFilter)
+    asserts:
+      - hasDocuments:
+          count: 5
+
+  - it: should render HTTPRoute when when is true
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /ng(/|$)(.*)
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: included-httproute
+
+  - it: should render HTTPRoute when when is omitted
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /always
+    asserts:
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: always-httproute
+
+  - it: should emit HTTPRouteFilter for included rewrite objects
+    documentSelector:
+      path: metadata.name
+      value: included-httproute-ng-ad548b
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter

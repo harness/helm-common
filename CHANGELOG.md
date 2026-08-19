@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.6] - 2026-08-19
+
+### Added
+- **Per-object Ingress / HTTPRoute `when` conditions**: `harnesscommon.utils.evalWhen` gates each `ingress.objects[]` entry (`key`/`equals` default `"true"`, `allOf`, `anyOf`, `not`). If `when` is omitted, the object still renders (backward compatible). When `when` is set, the object is rendered only if the tree evaluates to true. A missing or non-map values path is treated as `"false"` rather than failing the Helm render. The same helper is used for Ingress, HTTPRoute, and HTTPRouteFilter (filters follow the parent object's `when`).
+
 ## [1.9.5] - 2026-08-11
 
 ### Fixed

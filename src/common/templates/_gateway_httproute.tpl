@@ -49,6 +49,7 @@ where $renderedPath is the already-rendered path string.
 {{- end }}
 {{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
 {{- range $index, $object := $ingress.objects }}
+{{- if eq (include "harnesscommon.utils.evalWhen" (dict "ctx" $ "when" (dig "when" dict $object)) | trim) "true" }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
 {{- $objectAnnotations := dig "annotations" dict $object }}
 {{- /* Print migration suggestions if nginx annotations are detected */}}
@@ -370,6 +371,7 @@ spec:
 {{- end }} {{/* Range over chunk paths */}}
 {{- end }} {{/* If to create HTTPRouteFilter */}}
 {{- end }} {{/* Range over chunks */}}
+{{- end }} {{/* object when */}}
 {{- end }} {{/* Range over all the ingress keys */}}
 {{- end }} {{/* if gateway / ingress enabled */}}
 {{- end }} {{/* define */}}
