@@ -1,0 +1,39 @@
+# Per-object when for HTTPRoute and HTTPRouteFilter (same objects as Ingress)
+global:
+  ng:
+    enabled: true
+  cg:
+    enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - test.example.com
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+ingress:
+  objects:
+    - name: skipped-httproute
+      when:
+        not:
+          key: global.cg.enabled
+          equals: "true"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+      paths:
+        - path: /skipped(/|$)(.*)
+    - name: included-httproute
+      when:
+        key: global.ng.enabled
+        equals: "true"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+      paths:
+        - path: /ng(/|$)(.*)
+    - name: always-httproute
+      paths:
+        - path: /always
+service:
+  port: 8080

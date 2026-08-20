@@ -1,0 +1,42 @@
+suite: Ingress when conditions (harnesscommon.v1.renderIngress)
+values:
+  - ../values.yaml
+  - ../ci-values/ingress-when.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should skip objects whose when evaluates false and render the rest
+    asserts:
+      - hasDocuments:
+          count: 4
+      - equal:
+          path: metadata.name
+          value: included-allof-anyof
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: always-included
+        documentIndex: 1
+      - isKind:
+          of: Ingress
+        documentIndex: 0
+      - isKind:
+          of: Ingress
+        documentIndex: 1
+      - equal:
+          path: metadata.name
+          value: included-equals-false
+        documentIndex: 2
+      - isKind:
+          of: Ingress
+        documentIndex: 2
+      - equal:
+          path: metadata.name
+          value: included-missing-equals-false
+        documentIndex: 3
+      - isKind:
+          of: Ingress
+        documentIndex: 3

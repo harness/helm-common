@@ -15,6 +15,7 @@ resources (HTTPRoute, BackendTrafficPolicy, ClientTrafficPolicy, SecurityPolicy)
 {{- end }}
 {{- if $.Values.global.ingress.enabled -}}
 {{- range $index, $object := $ingress.objects }}
+{{- if eq (include "harnesscommon.utils.evalWhen" (dict "ctx" $ "when" (dig "when" dict $object)) | trim) "true" }}
 {{- $resolvedHosts := list }}
 {{- range $.Values.global.ingress.hosts }}
   {{- $resolvedHosts = append $resolvedHosts . }}
@@ -104,6 +105,7 @@ spec:
       secretName: {{ $.Values.global.ingress.tls.secretName }}
   {{- end }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if and (hasKey .ctx.Values.global "gatewayAPI") (dig "gatewayAPI" "enabled" false .ctx.Values.global) }}
