@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.7] - 2026-08-24
+
+### Changed
+- **Gateway API resources can render without Kubernetes Ingress resources**: `global.gatewayAPI.enabled: true` now renders configured Gateway API routes and policies independently of `global.ingress.enabled`. Set `global.ingress.enabled: false` to deploy HTTPRoutes without their corresponding Ingress objects. Existing installations with both flags enabled are unchanged.
+
 ## [1.9.6] - 2026-08-19
 
 ### Added

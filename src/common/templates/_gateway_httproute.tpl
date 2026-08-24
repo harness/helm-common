@@ -47,7 +47,7 @@ where $renderedPath is the already-rendered path string.
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
+{{- if dig "gatewayAPI" "enabled" false $.Values.global -}}
 {{- range $index, $object := $ingress.objects }}
 {{- if eq (include "harnesscommon.utils.evalWhen" (dict "ctx" $ "when" (dig "when" dict $object)) | trim) "true" }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-" $index) | nospace) $object }}
@@ -373,5 +373,5 @@ spec:
 {{- end }} {{/* Range over chunks */}}
 {{- end }} {{/* object when */}}
 {{- end }} {{/* Range over all the ingress keys */}}
-{{- end }} {{/* if gateway / ingress enabled */}}
+{{- end }} {{/* if gateway enabled */}}
 {{- end }} {{/* define */}}

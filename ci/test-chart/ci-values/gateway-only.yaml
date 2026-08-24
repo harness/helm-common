@@ -1,0 +1,25 @@
+# Gateway API resources can render without Kubernetes Ingress resources.
+global:
+  ingress:
+    enabled: false
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: test-service
+
+service:
+  port: 8080

@@ -25,7 +25,7 @@ ingress:
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
+{{- if dig "gatewayAPI" "enabled" false $.Values.global -}}
 {{- $policies := dig "backendTLSPolicies" list $ingress }}
 {{- range $index, $policy := $policies }}
 {{- $policyName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-backend-tls-" $index) | nospace) $policy }}

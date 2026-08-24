@@ -15,7 +15,7 @@ Supports hybrid approach (Option C):
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
+{{- if dig "gatewayAPI" "enabled" false $.Values.global -}}
 
 {{- $globalSecurityPolicy := dig "policies" "security" dict $.Values.global.gatewayAPI }}
 {{- $hasGlobalPolicy := and $globalSecurityPolicy (dig "enabled" false $globalSecurityPolicy) }}
@@ -198,5 +198,5 @@ spec:
   {{- end }}
 {{- end }}
 
-{{- end }} {{/* if gateway / ingress enabled */}}
+{{- end }} {{/* if gateway enabled */}}
 {{- end }} {{/* define */}}
