@@ -1,0 +1,22 @@
+suite: Gateway API without Kubernetes Ingress
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-only.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: renders an HTTPRoute without rendering a corresponding Ingress
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: metadata.name
+          value: api-routes
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: test-service

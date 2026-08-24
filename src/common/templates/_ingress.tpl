@@ -4,8 +4,9 @@ USAGE:
 or
 {{- include "harnesscommon.v1.renderIngress" (dict "ingress" .Values.other.ingress "ctx" $) }}
 
-When global.gatewayAPI.enabled is true, this template also renders Gateway API
-resources (HTTPRoute, BackendTrafficPolicy, ClientTrafficPolicy, SecurityPolicy).
+This helper controls the two resource families independently:
+- global.ingress.enabled renders Kubernetes Ingress resources.
+- global.gatewayAPI.enabled renders Gateway API routes and policies.
 */}}
 {{- define "harnesscommon.v1.renderIngress" }}
 {{- $ := .ctx }}

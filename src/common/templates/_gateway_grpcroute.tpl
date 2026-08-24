@@ -32,7 +32,7 @@ ingress:
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
+{{- if dig "gatewayAPI" "enabled" false $.Values.global -}}
 {{- $grpcRoutes := dig "grpcRoutes" list $ingress }}
 {{- range $index, $route := $grpcRoutes }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-grpc-" $index) | nospace) $route }}

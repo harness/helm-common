@@ -23,7 +23,7 @@ ingress:
 {{- if .ingress -}}
     {{- $ingress = .ingress }}
 {{- end }}
-{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) -}}
+{{- if dig "gatewayAPI" "enabled" false $.Values.global -}}
 {{- $tlsRoutes := dig "tlsRoutes" list $ingress }}
 {{- range $index, $route := $tlsRoutes }}
 {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-tls-" $index) | nospace) $route }}

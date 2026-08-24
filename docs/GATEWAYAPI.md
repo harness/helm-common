@@ -987,12 +987,12 @@ ingress:
 
 ## Template Usage
 
-The recommended approach is to use a single `renderIngress` call which automatically renders
-both traditional Ingress AND Gateway API resources (HTTPRoute + policies) when
-`global.gatewayAPI.enabled` is true:
+The recommended approach is to use a single `renderIngress` call. It independently renders
+traditional Ingress resources when `global.ingress.enabled` is true and Gateway API resources
+(HTTPRoute + policies) when `global.gatewayAPI.enabled` is true:
 
 ```yaml
-# templates/ingress.yaml (renders Ingress + Gateway API resources when enabled)
+# templates/ingress.yaml (renders each resource family when its flag is enabled)
 {{- include "harnesscommon.v1.renderIngress" (dict "ctx" $) }}
 ```
 
@@ -1364,9 +1364,11 @@ To add GatewayAPI support to an existing service using nginx-ingress:
 
 5. **Optional: Disable Ingress** once GatewayAPI is validated:
    ```yaml
-   # In the future, you can disable traditional Ingress
-   # ingress:
-   #   enabled: false  # Disable old Ingress resources
+   global:
+     ingress:
+       enabled: false  # Do not render Kubernetes Ingress resources
+     gatewayAPI:
+       enabled: true   # Continue rendering Gateway API resources
    ```
 
 ## Limitations and Caveats
@@ -1433,7 +1435,7 @@ global:
 ### HTTPRoutes not being created
 
 **Check**:
-- Both `global.gatewayAPI.enabled` and `global.ingress.enabled` must be `true`
+- `global.gatewayAPI.enabled` is `true`; `global.ingress.enabled` may be `false`
 - At least one ingress object must be defined in `ingress.objects`
 - Parent Gateway resource exists: `kubectl get gateway -A`
 

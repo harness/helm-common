@@ -1,7 +1,7 @@
 global:
   ha: false
   gatewayAPI:
-    # Enable GatewayAPI HTTPRoute generation (requires global.ingress.enabled)
+    # Enable Gateway API routes and policies independently of global.ingress.enabled
     enabled: false
     # Default parent Gateway reference for all HTTPRoutes
     parentRef:
