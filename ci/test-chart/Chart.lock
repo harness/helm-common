@@ -1,6 +1,6 @@
 dependencies:
 - name: harness-common
   repository: file://../../src/common
-  version: 1.9.7
-digest: sha256:c747685f90f25fc4d6b27ae6c72d5339d977052f40a6201f5c1050d33b1e8285
-generated: "2026-08-24T15:19:06.633153+05:30"
+  version: 1.9.8
+digest: sha256:7025eac7a26f1c32b6ec9c4f80ad643f09a5c50476a230aeaacaa7e2dd1e5ded
+generated: "2026-08-29T23:10:09.543088+05:30"
