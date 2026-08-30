@@ -61,7 +61,9 @@ metadata:
         {{- end }}
     {{- end }}
 spec:
+  {{- if $.Values.global.ingress.className }}
   ingressClassName: {{ $.Values.global.ingress.className | quote }}
+  {{- end }}
   rules:
     {{- if $.Values.global.ingress.disableHostInIngress }}
     - http:

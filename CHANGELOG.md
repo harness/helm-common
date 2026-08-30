@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.8] - 2026-08-29
+
+### Fixed
+- Omit `spec.ingressClassName` when `global.ingress.className` is empty.
+
 ## [1.9.7] - 2026-08-24
 
 ### Changed
