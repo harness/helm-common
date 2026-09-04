@@ -119,6 +119,9 @@ spec:
   podMetricsEndpoints:
     - portNumber: {{ default 8889 (int $port) }}
       interval: {{ default "120s" $interval }}
+      {{- with $.Values.global.monitoring.prometheusPodMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
       path: {{ default "/metrics" $path | quote }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).PodMetricsEndpointsConfig) "context" $ ) | nindent 6 }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" ((($.Values).monitoring).additionalPodMetricsEndpoints) "context" $ ) | nindent 4 }}
