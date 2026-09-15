@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.9] - 2026-09-21
+
+### Added
+- **Shared dbopsMigration init container templates**: `harnesscommon.dbopsMigration.enabled` and `harnesscommon.dbopsMigration.initContainers` allow any service to render wait-for + dbops-helm-migrate init containers. DB-agnostic — callers inject their own database env vars via `envIncludes`.
+
 ## [1.9.8] - 2026-08-29
 
 ### Fixed
