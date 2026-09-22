@@ -190,6 +190,12 @@ USAGE:
 {{/*
 Generates ESO External Secret CRD
 
+Automatically selects the appropriate API version:
+- Uses external-secrets.io/v1 if available (ESO 0.16.2+)
+- Falls back to external-secrets.io/v1beta1 if v1 is not available (pre-0.17.0)
+
+Note: v1beta1 support was removed in ESO v0.17.0
+
 USAGE:
 {{ include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" . "secretsCtx" .Values.secrets "secretIdentifier" "local") }}
 */}}
@@ -204,7 +210,16 @@ USAGE:
             {{- if gt $esoSecretIdx 0 }}
 {{ printf "\n---"  }}
             {{- end }}
+            {{- /* Detect which API version to use based on CRD availability */ -}}
+            {{- $useV1API := false }}
+            {{- if $.Capabilities.APIVersions.Has "external-secrets.io/v1/ExternalSecret" }}
+              {{- $useV1API = true }}
+            {{- end }}
+{{- if $useV1API }}
+apiVersion: external-secrets.io/v1
+{{- else }}
 apiVersion: external-secrets.io/v1beta1
+{{- end }}
 kind: ExternalSecret
 metadata:
   name: {{ $esoSecretName }}
