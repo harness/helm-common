@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.10] - 2026-09-24
+
+### Added
+- **`secrets.kubernetesSecrets` now also supports a map shape, keyed by `secretName`**: previously `kubernetesSecrets` was always a list of `{secretName, keys}` objects. Helm replaces (never merges) list values across `-f` layers, so any chart that already ships a native `kubernetesSecrets` entry (e.g. `minio` root credentials) had that entry silently dropped whenever a second values layer (e.g. an `override-secrets.yaml`-style file) also wrote to `secrets.kubernetesSecrets` for the same chart — the only workaround was to hand-copy the chart's native entries into every override file. `_ext-k8s-secrets-helper.tpl` (`hasExtKubernetesSecret`, `manageExtKubernetesSecretEnv`, `getExternalKubernetesSecretName`, `getExtSecretKey`), `_eso-secrets-volume.tpl` (`manageExtKubernetesSecretVolumes`), and `_eso-secrets-helper.tpl` (`renderSecretsAsVolumes`) now detect at render time whether `secrets.kubernetesSecrets` (or any per-source context passed into `extKubernetesSecretCtxs`) is a list or a map, and handle both. Charts that migrate `secrets.kubernetesSecrets` from a list to a map (e.g. `- secretName: minio\n  keys: {...}` becomes `minio:\n  keys: {...}`) get real deep-merge behavior from Helm across `-f` layers — native entries and override entries can now coexist without manual re-declaration. **Fully backward compatible**: charts that keep the legacy list shape are completely unaffected; only `secrets.kubernetesSecrets` changed — `secrets.default` and `secretManagement.externalSecretsOperator` are untouched and still list/map as before.
+
 ## [1.9.9] - 2026-09-21
 
 ### Added

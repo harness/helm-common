@@ -13,9 +13,13 @@ helm dependency update "$CHART_DIR"
 
 run_scenario() {
   local name="$1"
-  local values_file="$2"
-  echo "  Scenario: $name (${values_file})"
-  helm template "$RELEASE_NAME" "$CHART_DIR" -f "$values_file" >/dev/null
+  shift
+  local args=()
+  for values_file in "$@"; do
+    args+=(-f "$values_file")
+  done
+  echo "  Scenario: $name ($*)"
+  helm template "$RELEASE_NAME" "$CHART_DIR" "${args[@]}" >/dev/null
 }
 
 echo "Rendering scenarios..."
@@ -38,6 +42,8 @@ run_scenario "Gateway API (nil ingress)" "${VALUES_DIR}/gateway-nil-ingress.yaml
 run_scenario "Gateway API (duplicate filter)" "${VALUES_DIR}/gateway-duplicate-filter.yaml"
 run_scenario "Gateway API (rewrite filter)" "${VALUES_DIR}/gateway-rewrite-filter.yaml"
 run_scenario "Gateway API (pathType cascade)" "${VALUES_DIR}/gateway-pathtype-cascade.yaml"
+run_scenario "K8s Secrets (list shape, regression)" "${VALUES_DIR}/kubernetes-secrets-list-shape.yaml" "${VALUES_DIR}/kubernetes-secrets-list-shape-override.yaml"
+run_scenario "K8s Secrets (map shape, deep-merge)" "${VALUES_DIR}/kubernetes-secrets-map-shape.yaml" "${VALUES_DIR}/kubernetes-secrets-map-shape-override.yaml"
 echo "All template scenarios passed."
 
 echo ""

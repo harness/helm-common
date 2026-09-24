@@ -5,10 +5,25 @@
 {{- $hasExtKubernetesSecret := "false" }}
 {{- if .variableName }}
   {{- range .extKubernetesSecretCtxs }}
-    {{- range . }}
-      {{- if and . .secretName .keys }}
-        {{- if and (hasKey .keys $.variableName) (get .keys $.variableName) }}
-          {{- $hasExtKubernetesSecret = "true" }}
+    {{- $secretCtx := . }}
+    {{- /* secrets.kubernetesSecrets supports two shapes for backward compatibility:
+           - legacy list: [{secretName: "...", keys: {...}}, ...]
+           - map (keyed by secretName): {"...": {keys: {...}}, ...} -- deep-mergeable by Helm
+    */}}
+    {{- if eq (kindOf $secretCtx) "map" }}
+      {{- range $secretName, $secretVal := $secretCtx }}
+        {{- if and $secretName $secretVal $secretVal.keys }}
+          {{- if and (hasKey $secretVal.keys $.variableName) (get $secretVal.keys $.variableName) }}
+            {{- $hasExtKubernetesSecret = "true" }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+      {{- range $secretCtx }}
+        {{- if and . .secretName .keys }}
+          {{- if and (hasKey .keys $.variableName) (get .keys $.variableName) }}
+            {{- $hasExtKubernetesSecret = "true" }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -31,12 +46,25 @@
 {{- $secretKey := "" }}
 {{- if $variableName }}
   {{- range .extKubernetesSecretCtxs }}
-    {{- range . }}
-      {{- if and . .secretName .keys }}
-        {{- $currSecretKey := (get .keys $variableName) }}
-        {{- if and (hasKey .keys $variableName) $currSecretKey }}
-          {{- $secretName = .secretName }}
-          {{- $secretKey = $currSecretKey }}
+    {{- $secretCtx := . }}
+    {{- if eq (kindOf $secretCtx) "map" }}
+      {{- range $sName, $secretVal := $secretCtx }}
+        {{- if and $sName $secretVal $secretVal.keys }}
+          {{- $currSecretKey := (get $secretVal.keys $variableName) }}
+          {{- if and (hasKey $secretVal.keys $variableName) $currSecretKey }}
+            {{- $secretName = $sName }}
+            {{- $secretKey = $currSecretKey }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+      {{- range $secretCtx }}
+        {{- if and . .secretName .keys }}
+          {{- $currSecretKey := (get .keys $variableName) }}
+          {{- if and (hasKey .keys $variableName) $currSecretKey }}
+            {{- $secretName = .secretName }}
+            {{- $secretKey = $currSecretKey }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -58,11 +86,23 @@
 {{- $secret := .secret -}}
 {{- $kubernetesSecretName := "" -}}
 {{- if not (empty .secretsCtx) -}}
-  {{- range $secretIdx, $kubernetesSecret := .secretsCtx -}}
-    {{- if not (empty $kubernetesSecret.secretName) -}}
-      {{- with $kubernetesSecret.keys -}}
-        {{- if and (hasKey . $secret) (not (empty (get . $secret))) -}}
-          {{- $kubernetesSecretName = $kubernetesSecret.secretName -}}
+  {{- if eq (kindOf .secretsCtx) "map" -}}
+    {{- range $sName, $kubernetesSecret := .secretsCtx -}}
+      {{- if not (empty $sName) -}}
+        {{- with $kubernetesSecret.keys -}}
+          {{- if and (hasKey . $secret) (not (empty (get . $secret))) -}}
+            {{- $kubernetesSecretName = $sName -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- range $secretIdx, $kubernetesSecret := .secretsCtx -}}
+      {{- if not (empty $kubernetesSecret.secretName) -}}
+        {{- with $kubernetesSecret.keys -}}
+          {{- if and (hasKey . $secret) (not (empty (get . $secret))) -}}
+            {{- $kubernetesSecretName = $kubernetesSecret.secretName -}}
+          {{- end -}}
         {{- end -}}
       {{- end -}}
     {{- end -}}
@@ -80,6 +120,17 @@
 {{- define "harnesscommon.secrets.getExtSecretKey" -}}
 {{- $secret := .secret -}}
 {{- $kubernetesSecretName := "" -}}
+{{- if eq (kindOf .secretsCtx) "map" -}}
+  {{- range $sName, $kubernetesSecret := .secretsCtx -}}
+    {{- if not (empty $sName) -}}
+      {{- with $kubernetesSecret.keys -}}
+        {{- if and (hasKey . $secret) (not (empty (get . $secret))) -}}
+          {{- $kubernetesSecretName = (get . $secret) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
   {{- range $secretIdx, $kubernetesSecret := .secretsCtx -}}
     {{- if not (empty $kubernetesSecret.secretName) -}}
       {{- with $kubernetesSecret.keys -}}
@@ -89,5 +140,6 @@
       {{- end -}}
     {{- end -}}
   {{- end -}}
+{{- end -}}
   {{- print $kubernetesSecretName -}}
 {{- end -}}

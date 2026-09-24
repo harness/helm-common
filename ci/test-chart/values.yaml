@@ -62,3 +62,6 @@ virtualService:
   objects: []
 service:
   port: 80
+# Empty by default (falsy) so kubernetes-secrets-test.yaml stays inert for every other
+# scenario; ci-values/kubernetes-secrets-*.yaml overlays populate it for that scenario only.
+secrets: {}

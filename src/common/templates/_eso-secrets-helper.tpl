@@ -325,11 +325,18 @@ USAGE:
     {{- end }}
 {{- end }}
 {{- range $value := $extKubernetesSecretCtxs }}
-    {{- range $v := $value }}
+    {{- $isMapShape := eq (kindOf $value) "map" }}
+    {{- range $vKey, $v := $value }}
         {{- $secretListMap := list }}
         {{- $secretFound := false }}
+        {{- $currSecretName := "" }}
+        {{- if $isMapShape }}
+            {{- $currSecretName = $vKey }}
+        {{- else if and $v $v.secretName }}
+            {{- $currSecretName = $v.secretName }}
+        {{- end }}
         {{- range $variableName := $extKubernetesSecretsList }}
-            {{- if and $v $v.secretName $v.keys }}
+            {{- if and $v $currSecretName $v.keys }}
                     {{- if and (hasKey $v.keys $variableName) (get $v.keys $variableName) }}
                         {{- $secretListMap = append $secretListMap (dict "keyName" $variableName "secretKeyName" (get $v.keys $variableName)) }}
                         {{- $secretFound = true }}
@@ -337,8 +344,7 @@ USAGE:
             {{- end }}
         {{- end }}
         {{- if $secretFound }}
-            {{- $secretName:= .secretName }}
-            {{- $extKubernetesSecretsMap = append $extKubernetesSecretsMap (dict $secretName $secretListMap) }}
+            {{- $extKubernetesSecretsMap = append $extKubernetesSecretsMap (dict $currSecretName $secretListMap) }}
         {{- end }}
     {{- end }}
 {{- end }}

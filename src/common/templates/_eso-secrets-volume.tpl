@@ -45,12 +45,25 @@
 {{- $secretKey := "" }}
 {{- if $variableName }}
   {{- range .extKubernetesSecretCtxs }}
-    {{- range . }}
-      {{- if and . .secretName .keys }}
-        {{- $currSecretKey := (get .keys $variableName) }}
-        {{- if and (hasKey .keys $variableName) $currSecretKey }}
-          {{- $secretName = .secretName }}
-          {{- $secretKey = $currSecretKey }}
+    {{- $secretCtx := . }}
+    {{- if eq (kindOf $secretCtx) "map" }}
+      {{- range $sName, $secretVal := $secretCtx }}
+        {{- if and $sName $secretVal $secretVal.keys }}
+          {{- $currSecretKey := (get $secretVal.keys $variableName) }}
+          {{- if and (hasKey $secretVal.keys $variableName) $currSecretKey }}
+            {{- $secretName = $sName }}
+            {{- $secretKey = $currSecretKey }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
+      {{- range $secretCtx }}
+        {{- if and . .secretName .keys }}
+          {{- $currSecretKey := (get .keys $variableName) }}
+          {{- if and (hasKey .keys $variableName) $currSecretKey }}
+            {{- $secretName = .secretName }}
+            {{- $secretKey = $currSecretKey }}
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
