@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.10] - 2026-09-25
+
+### Added
+- **`secrets.smpSharedKubernetesSecrets`**: a new, separate list-shape values key (same shape as `secrets.kubernetesSecrets`) for Harness-managed secret sources (e.g. `override-secrets.yaml`). It's checked in `manageAppEnv`/`manageAppVolumes`/`renderSecretsAsEnvironmentVariables`/`renderSecretsAsVolumes` with lower priority than `secrets.kubernetesSecrets`, so a real chart-native or customer `secrets.kubernetesSecrets` entry always wins on conflict, while a generic customer override to `secrets.kubernetesSecrets` can no longer silently drop an entry written here (they're separate keys, so nothing to collide). Precedence: `secrets.default` < `secrets.smpSharedKubernetesSecrets` < a real `secrets.kubernetesSecrets` entry < ESO. Fully additive; charts that don't set it are unaffected.
+
 ## [1.9.9] - 2026-09-21
 
 ### Added
