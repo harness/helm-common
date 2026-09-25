@@ -271,6 +271,10 @@ USAGE:
 {{- range $ind := .ctx.Values.secrets.kubernetesSecrets }}
     {{- $kubernetesSecretsList = merge $kubernetesSecretsList $ind.keys }}
 {{- end}}
+{{- $smpSharedKubernetesSecretsList := dict }}
+{{- range $ind := .ctx.Values.secrets.smpSharedKubernetesSecrets }}
+    {{- $smpSharedKubernetesSecretsList = merge $smpSharedKubernetesSecretsList $ind.keys }}
+{{- end}}
 {{- $ESOSecretsList := dict }}
 {{- range $ind := .ctx.Values.secrets.secretManagement.externalSecretsOperator }}
     {{- $ESOSecretsList = merge $ESOSecretsList $ind.remoteKeys }}
@@ -283,7 +287,7 @@ USAGE:
 {{- end}}
 {{- $defaultSecretName := dig "defaultSecretName" $.Chart.Name $.Values.secrets }}
 {{- $conditionsList := .ctx.Values.secrets }}
-{{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $ESOSecretsList | uniq | sortAlpha }}
+{{- $mergedSecretKeys := keys $defaultSecretList $kubernetesSecretsList $smpSharedKubernetesSecretsList $ESOSecretsList | uniq | sortAlpha }}
 {{- range $key := $mergedSecretKeys }}
     {{- if not (has $key $fileSecretMap) }}
     {{- $diggedCondition := dig "conditions" $key "NOTFOUND" $conditionsList }}
@@ -310,7 +314,7 @@ USAGE:
 {{- $keys := $indexvalue.keys }}
 {{- $defaultSecretList := list }}
 {{- $extKubernetesSecretsList := list }}
-{{- $extKubernetesSecretCtxs := list ($.Values.secrets.kubernetesSecrets) }}
+{{- $extKubernetesSecretCtxs := list ($.Values.secrets.smpSharedKubernetesSecrets) ($.Values.secrets.kubernetesSecrets) }}
 {{- $extKubernetesSecretsMap := list }}
 {{- $esoSecretsList := list }}
 {{- $esoSecretCtxs := list (dict "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator) }}
