@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.11] - 2026-10-07
+
+### Fixed
+- **`upstreamHostOverride` on Envoy Gateway**: no longer sets the literal `Host` header (rejected by Envoy Gateway). It now sets `x-rewrite-host` and emits an `HTTPRouteFilter` with `urlRewrite.hostname: {type: Header, header: x-rewrite-host}`, merged with the `rewrite-target` path rewrite when both are set.
+
 ## [1.9.10] - 2026-09-25
 
 ### Added

@@ -37,6 +37,7 @@ run_scenario "Gateway API (per-route overrides)" "${VALUES_DIR}/gateway-per-rout
 run_scenario "Gateway API (nil ingress)" "${VALUES_DIR}/gateway-nil-ingress.yaml"
 run_scenario "Gateway API (duplicate filter)" "${VALUES_DIR}/gateway-duplicate-filter.yaml"
 run_scenario "Gateway API (rewrite filter)" "${VALUES_DIR}/gateway-rewrite-filter.yaml"
+run_scenario "Gateway API (upstreamHostOverride)" "${VALUES_DIR}/gateway-upstream-host.yaml"
 run_scenario "Gateway API (pathType cascade)" "${VALUES_DIR}/gateway-pathtype-cascade.yaml"
 run_scenario "smpSharedKubernetesSecrets" "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml"
 echo "  Scenario: smpSharedKubernetesSecrets (customer override) (${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml + customer-override.yaml)"

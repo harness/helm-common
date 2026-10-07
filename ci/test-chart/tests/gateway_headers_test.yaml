@@ -21,7 +21,7 @@ tests:
       - contains:
           path: spec.rules[0].filters[0].requestHeaderModifier.set
           content:
-            name: Host
+            name: x-rewrite-host
             value: backend.internal.svc.cluster.local
       - contains:
           path: spec.rules[0].filters[0].requestHeaderModifier.set
@@ -93,7 +93,7 @@ tests:
       - contains:
           path: spec.rules[0].filters[0].requestHeaderModifier.set
           content:
-            name: Host
+            name: x-rewrite-host
             value: backend.internal.svc.cluster.local
       # Should NOT have per-route X-Script-Name header
       - notContains:

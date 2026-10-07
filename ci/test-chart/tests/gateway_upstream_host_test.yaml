@@ -1,0 +1,55 @@
+suite: Gateway API upstreamHostOverride (harnesscommon.v2.renderHTTPRoute)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-upstream-host.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: sets x-rewrite-host (not Host) and references one HTTPRouteFilter
+    documentSelector:
+      path: spec.rules[0].matches[0].path.value
+      value: /har(/|$)(.*)
+    asserts:
+      - contains:
+          path: spec.rules[0].filters[0].requestHeaderModifier.set
+          content:
+            name: x-rewrite-host
+            value: registry-api
+      - equal:
+          path: spec.rules[0].filters[1].extensionRef.name
+          value: registry-har-har-7442be
+      - lengthEqual:
+          path: spec.rules[0].filters
+          count: 2
+
+  - it: HTTPRouteFilter merges hostname and path rewrite
+    documentSelector:
+      path: metadata.name
+      value: registry-har-har-7442be
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter
+      - equal:
+          path: spec.urlRewrite.hostname
+          value:
+            type: Header
+            header: x-rewrite-host
+      - equal:
+          path: spec.urlRewrite.path.replaceRegexMatch.pattern
+          value: /har(/|$)(.*)
+
+  - it: override without rewrite-target emits a hostname-only HTTPRouteFilter
+    documentSelector:
+      path: metadata.name
+      value: host-only-hostonly-25022d
+    asserts:
+      - isKind:
+          of: HTTPRouteFilter
+      - equal:
+          path: spec.urlRewrite.hostname.header
+          value: x-rewrite-host
+      - notExists:
+          path: spec.urlRewrite.path

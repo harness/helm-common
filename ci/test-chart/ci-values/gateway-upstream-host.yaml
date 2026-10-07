@@ -1,0 +1,29 @@
+# upstreamHostOverride with and without rewrite-target
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - ui.example.com
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+ingress:
+  objects:
+    - name: registry-har
+      gatewayAPI:
+        upstreamHostOverride: registry-api
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: $1$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+      paths:
+        - path: /har(/|$)(.*)
+    - name: host-only
+      gatewayAPI:
+        upstreamHostOverride: host-only-backend
+      paths:
+        - path: /host-only/.*
+
+service:
+  port: 8080
