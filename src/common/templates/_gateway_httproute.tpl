@@ -69,6 +69,9 @@ where $renderedPath is the already-rendered path string.
 {{- if gt $numChunks 1 }}
 {{- $chunkRouteName = printf "%s-part-%d" $routeName $chunkIdx }}
 {{- end }}
+{{- $objHasRewriteTarget := and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
+{{- $objUpstreamHost := coalesce (dig "gatewayAPI" "upstreamHostOverride" "" $object) (dig "httpRoute" "upstreamHostOverride" "" $.Values.global.gatewayAPI) "" }}
+{{- $needsRouteFilter := or $objHasRewriteTarget $objUpstreamHost }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -199,16 +202,12 @@ spec:
         {{- /* Request Header Modifier - handles upstreamHostOverride and custom headers */}}
         {{- $requestHeaderModifier := dict }}
         {{- $hasRequestModifier := false }}
-        {{- /* Upstream host override (nginx upstream-vhost equivalent) */}}
-        {{- $upstreamHost := "" }}
-        {{- if $perRouteHttpRoute.upstreamHostOverride }}
-          {{- $upstreamHost = $perRouteHttpRoute.upstreamHostOverride }}
-        {{- else if $globalHttpRoute.upstreamHostOverride }}
-          {{- $upstreamHost = $globalHttpRoute.upstreamHostOverride }}
-        {{- end }}
+        {{- /* Upstream host override (nginx upstream-vhost equivalent). Envoy Gateway rejects
+        setting `Host` directly, so the value goes in x-rewrite-host and the HTTPRouteFilter rewrites the host from it. */}}
+        {{- $upstreamHost := $objUpstreamHost }}
         {{- if $upstreamHost }}
           {{- $hasRequestModifier = true }}
-          {{- $_ := set $requestHeaderModifier "set" (list (dict "name" "Host" "value" $upstreamHost)) }}
+          {{- $_ := set $requestHeaderModifier "set" (list (dict "name" "x-rewrite-host" "value" $upstreamHost)) }}
         {{- end }}
         {{- /* Custom request headers (set/add/remove) */}}
         {{- $reqHeaders := dict }}
@@ -298,7 +297,7 @@ spec:
         {{- /* URL Rewrite filter. The extensionRef name is computed by the shared
         helper so it always matches the emitted HTTPRouteFilter below (same predicate,
         same computed name) -- never a dangling reference. */}}
-        {{- if $hasRewriteTarget }}
+        {{- if $needsRouteFilter }}
         {{- $renderedPath := include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
         - type: ExtensionRef
           extensionRef:
@@ -319,7 +318,7 @@ spec:
         backendRequest: {{ printf "%s%s" (get $objectAnnotations "nginx.ingress.kubernetes.io/proxy-read-timeout") "s" }}
       {{- end }}
     {{- end }}
-{{- if and $objectAnnotations (hasKey $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") }}
+{{- if $needsRouteFilter }}
 {{- /* Track filter names already emitted for this object so that duplicate paths
 (which slug + hash to an identical name) don't produce two HTTPRouteFilter resources
 with the same id, which would fail rendering. */}}
@@ -362,11 +361,18 @@ metadata:
     {{- end }}
 spec:
   urlRewrite:
+    {{- if $objUpstreamHost }}
+    hostname:
+      type: Header
+      header: x-rewrite-host
+    {{- end }}
+    {{- if $objHasRewriteTarget }}
     path:
       type: ReplaceRegexMatch
       replaceRegexMatch:
         pattern: {{ include "harnesscommon.tplvalues.render" ( dict "value" $idx.path "context" $) }}
         substitution: {{ include "harnesscommon.tplvalues.render" ( dict "value" ( regexReplaceAll "\\$" (get $objectAnnotations "nginx.ingress.kubernetes.io/rewrite-target") "\\" ) "context" $) }}
+    {{- end }}
 {{- end }} {{/* If filter name not already emitted */}}
 {{- end }} {{/* Range over chunk paths */}}
 {{- end }} {{/* If to create HTTPRouteFilter */}}

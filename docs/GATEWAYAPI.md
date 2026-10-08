@@ -527,7 +527,7 @@ These annotations trigger **migration suggestions** (you must add config to `val
 | `proxy-body-size` | `policies.clientTraffic.connection.bufferLimit` | ClientTrafficPolicy |
 | `client-max-body-size` | `policies.backendTraffic.connection.bufferLimit` | BackendTrafficPolicy |
 | `whitelist-source-range` | `policies.security.authorization` | SecurityPolicy |
-| `upstream-vhost` | `httpRoute.upstreamHostOverride` | HTTPRoute RequestHeaderModifier |
+| `upstream-vhost` | `httpRoute.upstreamHostOverride` | HTTPRoute RequestHeaderModifier (`x-rewrite-host`) + HTTPRouteFilter `urlRewrite.hostname` |
 | `server-alias` | `httpRoute.additionalHostnames` | HTTPRoute hostnames |
 | `configuration-snippet` (headers) | `httpRoute.requestHeaders` | HTTPRoute RequestHeaderModifier |
 | `server-snippet` (timeouts) | `policies.backendTraffic.timeout` | BackendTrafficPolicy |
