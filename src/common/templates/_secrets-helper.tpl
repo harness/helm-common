@@ -102,7 +102,7 @@ USAGE:
 {{- $ := .ctx }}
 {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
 {{- /* smpSharedKubernetesSecrets listed before kubernetesSecrets so a real kubernetesSecrets entry wins ties. */}}
-{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list $.Values.secrets.smpSharedKubernetesSecrets $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
+{{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" .variableName "overrideEnvName" .overrideEnvName "defaultKubernetesSecretName" .defaultKubernetesSecretName "providedSecretValues" .providedSecretValues "defaultKubernetesSecretKey" .defaultKubernetesSecretKey "extKubernetesSecretCtxs" (list (include "harnesscommon.secrets.smpSharedKubernetesSecrets" (dict "ctx" $) | fromJsonArray) $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator))) }}
 {{- end }}
 
 

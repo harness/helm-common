@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.9.12] - 2026-10-12
+
+### Changed
+- **`secrets.smpSharedKubernetesSecrets` is gated by `global.sharedSecrets.enabled`**: entries apply only when the flag is `true`; if it is `false` or unset, the list is ignored. **Behavior change:** charts already setting `smpSharedKubernetesSecrets` must also set `global.sharedSecrets.enabled: true`.
+
 ## [1.9.11] - 2026-10-07
 
 ### Fixed

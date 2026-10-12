@@ -59,6 +59,28 @@ Example:
 {{- end }}
 
 {{/*
+Returns secrets.smpSharedKubernetesSecrets as a JSON list only when global.sharedSecrets.enabled
+is true, otherwise "[]".
+
+USAGE:
+{{ include "harnesscommon.secrets.smpSharedKubernetesSecrets" (dict "ctx" $) | fromJsonArray }}
+*/}}
+{{- define "harnesscommon.secrets.smpSharedKubernetesSecrets" }}
+  {{- $ := .ctx }}
+  {{- $enabled := false }}
+  {{- if kindIs "map" $.Values.global }}
+    {{- if kindIs "map" $.Values.global.sharedSecrets }}
+      {{- $enabled = $.Values.global.sharedSecrets.enabled }}
+    {{- end }}
+  {{- end }}
+  {{- if eq (toString $enabled) "true" }}
+    {{- toJson (default list $.Values.secrets.smpSharedKubernetesSecrets) }}
+  {{- else }}
+    {{- print "[]" }}
+  {{- end }}
+{{- end }}
+
+{{/*
 Generate ESO global Secret Context Identifier
 
 Generates Identifier following the format: <ctx-identifier>-ext-secret
@@ -272,7 +294,7 @@ USAGE:
     {{- $kubernetesSecretsList = merge $kubernetesSecretsList $ind.keys }}
 {{- end}}
 {{- $smpSharedKubernetesSecretsList := dict }}
-{{- range $ind := .ctx.Values.secrets.smpSharedKubernetesSecrets }}
+{{- range $ind := (include "harnesscommon.secrets.smpSharedKubernetesSecrets" (dict "ctx" $) | fromJsonArray) }}
     {{- $smpSharedKubernetesSecretsList = merge $smpSharedKubernetesSecretsList $ind.keys }}
 {{- end}}
 {{- $ESOSecretsList := dict }}
@@ -314,7 +336,7 @@ USAGE:
 {{- $keys := $indexvalue.keys }}
 {{- $defaultSecretList := list }}
 {{- $extKubernetesSecretsList := list }}
-{{- $extKubernetesSecretCtxs := list ($.Values.secrets.smpSharedKubernetesSecrets) ($.Values.secrets.kubernetesSecrets) }}
+{{- $extKubernetesSecretCtxs := list (include "harnesscommon.secrets.smpSharedKubernetesSecrets" (dict "ctx" $) | fromJsonArray) ($.Values.secrets.kubernetesSecrets) }}
 {{- $extKubernetesSecretsMap := list }}
 {{- $esoSecretsList := list }}
 {{- $esoSecretCtxs := list (dict "secretCtx" $.Values.secrets.secretManagement.externalSecretsOperator) }}
