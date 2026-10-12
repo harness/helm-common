@@ -40,6 +40,7 @@ run_scenario "Gateway API (rewrite filter)" "${VALUES_DIR}/gateway-rewrite-filte
 run_scenario "Gateway API (upstreamHostOverride)" "${VALUES_DIR}/gateway-upstream-host.yaml"
 run_scenario "Gateway API (pathType cascade)" "${VALUES_DIR}/gateway-pathtype-cascade.yaml"
 run_scenario "smpSharedKubernetesSecrets" "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml"
+run_scenario "smpSharedKubernetesSecrets (global.sharedSecrets.enabled=false)" "${VALUES_DIR}/smp-shared-kubernetes-secrets-disabled.yaml"
 echo "  Scenario: smpSharedKubernetesSecrets (customer override) (${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml + customer-override.yaml)"
 helm template "$RELEASE_NAME" "$CHART_DIR" \
   -f "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml" \
