@@ -40,7 +40,7 @@ With `helm template`, pass --api-versions engine.harness.io/v1alpha1/Schedule.
 apiVersion: {{ $apiVersion }}
 kind: {{ $kind }}
 metadata:
-  name: {{ $name }}
+  name: {{ $name | quote }}
   namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- toYaml $labels | nindent 4 }}

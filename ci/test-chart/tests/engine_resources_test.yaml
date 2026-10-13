@@ -144,6 +144,28 @@ tests:
           value: zeta
         documentIndex: 2
 
+  - it: renders numeric- and boolean-looking names as strings
+    set:
+      engineResources:
+        schedules:
+          "123":
+            spec:
+              cronExpr: "0 * * * *"
+          "yes":
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: "123"
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: "yes"
+        documentIndex: 1
+
   - it: applies common labels plus entry labels and annotations
     set:
       engineResources:
