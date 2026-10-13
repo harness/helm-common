@@ -12,6 +12,9 @@ Values:
         labels: {}        # optional; merged over common labels
         annotations: {}   # optional
         spec: {}          # required; copied verbatim
+
+Renders nothing for a kind whose API the cluster does not serve (.Capabilities.APIVersions).
+With `helm template`, pass --api-versions engine.harness.io/v1alpha1/Schedule.
 */}}
 {{- define "harnesscommon.engine.renderResources" -}}
 {{- $ctx := .ctx }}
@@ -25,6 +28,7 @@ Values:
 {{- $kind := .kind }}
 {{- $valuesKey := .valuesKey }}
 {{- $entries := .entries }}
+{{- if $ctx.Capabilities.APIVersions.Has (printf "%s/%s" $apiVersion $kind) }}
 {{- range $name := keys $entries | sortAlpha }}
 {{- $entry := index $entries $name | default dict }}
 {{- if ne (toString (index $entry "enabled")) "false" }}
@@ -46,6 +50,7 @@ metadata:
   {{- end }}
 spec:
   {{- toYaml $entry.spec | nindent 2 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end -}}
