@@ -4,7 +4,7 @@ The library chart cannot be rendered alone (it only provides partial templates).
 
 ## Strategy
 
-1. **Template smoke tests** – Run `helm template` with scenario value files for every top-level manifest helper: HPA, PDB, KEDA (ScaledObject + TriggerAuthentication), Ingress, and VirtualService. Ensures no template errors and produces valid YAML. Fast and catches regressions.
+1. **Template smoke tests** – Run `helm template` with scenario value files for every top-level manifest helper: HPA, PDB, KEDA (ScaledObject + TriggerAuthentication), Ingress, VirtualService, and Engine resources. Ensures no template errors and produces valid YAML. Fast and catches regressions.
 2. **helm-unittest** – Assert on rendered output (document count, kind, spec fields) for HPA, PDB, and KEDA. Test files live in `ci/test-chart/tests/*_test.yaml`. Run with `helm unittest ci/test-chart` (requires the [helm-unittest](https://github.com/helm-unittest/helm-unittest) plugin).
 3. **Lint** – Existing `ct lint` on the library chart (syntax, Chart.yaml).
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.0] - 2026-10-13
+
+### Added
+- `harnesscommon.engine.renderResources`: renders Harness Engine `Schedule` CRs (`engine.harness.io/v1alpha1`) from `engineResources.schedules.<name>` values. `spec` is copied verbatim, `enabled: false` skips an entry, and nothing is rendered when the cluster does not serve the Schedule API. See [docs/ENGINE_RESOURCES.md](docs/ENGINE_RESOURCES.md).
+
 ## [1.9.12] - 2026-10-12
 
 ### Changed
