@@ -4,6 +4,7 @@ engineResources:
     nightly-cleanup:
       spec:
         namespace: pipeline
+        identifier: nightly-cleanup
         cronExpr: "0 3 * * *"
         invocation:
           queue: pipeline
@@ -12,6 +13,7 @@ engineResources:
       enabled: false
       spec:
         namespace: pipeline
+        identifier: legacy-sync
         cronExpr: "0 * * * *"
         invocation:
           queue: pipeline

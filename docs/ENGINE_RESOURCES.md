@@ -23,6 +23,7 @@ engineResources:
       annotations: {}           # optional
       spec:                     # required; copied verbatim, no defaults added
         namespace: pipeline
+        identifier: nightly-cleanup
         cronExpr: "0 3 * * *"
         invocation:
           queue: pipeline
@@ -53,8 +54,11 @@ merge and then fails with "spec is required".
 
 ## Rendering rules
 
-- No defaults are injected. Fields such as `timeZone` or `identifier` appear only if you set them.
-- An enabled entry without `spec` (or with `spec: {}`) fails rendering.
+- No defaults are injected. Optional fields such as `timeZone` or `state` appear only if you set them.
+- An enabled entry without `spec` (or with `spec: {}`) fails rendering. The template does not
+  check the spec's contents. The API server validates them against the CRD when the release is
+  applied: `namespace`, `identifier`, `cronExpr`, `invocation.queue` and `invocation.action` are
+  required. A rejected CR fails the whole release.
 - Entries render sorted by name.
 - If the cluster does not serve `engine.harness.io/v1alpha1/Schedule`, nothing is rendered. With
   `helm template`, pass `--api-versions engine.harness.io/v1alpha1/Schedule`.
