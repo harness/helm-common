@@ -49,8 +49,9 @@ engineResources:
       spec: { ... }
 ```
 
-Use `enabled: false` to remove an inherited entry. `null` is normalized to `{}` by the overrides
-merge and then fails with "spec is required".
+Use `enabled: false` to remove an inherited entry. The overrides merge normalizes `null` to `{}`, so
+`<name>: null` leaves an inherited entry unchanged, and on a new entry it fails with "spec is
+required".
 
 ## Rendering rules
 
