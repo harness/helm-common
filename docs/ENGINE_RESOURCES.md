@@ -19,8 +19,6 @@ engineResources:
   schedules:
     nightly-cleanup:            # metadata.name
       enabled: true             # optional; only false skips the entry
-      labels: {}                # optional; merged over common labels
-      annotations: {}           # optional
       spec:                     # required; copied verbatim, no defaults added
         namespace: pipeline
         identifier: nightly-cleanup

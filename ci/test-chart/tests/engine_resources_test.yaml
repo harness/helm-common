@@ -166,47 +166,22 @@ tests:
           value: "yes"
         documentIndex: 1
 
-  - it: applies common labels plus entry labels and annotations
+  - it: applies the common labels and no annotations
     set:
       engineResources:
         schedules:
           labelled:
-            labels:
-              team: pipeline
-            annotations:
-              owner: lucas
             spec:
               cronExpr: "0 * * * *"
     asserts:
-      - equal:
-          path: metadata.labels.team
-          value: pipeline
       - equal:
           path: metadata.labels["app.kubernetes.io/instance"]
           value: harness-common-test
       - equal:
           path: metadata.labels["app.kubernetes.io/managed-by"]
           value: Helm
-      - equal:
-          path: metadata.annotations.owner
-          value: lucas
-
-  - it: entry labels override common labels
-    set:
-      engineResources:
-        schedules:
-          labelled:
-            labels:
-              app.kubernetes.io/name: custom
-            spec:
-              cronExpr: "0 * * * *"
-    asserts:
-      - equal:
-          path: metadata.labels["app.kubernetes.io/name"]
-          value: custom
-      - equal:
-          path: metadata.labels["app.kubernetes.io/instance"]
-          value: harness-common-test
+      - notExists:
+          path: metadata.annotations
 
   - it: preserves string scalars in spec
     set:

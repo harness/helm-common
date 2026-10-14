@@ -9,8 +9,6 @@ Values:
     schedules:
       <name>:
         enabled: true     # optional; only false skips the entry
-        labels: {}        # optional; merged over common labels
-        annotations: {}   # optional
         spec: {}          # required; copied verbatim
 
 Renders nothing for a kind whose API the cluster does not serve (.Capabilities.APIVersions).
@@ -35,7 +33,6 @@ With `helm template`, pass --api-versions engine.harness.io/v1alpha1/Schedule.
 {{- if not $entry.spec }}
 {{- fail (printf "engineResources.%s.%s.spec is required" $valuesKey $name) }}
 {{- end }}
-{{- $labels := mergeOverwrite (include "harnesscommon.labels.labels" $ctx | fromYaml) ($entry.labels | default dict) }}
 ---
 apiVersion: {{ $apiVersion }}
 kind: {{ $kind }}
@@ -43,11 +40,7 @@ metadata:
   name: {{ $name | quote }}
   namespace: {{ $ctx.Release.Namespace }}
   labels:
-    {{- toYaml $labels | nindent 4 }}
-  {{- with $entry.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- include "harnesscommon.labels.labels" $ctx | nindent 4 }}
 spec:
   {{- toYaml $entry.spec | nindent 2 }}
 {{- end }}
