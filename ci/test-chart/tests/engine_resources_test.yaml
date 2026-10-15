@@ -30,7 +30,7 @@ tests:
           of: engine.harness.io/v1alpha1
       - equal:
           path: metadata.name
-          value: nightly-cleanup
+          value: harness-common-test-nightly-cleanup
       - equal:
           path: metadata.namespace
           value: engine-ns
@@ -76,7 +76,7 @@ tests:
           count: 1
       - equal:
           path: metadata.name
-          value: keep-me
+          value: harness-common-test-keep-me
 
   - it: treats string false as disabled
     set:
@@ -133,15 +133,15 @@ tests:
           count: 3
       - equal:
           path: metadata.name
-          value: alpha
+          value: harness-common-test-alpha
         documentIndex: 0
       - equal:
           path: metadata.name
-          value: mid
+          value: harness-common-test-mid
         documentIndex: 1
       - equal:
           path: metadata.name
-          value: zeta
+          value: harness-common-test-zeta
         documentIndex: 2
 
   - it: renders numeric- and boolean-looking names as strings
@@ -159,11 +159,11 @@ tests:
           count: 2
       - equal:
           path: metadata.name
-          value: "123"
+          value: harness-common-test-123
         documentIndex: 0
       - equal:
           path: metadata.name
-          value: "yes"
+          value: harness-common-test-yes
         documentIndex: 1
 
   - it: applies the common labels and no annotations
@@ -229,3 +229,25 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "engineResources.schedules.broken.spec is required"
+
+  - it: accepts a resource name of exactly 253 characters
+    set:
+      engineResources:
+        schedules:
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: fails when the prefixed resource name exceeds 253 characters
+    set:
+      engineResources:
+        schedules:
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - failedTemplate:
+          errorPattern: "exceeds 253 characters"

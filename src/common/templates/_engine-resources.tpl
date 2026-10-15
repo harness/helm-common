@@ -7,7 +7,7 @@ Usage:
 Values:
   engineResources:
     schedules:
-      <name>:
+      <name>:             # rendered as metadata.name "<release name>-<name>"
         enabled: true     # optional; only false skips the entry
         spec: {}          # required; copied verbatim
 
@@ -33,11 +33,15 @@ With `helm template`, pass --api-versions engine.harness.io/v1alpha1/Schedule.
 {{- if not $entry.spec }}
 {{- fail (printf "engineResources.%s.%s.spec is required" $valuesKey $name) }}
 {{- end }}
+{{- $crName := printf "%s-%s" $ctx.Release.Name $name }}
+{{- if gt (len $crName) 253 }}
+{{- fail (printf "engineResources.%s.%s: resource name %q exceeds 253 characters" $valuesKey $name $crName) }}
+{{- end }}
 ---
 apiVersion: {{ $apiVersion }}
 kind: {{ $kind }}
 metadata:
-  name: {{ $name | quote }}
+  name: {{ $crName | quote }}
   namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- include "harnesscommon.labels.labels" $ctx | nindent 4 }}

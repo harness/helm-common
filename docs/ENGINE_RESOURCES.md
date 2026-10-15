@@ -17,7 +17,7 @@ Declare resources in values:
 ```yaml
 engineResources:
   schedules:
-    nightly-cleanup:            # metadata.name
+    nightly-cleanup:            # CR name: <release name>-nightly-cleanup
       enabled: true             # optional; only false skips the entry
       spec:                     # required; copied verbatim, no defaults added
         namespace: pipeline
@@ -61,3 +61,6 @@ required".
 - Entries render sorted by name.
 - If the cluster does not serve `engine.harness.io/v1alpha1/Schedule`, nothing is rendered. With
   `helm template`, pass `--api-versions engine.harness.io/v1alpha1/Schedule`.
+- The CR is named `<release name>-<name>`, so two releases in one namespace can use the same key.
+  Rendering fails if that name exceeds 253 characters. The engine identifies a schedule by
+  `spec.namespace` + `spec.identifier`, so keep the `identifier` unique within each engine namespace.
