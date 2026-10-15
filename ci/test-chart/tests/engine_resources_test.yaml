@@ -1,0 +1,253 @@
+suite: Engine resources (Schedule)
+values:
+  - ../values.yaml
+templates:
+  - engine-resources.yaml
+release:
+  name: harness-common-test
+  namespace: engine-ns
+capabilities:
+  apiVersions:
+    - engine.harness.io/v1alpha1/Schedule
+tests:
+  - it: renders one Schedule with fixed apiVersion/kind, name, namespace and verbatim spec
+    set:
+      engineResources:
+        schedules:
+          nightly-cleanup:
+            spec:
+              namespace: pipeline
+              cronExpr: "0 3 * * *"
+              invocation:
+                queue: pipeline
+                action: cleanup
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Schedule
+      - isAPIVersion:
+          of: engine.harness.io/v1alpha1
+      - equal:
+          path: metadata.name
+          value: harness-common-test-nightly-cleanup
+      - equal:
+          path: metadata.namespace
+          value: engine-ns
+      - equal:
+          path: spec
+          value:
+            namespace: pipeline
+            cronExpr: "0 3 * * *"
+            invocation:
+              queue: pipeline
+              action: cleanup
+
+  - it: injects no defaults into spec
+    set:
+      engineResources:
+        schedules:
+          minimal:
+            spec:
+              cronExpr: "*/3 * * * *"
+    asserts:
+      - notExists:
+          path: spec.timeZone
+      - notExists:
+          path: spec.identifier
+      - notExists:
+          path: spec.state
+      - notExists:
+          path: metadata.annotations
+
+  - it: skips entries with enabled false and keeps the others
+    set:
+      engineResources:
+        schedules:
+          keep-me:
+            spec:
+              cronExpr: "0 * * * *"
+          drop-me:
+            enabled: false
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: harness-common-test-keep-me
+
+  - it: treats string false as disabled
+    set:
+      engineResources:
+        schedules:
+          drop-me:
+            enabled: "false"
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders when enabled is explicitly true
+    set:
+      engineResources:
+        schedules:
+          explicitly-enabled:
+            enabled: true
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: renders nothing when engineResources is absent
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders nothing when schedules is empty
+    set:
+      engineResources:
+        schedules: {}
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders entries sorted by name
+    set:
+      engineResources:
+        schedules:
+          zeta:
+            spec:
+              cronExpr: "0 * * * *"
+          alpha:
+            spec:
+              cronExpr: "0 * * * *"
+          mid:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: harness-common-test-alpha
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: harness-common-test-mid
+        documentIndex: 1
+      - equal:
+          path: metadata.name
+          value: harness-common-test-zeta
+        documentIndex: 2
+
+  - it: renders numeric- and boolean-looking names as strings
+    set:
+      engineResources:
+        schedules:
+          "123":
+            spec:
+              cronExpr: "0 * * * *"
+          "yes":
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: harness-common-test-123
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: harness-common-test-yes
+        documentIndex: 1
+
+  - it: applies the common labels and no annotations
+    set:
+      engineResources:
+        schedules:
+          labelled:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: harness-common-test
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - notExists:
+          path: metadata.annotations
+
+  - it: preserves string scalars in spec
+    set:
+      engineResources:
+        schedules:
+          strings:
+            spec:
+              state: "true"
+              invocation:
+                input:
+                  code: "08"
+    asserts:
+      - equal:
+          path: spec.state
+          value: "true"
+      - equal:
+          path: spec.invocation.input.code
+          value: "08"
+
+  - it: fails when an enabled entry has no spec
+    set:
+      engineResources:
+        schedules:
+          broken:
+            enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: "engineResources.schedules.broken.spec is required"
+
+  - it: fails when an entry is an empty map
+    set:
+      engineResources:
+        schedules:
+          broken: {}
+    asserts:
+      - failedTemplate:
+          errorPattern: "engineResources.schedules.broken.spec is required"
+
+  - it: fails when spec is empty
+    set:
+      engineResources:
+        schedules:
+          broken:
+            spec: {}
+    asserts:
+      - failedTemplate:
+          errorPattern: "engineResources.schedules.broken.spec is required"
+
+  - it: accepts a resource name of exactly 253 characters
+    set:
+      engineResources:
+        schedules:
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: fails when the prefixed resource name exceeds 253 characters
+    set:
+      engineResources:
+        schedules:
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
+            spec:
+              cronExpr: "0 * * * *"
+    asserts:
+      - failedTemplate:
+          errorPattern: "exceeds 253 characters"

@@ -14,8 +14,9 @@ helm dependency update "$CHART_DIR"
 run_scenario() {
   local name="$1"
   local values_file="$2"
+  shift 2
   echo "  Scenario: $name (${values_file})"
-  helm template "$RELEASE_NAME" "$CHART_DIR" -f "$values_file" >/dev/null
+  helm template "$RELEASE_NAME" "$CHART_DIR" -f "$values_file" "$@" >/dev/null
 }
 
 echo "Rendering scenarios..."
@@ -41,6 +42,7 @@ run_scenario "Gateway API (upstreamHostOverride)" "${VALUES_DIR}/gateway-upstrea
 run_scenario "Gateway API (pathType cascade)" "${VALUES_DIR}/gateway-pathtype-cascade.yaml"
 run_scenario "smpSharedKubernetesSecrets" "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml"
 run_scenario "smpSharedKubernetesSecrets (global.sharedSecrets.enabled=false)" "${VALUES_DIR}/smp-shared-kubernetes-secrets-disabled.yaml"
+run_scenario "Engine resources" "${VALUES_DIR}/engine-resources.yaml" --api-versions engine.harness.io/v1alpha1/Schedule
 echo "  Scenario: smpSharedKubernetesSecrets (customer override) (${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml + customer-override.yaml)"
 helm template "$RELEASE_NAME" "$CHART_DIR" \
   -f "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml" \

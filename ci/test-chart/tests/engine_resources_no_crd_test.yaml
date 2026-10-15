@@ -1,0 +1,28 @@
+suite: Engine resources without the Schedule CRD
+values:
+  - ../values.yaml
+templates:
+  - engine-resources.yaml
+release:
+  name: harness-common-test
+  namespace: engine-ns
+tests:
+  - it: renders nothing when engine.harness.io/v1alpha1/Schedule is not served
+    set:
+      engineResources:
+        schedules:
+          nightly-cleanup:
+            spec:
+              cronExpr: "0 3 * * *"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: does not fail on a missing spec when the API is not served
+    set:
+      engineResources:
+        schedules:
+          broken: {}
+    asserts:
+      - hasDocuments:
+          count: 0

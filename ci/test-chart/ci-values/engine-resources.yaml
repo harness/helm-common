@@ -1,0 +1,20 @@
+# Scenario: Harness Engine Schedule CRs (requires --api-versions engine.harness.io/v1alpha1/Schedule)
+engineResources:
+  schedules:
+    nightly-cleanup:
+      spec:
+        namespace: pipeline
+        identifier: nightly-cleanup
+        cronExpr: "0 3 * * *"
+        invocation:
+          queue: pipeline
+          action: cleanup
+    legacy-sync:
+      enabled: false
+      spec:
+        namespace: pipeline
+        identifier: legacy-sync
+        cronExpr: "0 * * * *"
+        invocation:
+          queue: pipeline
+          action: sync
