@@ -228,6 +228,57 @@ ingress:
         - path: "/my\\.package\\.StreamService/.*"
 ```
 
+#### Timeouts on native GRPCRoutes
+
+`GRPCRoute` has **no timeout fields of its own** — Envoy Gateway applies its default
+request timeout (600s) unless a `BackendTrafficPolicy` targets the route. Long-lived
+streams routed via `ingress.grpcRoutes` are cut at that default unless you override it:
+
+```yaml
+ingress:
+  grpcRoutes:
+    - name: grpc-stream
+      hostnames:
+        - grpc.example.com
+      gatewayAPI:
+        backendTraffic:
+          timeout:
+            http:
+              requestTimeout: "0s"       # 0s = unlimited; required for streams
+      rules:
+        - matches:
+            - method:
+                service: "log.GRPCLogger"
+          backendRefs:
+            - name: sto-core
+              port: 4001
+```
+
+**Generated output:**
+
+```yaml
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: grpc-stream-backend-policy
+  annotations:
+    helm.sh/policy-type: "per-route-override"
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute            # note: GRPCRoute, not HTTPRoute
+      name: grpc-stream
+  timeout:
+    http:
+      requestTimeout: 0s
+```
+
+`grpcRoutes` participate in the shared policy too: with
+`global.gatewayAPI.policies.backendTraffic.enabled: true`, every GRPCRoute without its
+own `gatewayAPI.backendTraffic` block is added to the shared
+`BackendTrafficPolicy`'s `targetRefs` as `kind: GRPCRoute`.
+
 ## TCPRoute
 
 Routes raw TCP traffic to backend services. Use for databases, Redis, custom TCP protocols, or any non-HTTP service.

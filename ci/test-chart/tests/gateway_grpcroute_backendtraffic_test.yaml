@@ -1,0 +1,63 @@
+suite: Gateway API BackendTrafficPolicy on GRPCRoutes (harnesscommon.v2.renderBackendTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-grpcroute-backendtraffic.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: shared BackendTrafficPolicy targets both the HTTPRoute and the GRPCRoute
+    documentSelector:
+      path: metadata.name
+      value: harness-common-test-backend-policy
+    asserts:
+      - equal:
+          path: kind
+          value: BackendTrafficPolicy
+      - lengthEqual:
+          path: spec.targetRefs
+          count: 2
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: HTTPRoute
+      - equal:
+          path: spec.targetRefs[0].name
+          value: api-routes
+      - equal:
+          path: spec.targetRefs[1].kind
+          value: GRPCRoute
+      - equal:
+          path: spec.targetRefs[1].name
+          value: grpc-default
+
+  - it: shared policy still carries the global backendTraffic settings
+    documentSelector:
+      path: metadata.name
+      value: harness-common-test-backend-policy
+    asserts:
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 30s
+
+  - it: GRPCRoute per-route override targets kind GRPCRoute, not HTTPRoute
+    documentSelector:
+      path: metadata.name
+      value: grpc-stream-backend-policy
+    asserts:
+      - equal:
+          path: kind
+          value: BackendTrafficPolicy
+      - equal:
+          path: metadata.annotations["helm.sh/policy-type"]
+          value: per-route-override
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: GRPCRoute
+      - equal:
+          path: spec.targetRefs[0].name
+          value: grpc-stream
+      - equal:
+          path: spec.timeout.http.requestTimeout
+          value: 0s
