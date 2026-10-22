@@ -1,0 +1,25 @@
+# Scenario: ingress.excludeGlobalHosts drops global.ingress.hosts (the public
+# app domain) while still keeping compatibilityHosts (internal routing alias)
+# and extraHosts (the object's own dedicated domain).
+global:
+  ingress:
+    enabled: true
+    className: "harness"
+    hosts:
+      - "prod0.harness.io"
+    compatibilityHosts:
+      - "harness-ingress-controller"
+    objects: {}
+    tls:
+      enabled: true
+      secretName: prod0-harness
+ingress:
+  excludeGlobalHosts: true
+  objects:
+    - paths:
+        - path: /
+          pathType: Prefix
+  extraHosts:
+    - looker.prod0.harness.io
+service:
+  port: 80

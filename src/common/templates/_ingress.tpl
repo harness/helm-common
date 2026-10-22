@@ -18,8 +18,10 @@ This helper controls the two resource families independently:
 {{- range $index, $object := $ingress.objects }}
 {{- if eq (include "harnesscommon.utils.evalWhen" (dict "ctx" $ "when" (dig "when" dict $object)) | trim) "true" }}
 {{- $resolvedHosts := list }}
+{{- if not (dig "excludeGlobalHosts" false $ingress) }}
 {{- range $.Values.global.ingress.hosts }}
   {{- $resolvedHosts = append $resolvedHosts . }}
+{{- end }}
 {{- end }}
 {{- range (default list $.Values.global.ingress.compatibilityHosts) }}
   {{- if not (has . $resolvedHosts) }}
