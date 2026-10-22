@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.1] - 2026-10-22
+
+### Added
+- **`ingress.excludeGlobalHosts`**: when `true`, `harnesscommon.v1.renderIngress` skips `global.ingress.hosts` for that ingress object, while still including `global.ingress.compatibilityHosts` and the object's own `extraHosts`. Fixes a collision where a component meant to be reachable only on its own dedicated domain (e.g. Looker, which requires a separate DNS host) was also inheriting the shared public app host, creating a second Ingress object with the same host+path as the primary UI and causing unpredictable routing (e.g. `/login` intermittently served by the wrong backend).
+
 ## [1.10.0] - 2026-10-13
 
 ### Added

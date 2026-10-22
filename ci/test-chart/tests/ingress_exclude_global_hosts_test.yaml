@@ -1,0 +1,59 @@
+suite: Ingress excludeGlobalHosts (harnesscommon.v1.renderIngress)
+values:
+  - ../values.yaml
+  - ../ci-values/ingress-exclude-global-hosts.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should drop global.ingress.hosts but keep compatibilityHosts and extraHosts
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+      - equal:
+          path: spec.rules[0].host
+          value: harness-ingress-controller
+      - equal:
+          path: spec.rules[1].host
+          value: looker.prod0.harness.io
+      - notEqual:
+          path: spec.rules[0].host
+          value: prod0.harness.io
+      - notEqual:
+          path: spec.rules[1].host
+          value: prod0.harness.io
+      - lengthEqual:
+          path: spec.tls[0].hosts
+          count: 2
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: harness-ingress-controller
+      - equal:
+          path: spec.tls[0].hosts[1]
+          value: looker.prod0.harness.io
+
+  - it: should still include global.ingress.hosts when excludeGlobalHosts is unset
+    set:
+      ingress.excludeGlobalHosts: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - lengthEqual:
+          path: spec.rules
+          count: 3
+      - equal:
+          path: spec.rules[0].host
+          value: prod0.harness.io
+      - equal:
+          path: spec.rules[1].host
+          value: harness-ingress-controller
+      - equal:
+          path: spec.rules[2].host
+          value: looker.prod0.harness.io
