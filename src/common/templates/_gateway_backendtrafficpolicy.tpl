@@ -6,8 +6,12 @@ USAGE:
 {{- include "harnesscommon.v2.renderBackendTrafficPolicy" (dict "ctx" $) }}
 
 Supports hybrid approach (Option C):
-- Shared global policies that target multiple HTTPRoutes
+- Shared global policies that target multiple HTTPRoutes / GRPCRoutes
 - Per-route override policies when needed
+
+Applies to both `ingress.objects` (HTTPRoute) and `ingress.grpcRoutes` (GRPCRoute).
+GRPCRoute has no timeout/retry fields of its own, so a BackendTrafficPolicy is the
+only way to change those for a gRPC backend.
 
 All Envoy Gateway BackendTrafficPolicy spec fields are supported via passthrough.
 See https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy for full API reference.
@@ -23,8 +27,12 @@ See https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy 
 {{- $globalBackendPolicy := dig "policies" "backendTraffic" dict $.Values.global.gatewayAPI }}
 {{- $hasGlobalPolicy := and $globalBackendPolicy (dig "enabled" false $globalBackendPolicy) }}
 
-{{- /* Collect routes that need shared policy vs per-route policy */}}
+{{- /* Collect routes that need shared policy vs per-route policy.
+       $sharedPolicyRoutes keeps the pre-existing HTTPRoute-only list shape so the
+       shared policy output stays byte-identical for charts that only use objects.
+       $perRouteOverrides maps route name -> {kind, policy}. */}}
 {{- $sharedPolicyRoutes := list }}
+{{- $sharedGRPCPolicyRoutes := list }}
 {{- $perRouteOverrides := dict }}
 
 {{- range $index, $object := $ingress.objects }}
@@ -33,15 +41,29 @@ See https://gateway.envoyproxy.io/docs/api/extension_types#backendtrafficpolicy 
 
   {{- if $perRoutePolicy }}
     {{- /* This route has an override */}}
-    {{- $_ := set $perRouteOverrides $routeName $perRoutePolicy }}
+    {{- $_ := set $perRouteOverrides $routeName (dict "kind" "HTTPRoute" "policy" $perRoutePolicy) }}
   {{- else if $hasGlobalPolicy }}
     {{- /* This route uses shared global policy */}}
     {{- $sharedPolicyRoutes = append $sharedPolicyRoutes $routeName }}
   {{- end }}
 {{- end }}
 
-{{- /* Generate shared global BackendTrafficPolicy if any routes use it */}}
-{{- if and $hasGlobalPolicy (gt (len $sharedPolicyRoutes) 0) }}
+{{- /* Same for GRPCRoutes. gRPC routes are collected separately so they can be
+       emitted with kind: GRPCRoute in targetRefs. */}}
+{{- if and (dig "gatewayAPI" "enabled" false $.Values.global) (dig "ingress" "enabled" false $.Values.global) }}
+  {{- range $index, $route := (dig "grpcRoutes" list $ingress) }}
+    {{- $routeName := dig "name" ((cat (coalesce $ingress.name $.Values.nameOverride $.Chart.Name | trunc 63 | trimSuffix "-") "-grpc-" $index) | nospace) $route }}
+    {{- $perRoutePolicy := dig "gatewayAPI" "backendTraffic" dict $route }}
+    {{- if $perRoutePolicy }}
+      {{- $_ := set $perRouteOverrides $routeName (dict "kind" "GRPCRoute" "policy" $perRoutePolicy) }}
+    {{- else if $hasGlobalPolicy }}
+      {{- $sharedGRPCPolicyRoutes = append $sharedGRPCPolicyRoutes $routeName }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /* Generate shared global BackendTrafficPolicy if any route uses it */}}
+{{- if and $hasGlobalPolicy (or (gt (len $sharedPolicyRoutes) 0) (gt (len $sharedGRPCPolicyRoutes) 0)) }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
@@ -63,13 +85,18 @@ spec:
       kind: HTTPRoute
       name: {{ $routeName }}
     {{- end }}
+    {{- range $routeName := $sharedGRPCPolicyRoutes }}
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+      name: {{ $routeName }}
+    {{- end }}
   {{- if $globalBackendPolicy }}
   {{- toYaml $globalBackendPolicy | nindent 2 }}
   {{- end }}
 {{- end }}
 
 {{- /* Generate per-route override BackendTrafficPolicy resources */}}
-{{- range $routeName, $policy := $perRouteOverrides }}
+{{- range $routeName, $override := $perRouteOverrides }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
@@ -88,10 +115,10 @@ metadata:
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io
-      kind: HTTPRoute
+      kind: {{ $override.kind }}
       name: {{ $routeName }}
-  {{- if $policy }}
-  {{- toYaml $policy | nindent 2 }}
+  {{- if $override.policy }}
+  {{- toYaml $override.policy | nindent 2 }}
   {{- end }}
 {{- end }}
 

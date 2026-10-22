@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.10.2] - 2026-10-22
+
+### Fixed
+- **`harnesscommon.v2.renderBackendTrafficPolicy` now covers `ingress.grpcRoutes`.** The template only iterated `ingress.objects`, so a `BackendTrafficPolicy` could never target a `GRPCRoute`. Since `GRPCRoute` carries no timeout/retry/protocol fields of its own, gRPC backends routed via `ingress.grpcRoutes` were locked to Envoy Gateway's 600s default request timeout with no way to change it — long-lived server-streaming RPCs were cut at 10 minutes. Now:
+  - a GRPCRoute with `gatewayAPI.backendTraffic` gets a per-route `BackendTrafficPolicy` with `targetRefs[].kind: GRPCRoute` (previously the kind was hardcoded to `HTTPRoute`, which would have silently targeted a non-existent HTTPRoute of the same name);
+  - with `global.gatewayAPI.policies.backendTraffic.enabled: true`, GRPCRoutes without their own override are added to the shared policy's `targetRefs` as `kind: GRPCRoute`;
+  - the shared policy is now rendered when only GRPCRoutes need it (previously gated on at least one HTTPRoute).
+
+  Fully additive: rendered output for charts that only use `ingress.objects` is byte-identical to 1.10.1 (verified across all existing CI scenarios).
+
 ## [1.10.1] - 2026-10-22
 
 ### Added

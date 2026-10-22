@@ -37,6 +37,12 @@ global:
         # Backend protocol (HTTP, GRPC, H2C)
         # protocol: "GRPC"
 
+        # NOTE: applies to ingress.objects (HTTPRoute) AND ingress.grpcRoutes
+        # (GRPCRoute). GRPCRoute has no timeout/retry fields of its own, so a
+        # BackendTrafficPolicy is the only way to change those for a gRPC backend.
+        # e.g. streaming RPCs need timeout.http.requestTimeout: "0s" (Envoy
+        # Gateway otherwise defaults to 600s and cuts the stream).
+
         # Use client protocol (HTTP/1.1 or HTTP/2) for upstream connections
         # Set to false to force HTTP/2 upstream (per-route override only)
         # useClientProtocol: false

@@ -1,0 +1,61 @@
+# Gateway API: BackendTrafficPolicy on GRPCRoutes.
+# GRPCRoute has no timeout fields of its own, so the only way to change gRPC backend
+# timeouts (e.g. streaming RPCs that must not be cut at the 600s default) is a
+# BackendTrafficPolicy targeting kind: GRPCRoute.
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - grpc.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+
+    # Shared default policy - must cover HTTPRoutes AND GRPCRoutes
+    policies:
+      backendTraffic:
+        enabled: true
+        timeout:
+          http:
+            requestTimeout: "30s"
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api/.*
+
+  grpcRoutes:
+    # Uses the shared policy
+    - name: grpc-default
+      hostnames:
+        - grpc.example.com
+      rules:
+        - matches:
+            - method:
+                service: mycompany.UserService
+          backendRefs:
+            - name: user-grpc-svc
+              port: 9090
+
+    # Long-lived streams: per-route override with unlimited request timeout
+    - name: grpc-stream
+      hostnames:
+        - grpc.example.com
+      gatewayAPI:
+        backendTraffic:
+          timeout:
+            http:
+              requestTimeout: "0s"
+      rules:
+        - matches:
+            - method:
+                service: log.GRPCLogger
+          backendRefs:
+            - name: sto-core
+              port: 4001
+
+service:
+  port: 8080
