@@ -210,6 +210,28 @@ USAGE:
 {{- end }}
 
 {{/*
+Returns the apiVersion used for ExternalSecret resources.
+
+Controlled by the flag global.externalSecrets.apiVersion
+  - "v1beta1" (default): external-secrets.io/v1beta1
+  - "v1": external-secrets.io/v1 (required for External Secrets >= 0.20.x)
+
+USAGE:
+{{ include "harnesscommon.secrets.externalSecretApiVersion" (dict "ctx" $) }}
+*/}}
+{{- define "harnesscommon.secrets.externalSecretApiVersion" -}}
+{{- $ := .ctx -}}
+{{- $version := "v1beta1" -}}
+{{- if kindIs "map" $.Values.global -}}
+  {{- $version = toString (dig "externalSecrets" "apiVersion" "v1beta1" $.Values.global) | default "v1beta1" -}}
+{{- end -}}
+{{- if not (has $version (list "v1" "v1beta1")) -}}
+  {{- fail (printf "Failed: invalid global.externalSecrets.apiVersion %q, must be one of: v1, v1beta1" $version) -}}
+{{- end -}}
+{{- printf "external-secrets.io/%s" $version -}}
+{{- end -}}
+
+{{/*
 Generates ESO External Secret CRD
 
 USAGE:
@@ -226,7 +248,7 @@ USAGE:
             {{- if gt $esoSecretIdx 0 }}
 {{ printf "\n---"  }}
             {{- end }}
-apiVersion: external-secrets.io/v1beta1
+apiVersion: {{ include "harnesscommon.secrets.externalSecretApiVersion" (dict "ctx" $) }}
 kind: ExternalSecret
 metadata:
   name: {{ $esoSecretName }}
