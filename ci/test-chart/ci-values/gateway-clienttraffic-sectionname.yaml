@@ -1,0 +1,34 @@
+# ClientTrafficPolicy attached to a single Gateway listener via the chart-local
+# gatewayAPI.policies.clientTraffic.sectionName (NOT under global).
+global:
+  ingress:
+    enabled: true
+    hosts:
+      - api.example.com
+
+  gatewayAPI:
+    enabled: true
+    parentRef:
+      name: test-gateway
+      namespace: gateway-system
+    policies:
+      clientTraffic:
+        enabled: true
+        path:
+          disableMergeSlashes: true
+          escapedSlashesAction: KeepUnchanged
+
+# Chart-local (non-global) so it cannot leak to other charts
+gatewayAPI:
+  policies:
+    clientTraffic:
+      sectionName: https-looker
+
+ingress:
+  objects:
+    - name: api-routes
+      paths:
+        - path: /api/.*
+
+service:
+  port: 8080

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.3] - 2026-11-16
+
+### Added
+- **`gatewayAPI.policies.clientTraffic.sectionName`** (chart-local, read from `.Values`, not `.Values.global`): when set, `harnesscommon.v2.renderClientTrafficPolicy` adds `sectionName` to the policy's `targetRefs`, attaching it to a single Gateway listener instead of the whole Gateway. Fixes a conflict where a component policy (e.g. Looker's `path.escapedSlashesAction: KeepUnchanged`) and the shared Gateway-level policy both targeted the Gateway; Envoy Gateway allows one policy per target, so the component policy was `Accepted=False, reason=Conflicted` and `%2F` was decoded (Looker embed returned 404). Fully additive; unset renders exactly as before.
+
 ## [1.10.2] - 2026-10-22
 
 ### Fixed

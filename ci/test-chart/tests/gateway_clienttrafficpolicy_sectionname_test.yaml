@@ -1,0 +1,27 @@
+suite: Gateway API ClientTrafficPolicy sectionName (harnesscommon.v2.renderClientTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-clienttraffic-sectionname.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should target a single listener when chart-local sectionName is set
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - equal:
+          path: spec.targetRefs[0].kind
+          value: Gateway
+      - equal:
+          path: spec.targetRefs[0].name
+          value: test-gateway
+      - equal:
+          path: spec.targetRefs[0].sectionName
+          value: https-looker
+      - equal:
+          path: spec.path.escapedSlashesAction
+          value: KeepUnchanged
