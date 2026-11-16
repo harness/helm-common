@@ -44,6 +44,9 @@ run_scenario "Gateway API (upstreamHostOverride)" "${VALUES_DIR}/gateway-upstrea
 run_scenario "Gateway API (pathType cascade)" "${VALUES_DIR}/gateway-pathtype-cascade.yaml"
 run_scenario "smpSharedKubernetesSecrets" "${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml"
 run_scenario "smpSharedKubernetesSecrets (global.sharedSecrets.enabled=false)" "${VALUES_DIR}/smp-shared-kubernetes-secrets-disabled.yaml"
+run_scenario "ExternalSecret (default apiVersion)" "${VALUES_DIR}/eso-api-version.yaml"
+run_scenario "ExternalSecret (global apiVersion v1)" "${VALUES_DIR}/eso-api-version.yaml" --set global.externalSecrets.apiVersion=v1
+run_scenario "ExternalSecret DB (global apiVersion v1)" "${VALUES_DIR}/eso-db-api-version.yaml" --set global.externalSecrets.apiVersion=v1
 run_scenario "Engine resources" "${VALUES_DIR}/engine-resources.yaml" --api-versions engine.harness.io/v1alpha1/Schedule
 echo "  Scenario: smpSharedKubernetesSecrets (customer override) (${VALUES_DIR}/smp-shared-kubernetes-secrets.yaml + customer-override.yaml)"
 helm template "$RELEASE_NAME" "$CHART_DIR" \

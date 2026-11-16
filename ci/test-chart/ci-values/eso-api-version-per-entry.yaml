@@ -1,0 +1,18 @@
+esoTest: true
+secrets:
+  secretManagement:
+    externalSecretsOperator:
+      - secretStore:
+          name: store
+          kind: ClusterSecretStore
+        remoteKeys:
+          MY_VAR:
+            name: remote/path
+            property: prop
+      - apiVersion: v1
+        secretStore:
+          name: store
+          kind: ClusterSecretStore
+        remoteKeys:
+          OTHER_VAR:
+            name: remote/other

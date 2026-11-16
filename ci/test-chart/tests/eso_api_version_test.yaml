@@ -1,0 +1,113 @@
+suite: ExternalSecret apiVersion is opt-in
+templates:
+  - eso-externalsecret-test.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: defaults to v1beta1 when nothing is configured
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-api-version.yaml
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 0
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 1
+
+  - it: uses global.externalSecrets.apiVersion (shared with subcharts)
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-api-version.yaml
+    set:
+      global.externalSecrets.apiVersion: v1
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1
+        documentIndex: 0
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1
+        documentIndex: 1
+
+  - it: chart-level secretManagement.externalSecretsApiVersion overrides global
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-api-version.yaml
+    set:
+      global.externalSecrets.apiVersion: v1
+      secrets.secretManagement.externalSecretsApiVersion: v1beta1
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 0
+
+  - it: per-entry apiVersion overrides chart-level and global
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-api-version-per-entry.yaml
+    set:
+      global.externalSecrets.apiVersion: v1beta1
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 0
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1
+        documentIndex: 1
+
+  - it: fails on an unsupported apiVersion
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-api-version.yaml
+    set:
+      global.externalSecrets.apiVersion: v2
+    asserts:
+      - failedTemplate:
+          errorPattern: "Invalid ExternalSecret apiVersion"
+
+---
+suite: DB ExternalSecret apiVersion is opt-in
+templates:
+  - eso-db-externalsecret-test.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: DB ExternalSecrets default to v1beta1
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-db-api-version.yaml
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 0
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1beta1
+        documentIndex: 1
+
+  - it: DB ExternalSecrets follow global.externalSecrets.apiVersion
+    values:
+      - ../values.yaml
+      - ../ci-values/eso-db-api-version.yaml
+    set:
+      global.externalSecrets.apiVersion: v1
+    asserts:
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1
+        documentIndex: 0
+      - equal:
+          path: apiVersion
+          value: external-secrets.io/v1
+        documentIndex: 1

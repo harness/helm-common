@@ -1,0 +1,26 @@
+esoDbTest: true
+database:
+  mongo:
+    app:
+      enabled: true
+      secrets:
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: store
+                kind: ClusterSecretStore
+              remoteKeys:
+                MONGO_PASSWORD:
+                  name: remote/mongo
+  redis:
+    app:
+      enabled: true
+      secrets:
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: store
+                kind: ClusterSecretStore
+              remoteKeys:
+                REDIS_PASSWORD:
+                  name: remote/redis
