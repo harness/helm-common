@@ -2,16 +2,16 @@ esoTest: true
 secrets:
   secretManagement:
     externalSecretsOperator:
-      - secretStore:
-          name: store
-          kind: ClusterSecretStore
+      - secretStore: {name: store, kind: ClusterSecretStore}
         remoteKeys:
-          MY_VAR:
-            name: remote/path
-            property: prop
-      - secretStore:
-          name: store
-          kind: ClusterSecretStore
-        remoteKeys:
-          OTHER_VAR:
-            name: remote/other
+          MY_VAR: {name: remote/path}
+database:
+  mongo:
+    app:
+      enabled: true
+      secrets:
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore: {name: store, kind: ClusterSecretStore}
+              remoteKeys:
+                MONGO_PASSWORD: {name: remote/mongo}

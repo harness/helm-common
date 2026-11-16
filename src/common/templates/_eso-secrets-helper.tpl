@@ -210,27 +210,20 @@ USAGE:
 {{- end }}
 
 {{/*
-Resolves the apiVersion used for ExternalSecret resources. Opt-in: defaults to v1beta1.
+Resolves the apiVersion for ExternalSecret resources. Opt-in: defaults to v1beta1.
 
-Precedence (first non-empty wins):
-  1. esoSecret.apiVersion                                   (per externalSecretsOperator entry)
-  2. secretsCtx.secretManagement.externalSecretsApiVersion  (per chart / per DB secrets block)
-  3. global.externalSecrets.apiVersion                      (shared with all subcharts via .Values.global)
-  4. "v1beta1"                                              (default, current behaviour)
-
-Allowed values: v1beta1, v1
+Precedence (first set wins):
+  1. secretsCtx.secretManagement.externalSecretsApiVersion  (per chart / per DB secrets block)
+  2. global.externalSecrets.apiVersion                      (shared with subcharts; needs ctx)
+  3. v1beta1
+Allowed: v1beta1, v1
 
 USAGE:
-{{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" .Values.secrets "esoSecret" $esoSecret) }}
-
-ctx, secretsCtx and esoSecret are all optional; missing ones are skipped.
+{{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" .Values.secrets) }}
 */}}
 {{- define "harnesscommon.secrets.esoApiVersion" -}}
 {{- $version := "" -}}
-{{- if kindIs "map" .esoSecret -}}
-  {{- $version = default "" .esoSecret.apiVersion -}}
-{{- end -}}
-{{- if and (not $version) (kindIs "map" .secretsCtx) (kindIs "map" .secretsCtx.secretManagement) -}}
+{{- if and (kindIs "map" .secretsCtx) (kindIs "map" .secretsCtx.secretManagement) -}}
   {{- $version = default "" .secretsCtx.secretManagement.externalSecretsApiVersion -}}
 {{- end -}}
 {{- if and (not $version) .ctx -}}
@@ -265,7 +258,7 @@ USAGE:
             {{- if gt $esoSecretIdx 0 }}
 {{ printf "\n---"  }}
             {{- end }}
-apiVersion: {{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" $secretsCtx "esoSecret" $esoSecret) }}
+apiVersion: {{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" $secretsCtx) }}
 kind: ExternalSecret
 metadata:
   name: {{ $esoSecretName }}
