@@ -1,0 +1,42 @@
+suite: ExternalSecret apiVersion is opt-in
+templates:
+  - eso-externalsecret-test.yaml
+release:
+  name: harness-common-test
+  namespace: default
+values:
+  - ../values.yaml
+  - ../ci-values/eso-api-version.yaml
+tests:
+  - it: defaults to v1beta1 (chart and DB secrets)
+    asserts:
+      - equal: {path: apiVersion, value: external-secrets.io/v1beta1}
+        documentIndex: 0
+      - equal: {path: apiVersion, value: external-secrets.io/v1beta1}
+        documentIndex: 1
+
+  - it: global.externalSecrets.apiVersion moves both to v1
+    set:
+      global.externalSecrets.apiVersion: v1
+    asserts:
+      - equal: {path: apiVersion, value: external-secrets.io/v1}
+        documentIndex: 0
+      - equal: {path: apiVersion, value: external-secrets.io/v1}
+        documentIndex: 1
+
+  - it: chart-level setting beats global
+    set:
+      global.externalSecrets.apiVersion: v1
+      secrets.secretManagement.externalSecretsApiVersion: v1beta1
+    asserts:
+      - equal: {path: apiVersion, value: external-secrets.io/v1beta1}
+        documentIndex: 0
+      - equal: {path: apiVersion, value: external-secrets.io/v1}
+        documentIndex: 1
+
+  - it: rejects unsupported versions
+    set:
+      global.externalSecrets.apiVersion: v2
+    asserts:
+      - failedTemplate:
+          errorPattern: "Invalid ExternalSecret apiVersion"

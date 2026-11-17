@@ -210,13 +210,45 @@ USAGE:
 {{- end }}
 
 {{/*
+Resolves the apiVersion for ExternalSecret resources. Opt-in: defaults to v1beta1.
+
+Precedence (first set wins):
+  1. secretsCtx.secretManagement.externalSecretsApiVersion  (per chart / per DB secrets block)
+  2. global.externalSecrets.apiVersion                      (shared with subcharts; needs ctx)
+  3. v1beta1
+Allowed: v1beta1, v1
+
+USAGE:
+{{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" .Values.secrets) }}
+*/}}
+{{- define "harnesscommon.secrets.esoApiVersion" -}}
+{{- $version := "" -}}
+{{- if and (kindIs "map" .secretsCtx) (kindIs "map" .secretsCtx.secretManagement) -}}
+  {{- $version = default "" .secretsCtx.secretManagement.externalSecretsApiVersion -}}
+{{- end -}}
+{{- if and (not $version) .ctx -}}
+  {{- if and (kindIs "map" .ctx.Values.global) (kindIs "map" .ctx.Values.global.externalSecrets) -}}
+    {{- $version = default "" .ctx.Values.global.externalSecrets.apiVersion -}}
+  {{- end -}}
+{{- end -}}
+{{- $version = default "v1beta1" $version -}}
+{{- if not (has $version (list "v1beta1" "v1")) -}}
+  {{- fail (printf "Invalid ExternalSecret apiVersion %q: must be one of v1beta1, v1" $version) -}}
+{{- end -}}
+{{- printf "external-secrets.io/%s" $version -}}
+{{- end -}}
+
+{{/*
 Generates ESO External Secret CRD
 
 USAGE:
 {{ include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" . "secretsCtx" .Values.secrets "secretIdentifier" "local") }}
+
+"ctx" is optional, but required for the global.externalSecrets.apiVersion opt-in to take effect.
 */}}
 {{- define "harnesscommon.secrets.generateExternalSecret" }}
 {{- $ := .ctx }}
+{{- $secretsCtx := .secretsCtx }}
 {{- $secretNamePrefix := .secretNamePrefix }}
 {{- if and .secretsCtx .secretsCtx.secretManagement .secretsCtx.secretManagement.externalSecretsOperator }}
     {{- with .secretsCtx.secretManagement.externalSecretsOperator }}
@@ -226,7 +258,7 @@ USAGE:
             {{- if gt $esoSecretIdx 0 }}
 {{ printf "\n---"  }}
             {{- end }}
-apiVersion: external-secrets.io/v1beta1
+apiVersion: {{ include "harnesscommon.secrets.esoApiVersion" (dict "ctx" $ "secretsCtx" $secretsCtx) }}
 kind: ExternalSecret
 metadata:
   name: {{ $esoSecretName }}
