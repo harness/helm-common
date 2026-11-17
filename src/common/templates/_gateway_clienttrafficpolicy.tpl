@@ -1,7 +1,14 @@
 {{/*
 ClientTrafficPolicy template for Envoy Gateway
 Handles client-side settings: connection limits, client timeouts, HTTP/2 settings
-NOTE: This policy attaches to the Gateway itself, not individual HTTPRoutes
+NOTE: This policy attaches to the Gateway itself, not individual HTTPRoutes.
+Envoy Gateway allows only one ClientTrafficPolicy per target, so a second
+Gateway-level policy is rejected (Accepted=False, reason=Conflicted). To avoid
+that, a chart can target a single Gateway listener instead by setting the
+CHART-LOCAL (non-global) value:
+  gatewayAPI.policies.clientTraffic.sectionName: <listener-name>
+It is deliberately read from .Values (not .Values.global) so it cannot leak
+to other charts through global values.
 
 USAGE:
 {{- include "harnesscommon.v2.renderClientTrafficPolicy" (dict "ctx" $) }}
@@ -33,6 +40,10 @@ spec:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: {{ include "harnesscommon.tplvalues.render" ( dict "value" $parentRef.name "context" $) }}
+      {{- $sectionName := dig "policies" "clientTraffic" "sectionName" "" (default dict $.Values.gatewayAPI) }}
+      {{- if $sectionName }}
+      sectionName: {{ include "harnesscommon.tplvalues.render" ( dict "value" $sectionName "context" $) }}
+      {{- end }}
   {{- $pathDisableMergeSlashes := dig "path" "disableMergeSlashes" "" $clientPolicy }}
   {{- $pathEscapedSlashesAction := dig "path" "escapedSlashesAction" "" $clientPolicy }}
   {{- $connectionBufferLimit := dig "connection" "bufferLimit" "" $clientPolicy }}

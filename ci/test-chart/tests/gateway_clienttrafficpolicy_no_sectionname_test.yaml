@@ -1,0 +1,27 @@
+suite: Gateway API ClientTrafficPolicy without chart-local sectionName (harnesscommon.v2.renderClientTrafficPolicy)
+values:
+  - ../values.yaml
+  - ../ci-values/gateway-policies.yaml
+templates:
+  - ingress.yaml
+release:
+  name: harness-common-test
+  namespace: default
+tests:
+  - it: should NOT set sectionName by default (targets the whole Gateway)
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - notExists:
+          path: spec.targetRefs[0].sectionName
+
+  - it: should ignore a sectionName placed under global (must be chart-local)
+    set:
+      global.gatewayAPI.policies.clientTraffic.sectionName: leaked-listener
+    documentSelector:
+      path: kind
+      value: ClientTrafficPolicy
+    asserts:
+      - notExists:
+          path: spec.targetRefs[0].sectionName
