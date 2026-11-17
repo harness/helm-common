@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.4] - 2026-11-17
+
+### Added
+- **Opt-in `apiVersion` for `ExternalSecret`**: new helper `harnesscommon.secrets.esoApiVersion`, used by `harnesscommon.secrets.generateExternalSecret`, lets charts render `external-secrets.io/v1` instead of `v1beta1`. Resolution order: `secrets.secretManagement.externalSecretsApiVersion` (chart-level; for Mongo/Redis, the same key inside that DB's own `secrets.secretManagement` block), then `global.externalSecrets.apiVersion`, then `v1beta1`. Allowed values are `v1beta1` and `v1`; anything else fails the render. The global setting needs the caller to pass `ctx`; the `_dbv3` Mongo/Redis ExternalSecret generators now do. Note: in an umbrella chart, subcharts share one set of `harnesscommon` templates, so the global setting is only reliable once every subchart using the helper is on 1.10.4+. Fully additive: unset renders exactly as before (verified across all existing CI scenarios).
+
 ## [1.10.3] - 2026-11-16
 
 ### Added
