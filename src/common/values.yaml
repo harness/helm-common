@@ -131,6 +131,9 @@ global:
       # These settings apply to traffic from clients to the Gateway
       clientTraffic:
         enabled: false
+        # NOTE: to attach to a single Gateway listener instead of the whole Gateway,
+        # set the CHART-LOCAL (non-global) value
+        # gatewayAPI.policies.clientTraffic.sectionName — see docs/GATEWAYAPI.md.
         # Client-side connection limits
         connection:
           # e.g., "1024Mi" - equivalent to nginx proxy-body-size

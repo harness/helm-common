@@ -1117,6 +1117,28 @@ global:
 | `path.disableMergeSlashes` | bool | `false` | Preserve consecutive slashes in request paths (envoy merges them by default) |
 | `path.escapedSlashesAction` | string | `""` | How to handle `%2F`/`%2f` in paths: `KeepUnchanged`, `UnescapeAndForward`, `UnescapeAndRedirect`, `RejectRequest` |
 
+#### Targeting a single listener (`sectionName`)
+
+Envoy Gateway accepts only one `ClientTrafficPolicy` per target. If two charts each render a Gateway-level policy (for example the shared Gateway policy plus a component policy that sets `path.*`), the second is rejected with `Accepted=False, reason=Conflicted` and its settings are silently ignored.
+
+A chart can avoid this by attaching its policy to one Gateway listener instead of the whole Gateway:
+
+```yaml
+# Chart-local values (NOT under global)
+gatewayAPI:
+  policies:
+    clientTraffic:
+      sectionName: https-looker   # name of a listener on the Gateway
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `gatewayAPI.policies.clientTraffic.sectionName` | string | `""` | Gateway listener name to attach the policy to. Empty attaches to the whole Gateway. Read from chart-local `.Values`, **not** `.Values.global`, so it does not leak to other charts. |
+
+Notes:
+- The listener must exist on the Gateway, otherwise the policy fails to attach.
+- A listener-level policy is more specific than a Gateway-level one, so Envoy Gateway applies it to that listener instead of the Gateway-level policy (settings are not merged). Repeat any setting the listener still needs.
+
 ### global.gatewayAPI.policies.security
 
 | Parameter | Type | Default | Description |
